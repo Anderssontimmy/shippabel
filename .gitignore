@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.*
+*.local
+mcp/node_modules/
+mcp/dist/
+.vite/
