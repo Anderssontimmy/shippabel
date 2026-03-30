@@ -43,6 +43,7 @@ export const Status = () => {
 
   useEffect(() => {
     if (id) reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   if (loading) {

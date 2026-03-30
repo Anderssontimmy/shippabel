@@ -226,7 +226,16 @@ export const ScanResults = () => {
       window.location.href = "/login";
       return;
     }
-    // TODO: check payment status — for now allow all authenticated users
+
+    // Check if user has a paid plan (Launch or Pro)
+    const metadata = user.user_metadata as Record<string, unknown> | undefined;
+    const hasPaidPlan = metadata?.stripe_customer_id && metadata?.plan;
+    if (!hasPaidPlan) {
+      toast("error", "Conversion requires a paid plan. Check out our pricing options.");
+      window.location.href = "/pricing";
+      return;
+    }
+
     const result = await convert();
     if (result) {
       toast("success", result.message);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Rocket,
@@ -32,15 +32,7 @@ export const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/login");
-      return;
-    }
-    if (user) loadProjects();
-  }, [user, authLoading]);
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     const { data } = await supabase
       .from("projects")
       .select("*")
@@ -49,7 +41,15 @@ export const Dashboard = () => {
 
     setProjects((data ?? []) as Project[]);
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/login");
+      return;
+    }
+    if (user) loadProjects();
+  }, [user, authLoading, navigate, loadProjects]);
 
   if (authLoading || loading) {
     return (

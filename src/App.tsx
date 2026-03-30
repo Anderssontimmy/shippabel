@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Landing } from "./pages/Landing";
 import { Loader2 } from "lucide-react";
 
@@ -26,25 +27,27 @@ const PageLoader = () => (
 
 const App = () => {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Landing />} />
-          <Route path="/scan" element={<Scan />} />
-          <Route path="/scan/:id" element={<ScanResults />} />
-          <Route path="/app/:id/listing" element={<Listing />} />
-          <Route path="/app/:id/screenshots" element={<Screenshots />} />
-          <Route path="/app/:id/submit" element={<Submit />} />
-          <Route path="/app/:id/status" element={<Status />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </Suspense>
+    <ErrorBoundary fallbackTitle="The app encountered an error">
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Landing />} />
+            <Route path="/scan" element={<ErrorBoundary fallbackTitle="Scanner error"><Scan /></ErrorBoundary>} />
+            <Route path="/scan/:id" element={<ErrorBoundary fallbackTitle="Could not load scan results"><ScanResults /></ErrorBoundary>} />
+            <Route path="/app/:id/listing" element={<ErrorBoundary fallbackTitle="Could not load listing editor"><Listing /></ErrorBoundary>} />
+            <Route path="/app/:id/screenshots" element={<ErrorBoundary fallbackTitle="Could not load screenshots"><Screenshots /></ErrorBoundary>} />
+            <Route path="/app/:id/submit" element={<ErrorBoundary fallbackTitle="Could not load submission"><Submit /></ErrorBoundary>} />
+            <Route path="/app/:id/status" element={<ErrorBoundary fallbackTitle="Could not load status"><Status /></ErrorBoundary>} />
+            <Route path="/dashboard" element={<ErrorBoundary fallbackTitle="Could not load dashboard"><Dashboard /></ErrorBoundary>} />
+            <Route path="/settings" element={<ErrorBoundary fallbackTitle="Could not load settings"><Settings /></ErrorBoundary>} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 

@@ -55,6 +55,7 @@ export const Listing = () => {
 
   useEffect(() => {
     if (id) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, platform]);
 
   const limits = charLimits[platform]!;

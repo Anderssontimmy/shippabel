@@ -118,6 +118,7 @@ export const Settings = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
 
   if (authLoading || loading) {
