@@ -32,11 +32,11 @@ const stepColors: Record<FlowStep, string> = {
   scan: "text-blue-400 bg-blue-500/10",
   fix: "text-amber-400 bg-amber-500/10",
   signup: "text-primary-400 bg-primary-500/10",
-  listing: "text-emerald-400 bg-emerald-500/10",
+  listing: "text-green-400 bg-green-500/10",
   screenshots: "text-pink-400 bg-pink-500/10",
   connect: "text-cyan-400 bg-cyan-500/10",
   build: "text-orange-400 bg-orange-500/10",
-  submit: "text-emerald-400 bg-emerald-500/10",
+  submit: "text-green-400 bg-green-500/10",
 };
 
 const stepRoutes: Record<FlowStep, (id: string) => string> = {
@@ -184,7 +184,7 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
                 <div
                   className={`h-7 w-7 rounded-full flex items-center justify-center ${
                     step.completed
-                      ? "bg-emerald-500/20 text-emerald-400"
+                      ? "bg-green-500/20 text-green-400"
                       : step.id === currentStep
                       ? "bg-primary-500/20 text-primary-400"
                       : step.available

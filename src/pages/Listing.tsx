@@ -244,7 +244,7 @@ export const Listing = () => {
                     <h4 className="text-sm font-semibold mb-1">Privacy Policy</h4>
                     {listing?.privacy_policy_url ? (
                       <div className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-emerald-400" />
+                        <Check className="h-4 w-4 text-green-400" />
                         <a
                           href={listing.privacy_policy_url}
                           target="_blank"

@@ -52,7 +52,7 @@ const plans = [
     period: "/month",
     description: "For people publishing multiple apps",
     icon: Rocket,
-    color: "text-emerald-400",
+    color: "text-green-400",
     features: [
       "Everything in Launch",
       "Submit unlimited apps",
@@ -123,7 +123,7 @@ export const Pricing = () => {
             <ul className="space-y-3 mb-8 flex-1">
               {plan.features.map((feature) => (
                 <li key={feature} className="flex items-start gap-2 text-sm text-surface-300">
-                  <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                   {feature}
                 </li>
               ))}

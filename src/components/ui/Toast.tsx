@@ -18,7 +18,7 @@ const ToastContext = createContext<ToastContextType | null>(null);
 
 const icons = { success: CheckCircle2, error: AlertCircle, info: Info };
 const colors = {
-  success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+  success: "border-green-500/30 bg-green-500/10 text-green-300",
   error: "border-red-500/30 bg-red-500/10 text-red-300",
   info: "border-blue-500/30 bg-blue-500/10 text-blue-300",
 };

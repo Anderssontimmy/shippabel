@@ -21,7 +21,7 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
   return (
     <Card className="relative overflow-hidden border-primary-500/20">
       {/* Gradient accent */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-blue-500 to-emerald-500" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 via-blue-500 to-green-500" />
 
       {/* Header + hook */}
       <div className="flex items-center gap-2 mb-2">
@@ -48,14 +48,14 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
         {/* Market opportunity */}
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
+            <TrendingUp className="h-4 w-4 text-green-400" />
             <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-400">Market Opportunity</h4>
           </div>
           <p className="text-sm text-surface-300 mb-2">{analysis.market_potential.market_size}</p>
           <div className="space-y-1">
             {analysis.market_potential.comparable_apps.map((app) => (
               <div key={app} className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                <div className="h-1.5 w-1.5 rounded-full bg-green-400 mt-1.5 shrink-0" />
                 <span className="text-xs text-surface-400">{app}</span>
               </div>
             ))}
@@ -108,7 +108,7 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
       </div>
 
       {/* CTA */}
-      <div className="rounded-xl bg-gradient-to-r from-primary-600/10 to-emerald-600/10 border border-primary-500/10 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="rounded-xl bg-gradient-to-r from-primary-600/10 to-green-600/10 border border-primary-500/10 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p className="text-sm font-medium text-surface-200">
           Ready to ship? Let us handle the App Store submission.
         </p>

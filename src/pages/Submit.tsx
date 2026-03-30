@@ -154,7 +154,7 @@ export const Submit = () => {
               <div
                 className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
                   i < currentStepIndex
-                    ? "bg-emerald-500 text-white"
+                    ? "bg-green-500 text-white"
                     : i === currentStepIndex
                     ? "bg-primary-600 text-white"
                     : "bg-surface-800 text-surface-500"
@@ -165,7 +165,7 @@ export const Submit = () => {
               <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
             </button>
             {i < steps.length - 1 && (
-              <div className={`flex-1 h-px mx-3 ${i < currentStepIndex ? "bg-emerald-500" : "bg-surface-800"}`} />
+              <div className={`flex-1 h-px mx-3 ${i < currentStepIndex ? "bg-green-500" : "bg-surface-800"}`} />
             )}
           </div>
         ))}
@@ -397,7 +397,7 @@ const CheckItem = ({
     <div className="flex items-center gap-3">
       <div
         className={`h-5 w-5 rounded-full flex items-center justify-center ${
-          checked ? "bg-emerald-500" : "bg-surface-800 border border-surface-700"
+          checked ? "bg-green-500" : "bg-surface-800 border border-surface-700"
         }`}
       >
         {checked && <Check className="h-3 w-3 text-white" />}
@@ -418,7 +418,7 @@ const BuildStatusDisplay = ({ submission }: { submission: Submission }) => {
   const statusMap: Record<string, { label: string; color: string; animate?: boolean }> = {
     queued: { label: "Queued", color: "text-surface-400" },
     in_progress: { label: "Building...", color: "text-blue-400", animate: true },
-    completed: { label: "Build Complete", color: "text-emerald-400" },
+    completed: { label: "Build Complete", color: "text-green-400" },
     failed: { label: "Build Failed", color: "text-red-400" },
   };
 
@@ -467,7 +467,7 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
     approved: {
       label: "Approved!",
       desc: "Your app has been approved and is live on the store.",
-      color: "text-emerald-400",
+      color: "text-green-400",
     },
     rejected: {
       label: "Rejected",

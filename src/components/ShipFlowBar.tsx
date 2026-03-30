@@ -34,7 +34,7 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
                       isActive
                         ? "bg-primary-600 text-white"
                         : isPast
-                        ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                        ? "bg-green-500/10 text-green-400 hover:bg-green-500/20"
                         : "text-surface-500 hover:text-surface-300"
                     }`}
                   >
@@ -49,7 +49,7 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
                 )}
 
                 {i < steps.length - 1 && (
-                  <ChevronRight aria-hidden="true" className={`h-3 w-3 mx-0.5 shrink-0 ${isPast ? "text-emerald-500/40" : "text-surface-800"}`} />
+                  <ChevronRight aria-hidden="true" className={`h-3 w-3 mx-0.5 shrink-0 ${isPast ? "text-green-500/40" : "text-surface-800"}`} />
                 )}
               </div>
             );

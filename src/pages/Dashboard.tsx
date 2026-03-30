@@ -19,10 +19,10 @@ import type { Project, ProjectStatus } from "@/lib/types";
 const statusConfig: Record<ProjectStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
   scanning: { label: "Scanning", color: "text-blue-400", icon: Loader2 },
   issues_found: { label: "Issues Found", color: "text-amber-400", icon: AlertCircle },
-  ready: { label: "Ready", color: "text-emerald-400", icon: CheckCircle2 },
+  ready: { label: "Ready", color: "text-green-400", icon: CheckCircle2 },
   building: { label: "Building", color: "text-blue-400", icon: Loader2 },
   submitted: { label: "Submitted", color: "text-primary-400", icon: Rocket },
-  live: { label: "Live", color: "text-emerald-400", icon: CheckCircle2 },
+  live: { label: "Live", color: "text-green-400", icon: CheckCircle2 },
   rejected: { label: "Rejected", color: "text-red-400", icon: AlertCircle },
 };
 
@@ -103,7 +103,7 @@ export const Dashboard = () => {
                     <div
                       className={`h-12 w-12 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
                         score >= 80
-                          ? "bg-emerald-500/10 text-emerald-400"
+                          ? "bg-green-500/10 text-green-400"
                           : score >= 50
                           ? "bg-amber-500/10 text-amber-400"
                           : "bg-red-500/10 text-red-400"

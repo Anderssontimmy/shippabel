@@ -117,7 +117,7 @@ const PhoneMockup = () => {
 
             {/* App header */}
             <div className="px-5 pt-1 pb-2">
-              <div className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: "#10b981" }}>Shippabel</div>
+              <div className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: "#22c55e" }}>Shippabel</div>
               <motion.div
                 key={stage}
                 initial={{ opacity: 0, y: 6 }}
@@ -126,10 +126,10 @@ const PhoneMockup = () => {
                 className="text-[16px] font-bold mt-1 leading-tight"
                 style={{ color: "#fff" }}
               >
-                {stage === 0 && <>Scanning<br /><span style={{ color: "#10b981" }}>MyFitApp...</span></>}
-                {stage === 1 && <>Auto-fixing<br /><span style={{ color: "#10b981" }}>5 issues...</span></>}
-                {stage === 2 && <>Generating<br /><span style={{ color: "#10b981" }}>store listing...</span></>}
-                {stage === 3 && <>Submitting to<br /><span style={{ color: "#10b981" }}>App Store...</span></>}
+                {stage === 0 && <>Scanning<br /><span style={{ color: "#22c55e" }}>MyFitApp...</span></>}
+                {stage === 1 && <>Auto-fixing<br /><span style={{ color: "#22c55e" }}>5 issues...</span></>}
+                {stage === 2 && <>Generating<br /><span style={{ color: "#22c55e" }}>store listing...</span></>}
+                {stage === 3 && <>Submitting to<br /><span style={{ color: "#22c55e" }}>App Store...</span></>}
                 {stage === 4 && <>You're<br /><span style={{ color: "#4ade80" }}>live! 🎉</span></>}
               </motion.div>
             </div>
@@ -184,7 +184,7 @@ const PhoneMockup = () => {
                 {stage === 4 && (
                   <div>
                     <div className="flex items-center gap-2.5 mb-2.5">
-                      <div className="h-10 w-10 rounded-2xl flex items-center justify-center text-[18px]" style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>💪</div>
+                      <div className="h-10 w-10 rounded-2xl flex items-center justify-center text-[18px]" style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>💪</div>
                       <div>
                         <div className="text-[13px] font-bold" style={{ color: "#fff" }}>MyFitApp</div>
                         <div className="flex items-center gap-0.5 mt-0.5">
@@ -215,7 +215,7 @@ const PhoneMockup = () => {
               <div className="w-full h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                 <motion.div
                   className="h-full rounded-full"
-                  style={{ background: stage === 4 ? "#4ade80" : "linear-gradient(90deg, #10b981, #059669)" }}
+                  style={{ background: stage === 4 ? "#4ade80" : "linear-gradient(90deg, #22c55e, #16a34a)" }}
                   animate={{ width: `${[15, 45, 70, 90, 100][stage]}%` }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
                 />

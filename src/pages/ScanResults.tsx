@@ -139,19 +139,19 @@ const IssueCard = ({ issue, onFix, fixingId }: { issue: Issue; onFix: (id: strin
   const isFixing = fixingId === issue.id;
 
   return (
-    <div className={`border rounded-xl overflow-hidden transition-colors ${issue.fixed ? "border-emerald-500/20 bg-emerald-500/5" : "border-surface-800"}`}>
+    <div className={`border rounded-xl overflow-hidden transition-colors ${issue.fixed ? "border-green-500/20 bg-green-500/5" : "border-surface-800"}`}>
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-800/30 transition-colors cursor-pointer"
       >
-        <Icon className={`h-4 w-4 shrink-0 ${issue.fixed ? "text-emerald-400" : severityColor[issue.severity]}`} />
+        <Icon className={`h-4 w-4 shrink-0 ${issue.fixed ? "text-green-400" : severityColor[issue.severity]}`} />
         <span className={`flex-1 text-sm font-medium ${issue.fixed ? "text-surface-500 line-through" : "text-surface-200"}`}>{issue.friendly_title || issue.title}</span>
         <div className="flex items-center gap-2">
           {issue.fixed && (
-            <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Fixed</span>
+            <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Fixed</span>
           )}
           {!issue.fixed && issue.auto_fixable && (
-            <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Auto-fix</span>
+            <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Auto-fix</span>
           )}
           {open ? <ChevronDown className="h-4 w-4 text-surface-500" /> : <ChevronRight className="h-4 w-4 text-surface-500" />}
         </div>
@@ -180,7 +180,7 @@ const IssueCard = ({ issue, onFix, fixingId }: { issue: Issue; onFix: (id: strin
 const ScoreRing = ({ score }: { score: number }) => {
   const circumference = 2 * Math.PI * 52;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 80 ? "text-emerald-400" : score >= 50 ? "text-amber-400" : "text-red-400";
+  const color = score >= 80 ? "text-green-400" : score >= 50 ? "text-amber-400" : "text-red-400";
 
   return (
     <div className="relative h-36 w-36 sm:h-44 sm:w-44">
@@ -372,10 +372,10 @@ export const ScanResults = () => {
 
       {/* Conversion CTA — for non-Expo projects */}
       {scan.needs_conversion && (
-        <div className="mb-8 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-transparent p-6 sm:p-8">
+        <div className="mb-8 rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-transparent p-6 sm:p-8">
           <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-              <Rocket className="h-6 w-6 text-emerald-400" />
+            <div className="h-12 w-12 rounded-2xl bg-green-500/20 flex items-center justify-center shrink-0">
+              <Rocket className="h-6 w-6 text-green-400" />
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold mb-2">We can make your app store-ready</h3>
@@ -463,7 +463,7 @@ export const ScanResults = () => {
           </Link>
           <Link to="/login">
             <Card hover className="text-center py-6 h-full">
-              <ArrowRight className="h-6 w-6 text-emerald-400 mx-auto mb-2" />
+              <ArrowRight className="h-6 w-6 text-green-400 mx-auto mb-2" />
               <h4 className="text-sm font-semibold">Sign Up</h4>
               <p className="text-xs text-surface-500 mt-1">Save scans & unlock features</p>
             </Card>

@@ -50,7 +50,7 @@ export const Login = () => {
     return (
       <div className="mx-auto max-w-md px-4 sm:px-6 py-24 sm:py-32">
         <Card className="text-center py-10">
-          <CheckCircle2 className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
+          <CheckCircle2 className="h-12 w-12 text-green-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">Check your email</h2>
           <p className="text-sm text-surface-400 max-w-xs mx-auto">
             We sent a magic link to <strong className="text-white">{email}</strong>.

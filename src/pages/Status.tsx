@@ -134,7 +134,7 @@ export const Status = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0">
                   {timelineSteps.map((step, i) => {
                     const stepColor = i < timeline.active
-                      ? "bg-emerald-500"
+                      ? "bg-green-500"
                       : i === timeline.active && timeline.failed
                       ? "bg-red-500"
                       : i === timeline.active
@@ -166,9 +166,9 @@ export const Status = () => {
                         {i < timelineSteps.length - 1 && (
                           <>
                             {/* Vertical connector (mobile) */}
-                            <div className={`hidden max-sm:block w-px h-4 ml-[15px] -mt-1 -mb-1 absolute ${i < timeline.active ? "bg-emerald-500" : "bg-surface-800"}`} />
+                            <div className={`hidden max-sm:block w-px h-4 ml-[15px] -mt-1 -mb-1 absolute ${i < timeline.active ? "bg-green-500" : "bg-surface-800"}`} />
                             {/* Horizontal connector (desktop) */}
-                            <div className={`hidden sm:block flex-1 h-px mx-2 ${i < timeline.active ? "bg-emerald-500" : "bg-surface-800"}`} />
+                            <div className={`hidden sm:block flex-1 h-px mx-2 ${i < timeline.active ? "bg-green-500" : "bg-surface-800"}`} />
                           </>
                         )}
                       </div>
@@ -185,8 +185,8 @@ export const Status = () => {
                 )}
 
                 {submission.review_status === "approved" && (
-                  <div className="mt-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-center">
-                    <p className="text-sm font-semibold text-emerald-300">
+                  <div className="mt-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-center">
+                    <p className="text-sm font-semibold text-green-300">
                       Your app is live on the {submission.platform === "ios" ? "App Store" : "Google Play Store"}!
                     </p>
                   </div>

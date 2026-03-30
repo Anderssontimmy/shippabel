@@ -192,15 +192,15 @@ export const Settings = () => {
           return (
             <Card key={provider.id}>
               <div className="flex items-start gap-4">
-                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${connected ? "bg-emerald-500/10" : "bg-surface-800"}`}>
-                  <provider.icon className={`h-5 w-5 ${connected ? "text-emerald-400" : "text-surface-400"}`} />
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${connected ? "bg-green-500/10" : "bg-surface-800"}`}>
+                  <provider.icon className={`h-5 w-5 ${connected ? "text-green-400" : "text-surface-400"}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold">{provider.name}</h3>
                     {connected && (
-                      <span className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
                         <Check className="h-3 w-3" />
                         Connected
                       </span>
@@ -310,10 +310,10 @@ export const Settings = () => {
           ].map((step) => (
             <div key={step.label} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${step.ready ? "bg-emerald-400" : "bg-surface-600"}`} />
+                <div className={`h-2 w-2 rounded-full ${step.ready ? "bg-green-400" : "bg-surface-600"}`} />
                 <span className="text-sm text-surface-300">{step.label}</span>
               </div>
-              <span className={`text-xs ${step.ready ? "text-emerald-400" : "text-surface-500"}`}>{step.note}</span>
+              <span className={`text-xs ${step.ready ? "text-green-400" : "text-surface-500"}`}>{step.note}</span>
             </div>
           ))}
         </div>

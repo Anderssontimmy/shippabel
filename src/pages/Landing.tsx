@@ -28,7 +28,7 @@ export const Landing = () => {
     <div className="bg-[#fafafa] text-gray-900 min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-emerald-50/60 via-[#fafafa] to-[#fafafa]" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-green-50/60 via-[#fafafa] to-[#fafafa]" />
 
         <div className="mx-auto max-w-[1400px] px-6 sm:px-12 pt-28 sm:pt-40 pb-28 sm:pb-40">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
@@ -40,14 +40,14 @@ export const Landing = () => {
             {/* Right: Text */}
             <div className="order-1 lg:order-2">
               <div className="animate-fade-up inline-flex items-center gap-2.5 rounded-full border border-gray-200 bg-white px-6 py-2.5 text-base text-gray-500 mb-12 shadow-sm">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="h-2.5 w-2.5 rounded-full bg-green-400 animate-pulse" />
                 Now in public beta
               </div>
 
               <h1 className="animate-fade-up-delay-1 text-6xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.04]">
                 Get your app
                 <br />
-                <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-green-600 to-teal-500 bg-clip-text text-transparent">
                   in the store.
                 </span>
               </h1>
@@ -60,7 +60,7 @@ export const Landing = () => {
               <div className="animate-fade-up-delay-3 mt-14 flex flex-wrap items-center gap-5">
                 <Link
                   to="/scan"
-                  className="inline-flex items-center gap-2.5 rounded-full bg-emerald-600 px-10 py-5 text-lg font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/25"
+                  className="inline-flex items-center gap-2.5 rounded-full bg-green-600 px-10 py-5 text-lg font-semibold text-white hover:bg-green-500 transition-colors shadow-lg shadow-green-600/25"
                 >
                   Check my app for free
                   <ArrowRight className="h-5 w-5" />
@@ -76,14 +76,14 @@ export const Landing = () => {
           </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-emerald-200 to-transparent" />
+        <div className="h-px bg-gradient-to-r from-transparent via-green-200 to-transparent" />
       </section>
 
       {/* Features */}
       <section className="py-24 sm:py-32">
         <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
           <div className="text-center mb-16 sm:mb-20">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 mb-4">What we do for you</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-green-600 mb-4">What we do for you</p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
               We handle the hard part.
               <br />
@@ -95,10 +95,10 @@ export const Landing = () => {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="group rounded-2xl border border-gray-200/60 bg-white p-10 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 hover:-translate-y-1 transition-all duration-200"
+                className="group rounded-2xl border border-gray-200/60 bg-white p-10 hover:border-green-200 hover:shadow-xl hover:shadow-green-500/5 hover:-translate-y-1 transition-all duration-200"
               >
-                <div className="h-16 w-16 rounded-2xl bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center mb-6 transition-colors">
-                  <f.icon className="h-8 w-8 text-emerald-600 group-hover:scale-110 transition-transform duration-200" />
+                <div className="h-16 w-16 rounded-2xl bg-green-50 group-hover:bg-green-100 flex items-center justify-center mb-6 transition-colors">
+                  <f.icon className="h-8 w-8 text-green-600 group-hover:scale-110 transition-transform duration-200" />
                 </div>
                 <h3 className="text-xl font-bold mb-3">{f.title}</h3>
                 <p className="text-[1.05rem] text-gray-500 leading-relaxed">{f.desc}</p>
@@ -108,13 +108,13 @@ export const Landing = () => {
         </div>
       </section>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-200 to-transparent" />
+      <div className="h-px bg-gradient-to-r from-transparent via-green-200 to-transparent" />
 
       {/* How it works */}
       <section id="how-it-works" className="py-24 sm:py-32">
         <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
           <div className="text-center mb-16 sm:mb-20">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 mb-4">How it works</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-green-600 mb-4">How it works</p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
               Three steps. That's it.
             </h2>
@@ -124,7 +124,7 @@ export const Landing = () => {
             {steps.map((step, i) => (
               <div key={step.num}>
                 <div className="flex items-center gap-5 mb-6">
-                  <span className="text-6xl font-extrabold text-emerald-200 italic">{step.num}</span>
+                  <span className="text-6xl font-extrabold text-green-200 italic">{step.num}</span>
                   {i < steps.length - 1 && (
                     <div className="hidden md:block flex-1 h-px bg-gray-200" />
                   )}
@@ -137,13 +137,13 @@ export const Landing = () => {
         </div>
       </section>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-200 to-transparent" />
+      <div className="h-px bg-gradient-to-r from-transparent via-green-200 to-transparent" />
 
       {/* Why Shippabel */}
       <section className="py-24 sm:py-32">
         <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
           <div className="text-center mb-16 sm:mb-20">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 mb-4">Why Shippabel</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-green-600 mb-4">Why Shippabel</p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
               Finally, someone{" "}
               <span className="text-gray-400">who gets it.</span>
@@ -165,11 +165,11 @@ export const Landing = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-24 sm:py-32 bg-gradient-to-b from-[#fafafa] to-emerald-50/40">
+      <section className="py-24 sm:py-32 bg-gradient-to-b from-[#fafafa] to-green-50/40">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
             Ready to{" "}
-            <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-green-600 to-teal-500 bg-clip-text text-transparent">
               go live?
             </span>
           </h2>
@@ -179,7 +179,7 @@ export const Landing = () => {
           <div className="mt-12 flex flex-wrap items-center justify-center gap-5">
             <Link
               to="/scan"
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-10 py-5 text-base font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/25"
+              className="inline-flex items-center gap-2 rounded-full bg-green-600 px-10 py-5 text-base font-semibold text-white hover:bg-green-500 transition-colors shadow-lg shadow-green-600/25"
             >
               Check my app for free
               <ArrowRight className="h-5 w-5" />

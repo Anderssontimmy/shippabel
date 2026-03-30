@@ -110,7 +110,7 @@ export const Scan = () => {
             />
             <p className="mt-2 text-xs text-surface-500">
 {hasGitHub ? (
-                  <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-emerald-500" /> Works with private and public apps</span>
+                  <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-green-500" /> Works with private and public apps</span>
                 ) : (
                   <span>Only works with public apps right now. <Link to="/settings" className="text-primary-400 hover:text-primary-300">Connect your GitHub</Link> for private apps, or upload a file instead.</span>
                 )}
@@ -125,13 +125,13 @@ export const Scan = () => {
               dragOver
                 ? "border-primary-500 bg-primary-500/5"
                 : file
-                ? "border-emerald-500/30 bg-emerald-500/5"
+                ? "border-green-500/30 bg-green-500/5"
                 : "border-surface-700 hover:border-surface-600"
             }`}
           >
             {file ? (
               <div className="flex flex-col items-center gap-2">
-                <FileArchive className="h-10 w-10 text-emerald-400" />
+                <FileArchive className="h-10 w-10 text-green-400" />
                 <p className="text-sm font-medium text-white">{file.name}</p>
                 <p className="text-xs text-surface-500">
                   {(file.size / 1024 / 1024).toFixed(1)} MB

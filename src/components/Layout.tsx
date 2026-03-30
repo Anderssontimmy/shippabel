@@ -35,7 +35,7 @@ export const Layout = () => {
       >
         <nav className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6 sm:px-12">
           <Link to="/" className={`flex items-center gap-2.5 font-bold text-xl ${isLanding ? "text-gray-900" : "text-white"}`}>
-            <Rocket className={`h-5 w-5 ${isLanding ? "text-emerald-600" : "text-primary-400"}`} />
+            <Rocket className={`h-5 w-5 ${isLanding ? "text-green-600" : "text-primary-400"}`} />
             <span>Shippabel</span>
           </Link>
 
@@ -67,7 +67,7 @@ export const Layout = () => {
             )}
             <Link
               to="/scan"
-              className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+              className="rounded-full bg-green-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-500"
             >
               Get started
             </Link>
@@ -109,7 +109,7 @@ export const Layout = () => {
             <Link
               to="/scan"
               onClick={() => setMobileOpen(false)}
-              className="block rounded-full bg-emerald-600 px-5 py-2.5 text-center text-sm font-semibold text-white"
+              className="block rounded-full bg-green-600 px-5 py-2.5 text-center text-sm font-semibold text-white"
             >
               Get started
             </Link>
@@ -126,7 +126,7 @@ export const Layout = () => {
           isLanding ? "text-gray-400" : "text-surface-500"
         }`}>
           <div className="flex items-center gap-2">
-            <Rocket className={`h-4 w-4 ${isLanding ? "text-emerald-500" : "text-primary-500"}`} />
+            <Rocket className={`h-4 w-4 ${isLanding ? "text-green-500" : "text-primary-500"}`} />
             <span>Shippabel</span>
           </div>
           <div className="flex gap-6">
