@@ -7,7 +7,7 @@ const PhoneMockup = () => {
   const mouseY = useMotionValue(0);
 
   const rawRotateX = useTransform(mouseY, [-0.5, 0.5], [22, 5]);
-  const rawRotateY = useTransform(mouseX, [-0.5, 0.5], [-20, -3]);
+  const rawRotateY = useTransform(mouseX, [-0.5, 0.5], [3, 20]);
   const rotateX = useSpring(rawRotateX, { stiffness: 100, damping: 22 });
   const rotateY = useSpring(rawRotateY, { stiffness: 100, damping: 22 });
 
@@ -268,33 +268,6 @@ const PhoneMockup = () => {
           />
         </div>
 
-        {/* Floating badges */}
-        <motion.div
-          animate={{ y: [0, -6, 0], x: [0, 3, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-4 -right-16 bg-white rounded-xl px-3.5 py-2 text-[11px] text-gray-500 shadow-xl border border-gray-100"
-          style={{ transform: "translateZ(40px)" }}
-        >
-          <span className="text-emerald-500 mr-1">●</span> 42ms deploy
-        </motion.div>
-
-        <motion.div
-          animate={{ y: [0, 8, 0], x: [0, -4, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute -bottom-2 -left-18 bg-white rounded-xl px-3.5 py-2 text-[11px] text-gray-500 shadow-xl border border-gray-100"
-          style={{ transform: "translateZ(30px)" }}
-        >
-          ⚡ Edge-optimized
-        </motion.div>
-
-        <motion.div
-          animate={{ y: [0, -5, 0] }}
-          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-          className="absolute top-1/3 -left-22 bg-white rounded-xl px-3.5 py-2 text-[11px] text-gray-500 shadow-xl border border-gray-100"
-          style={{ transform: "translateZ(50px)" }}
-        >
-          🔒 SSL auto
-        </motion.div>
       </motion.div>
     </div>
   );
