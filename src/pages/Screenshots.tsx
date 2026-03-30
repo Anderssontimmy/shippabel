@@ -10,9 +10,11 @@ import {
   Plus,
   Smartphone,
   Tablet,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { getTemplates, getTemplateById, getTemplateBackground, renderTemplateScreenshot, type ScreenshotTemplate } from "@/lib/screenshot-templates";
 
 interface Screenshot {
   id: string;
@@ -43,6 +45,40 @@ const storeRequirements = {
   ],
 };
 
+const TemplatePreview = ({ template }: { template: ScreenshotTemplate }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useState(() => {
+    // Draw preview on mount
+    setTimeout(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      canvas.width = 120;
+      canvas.height = 200;
+      template.background(ctx, 120, 200);
+      // Draw placeholder device
+      const dx = 120 * template.deviceInset.left;
+      const dw = 120 * template.deviceInset.width;
+      const dy = 200 * template.deviceInset.top;
+      const dh = 200 * 0.75;
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath();
+      ctx.roundRect(dx, dy, dw, dh, 6);
+      ctx.fill();
+      // Caption placeholder
+      ctx.fillStyle = template.captionStyle.color;
+      ctx.globalAlpha = 0.5;
+      ctx.fillRect(30, 200 * template.captionStyle.yPosition, 60, 6);
+      ctx.fillRect(40, 200 * template.captionStyle.yPosition + 10, 40, 4);
+      ctx.globalAlpha = 1;
+    }, 0);
+  });
+
+  return <canvas ref={canvasRef} className="w-full h-20 rounded-t-md" />;
+};
+
 export const Screenshots = () => {
   const { id } = useParams();
   const { toast } = useToast();
@@ -50,8 +86,21 @@ export const Screenshots = () => {
   const [selectedDevice, setSelectedDevice] = useState<DeviceFrame>("iphone16pro");
   const [captionColor, setCaptionColor] = useState("#ffffff");
   const [bgColor, setBgColor] = useState("#6366f1");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("clean-gradient");
+  const [useTemplate, setUseTemplate] = useState(true);
+  const allTemplates = getTemplates();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Default captions for when user doesn't write their own
+  const defaultCaptions = [
+    "Track Your Progress",
+    "Stay Organized",
+    "Easy to Use",
+    "Beautiful Design",
+    "Works Offline",
+    "Share with Friends",
+  ];
 
   const device = deviceFrames.find((d) => d.id === selectedDevice)!;
 
@@ -156,10 +205,28 @@ export const Screenshots = () => {
     });
   };
 
+  const downloadWithTemplate = async (screenshot: Screenshot): Promise<Blob> => {
+    const template = getTemplateById(selectedTemplate);
+    if (!template || !useTemplate) {
+      return renderFramedScreenshot(screenshot);
+    }
+    const req = storeRequirements[selectedDevice][0]!;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve) => {
+      img.onload = () => resolve();
+      img.src = screenshot.preview;
+    });
+    const canvas = renderTemplateScreenshot(template, img, screenshot.caption, req.width, req.height);
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob!), "image/png");
+    });
+  };
+
   const downloadAll = async () => {
     for (let i = 0; i < screenshots.length; i++) {
       const screenshot = screenshots[i]!;
-      const blob = await renderFramedScreenshot(screenshot);
+      const blob = await downloadWithTemplate(screenshot);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -189,6 +256,38 @@ export const Screenshots = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Controls */}
         <div className="space-y-6">
+          {/* Template selector */}
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                <Palette className="h-4 w-4 text-primary-400" />
+                Template
+              </h3>
+              <button
+                onClick={() => setUseTemplate(!useTemplate)}
+                className={`text-[10px] px-2 py-0.5 rounded-full cursor-pointer ${useTemplate ? "bg-green-500/10 text-green-400" : "bg-surface-800 text-surface-500"}`}
+              >
+                {useTemplate ? "ON" : "OFF"}
+              </button>
+            </div>
+            {useTemplate && (
+              <div className="grid grid-cols-2 gap-2">
+                {allTemplates.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setSelectedTemplate(t.id)}
+                    className={`rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+                      selectedTemplate === t.id ? "border-primary-500 ring-1 ring-primary-500/30" : "border-transparent hover:border-surface-600"
+                    }`}
+                  >
+                    <TemplatePreview template={t} />
+                    <div className="px-2 py-1.5 text-[10px] font-medium text-surface-300 text-center">{t.name}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </Card>
+
           {/* Device selector */}
           <Card>
             <h3 className="text-sm font-semibold mb-3">Device Frame</h3>
@@ -266,6 +365,21 @@ export const Screenshots = () => {
 
           {screenshots.length > 0 && (
             <>
+              {screenshots.some((s) => !s.caption) && (
+                <Button
+                  variant="secondary"
+                  className="w-full gap-2 mb-3"
+                  onClick={() => {
+                    setScreenshots((prev) =>
+                      prev.map((s, i) => s.caption ? s : { ...s, caption: defaultCaptions[i % defaultCaptions.length]! })
+                    );
+                    toast("success", "Captions added!");
+                  }}
+                >
+                  <Palette className="h-4 w-4" />
+                  Auto-write captions
+                </Button>
+              )}
               <Button onClick={downloadAll} className="w-full gap-2">
                 <Download className="h-4 w-4" />
                 Download all ({screenshots.length})
@@ -286,7 +400,7 @@ export const Screenshots = () => {
               <div key={screenshot.id} className="group relative">
                 <div
                   className="rounded-xl overflow-hidden border border-surface-800 aspect-[9/19.5]"
-                  style={{ backgroundColor: bgColor }}
+                  style={{ backgroundColor: useTemplate ? undefined : bgColor, background: useTemplate ? getTemplateBackground(selectedTemplate) : undefined }}
                 >
                   {screenshot.caption && (
                     <div className="text-center pt-3 px-2">
