@@ -12,11 +12,11 @@ const getStripe = () => {
   return stripePromise;
 };
 
-export type PlanId = "launch" | "pro";
+export type PlanId = "ship" | "unlimited";
 
 const priceIds: Record<PlanId, string> = {
-  launch: import.meta.env.VITE_STRIPE_LAUNCH_PRICE_ID ?? "",
-  pro: import.meta.env.VITE_STRIPE_PRO_PRICE_ID ?? "",
+  ship: import.meta.env.VITE_STRIPE_SHIP_PRICE_ID ?? "",
+  unlimited: import.meta.env.VITE_STRIPE_UNLIMITED_PRICE_ID ?? "",
 };
 
 export const useStripe = () => {

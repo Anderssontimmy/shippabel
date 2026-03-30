@@ -67,14 +67,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Determine if this is a one-time or subscription checkout
-    const isSubscription = plan === "pro";
-
+    // All plans are one-time payments
     const params = new URLSearchParams({
       customer: customerId!,
       "line_items[0][price]": price_id,
       "line_items[0][quantity]": "1",
-      mode: isSubscription ? "subscription" : "payment",
+      mode: "payment",
       success_url,
       cancel_url,
       "metadata[plan]": plan,

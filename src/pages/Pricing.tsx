@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Check, Sparkles, Rocket, Zap, Loader2 } from "lucide-react";
+import { Check, Rocket, Zap, Loader2, Infinity } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useStripe, type PlanId } from "@/hooks/useStripe";
@@ -11,13 +11,13 @@ const plans = [
     planId: null as PlanId | null,
     price: "$0",
     period: "forever",
-    description: "See what's stopping your app from going live",
+    description: "See exactly what's stopping your app from going live",
     icon: Zap,
     color: "text-surface-300",
     features: [
       "Check unlimited apps",
-      "See everything that needs fixing",
-      "Plain-language explanations",
+      "See every problem explained in plain language",
+      "AI store page preview",
       "Share your results with anyone",
     ],
     cta: "Check my app",
@@ -25,44 +25,40 @@ const plans = [
     ctaTo: "/scan",
   },
   {
-    name: "Launch",
-    planId: "launch" as PlanId,
+    name: "Ship",
+    planId: "ship" as PlanId,
     price: "$99",
     period: "one-time",
-    description: "Everything you need to get your first app live",
-    icon: Sparkles,
-    color: "text-primary-400",
+    description: "Everything you need to get your app live in the store",
+    icon: Rocket,
+    color: "text-green-400",
     popular: true,
     features: [
       "Everything in Free",
       "Auto-fix problems with one click",
-      "AI writes your store page for you",
+      "AI writes your full store page",
       "Professional screenshot frames",
       "Privacy policy created & hosted",
       "We build & submit your app",
-      "Track your app's review status",
+      "Track your review status",
     ],
-    cta: "Get Launch",
+    cta: "Get Ship — $99",
     ctaVariant: "primary" as const,
   },
   {
-    name: "Pro",
-    planId: "pro" as PlanId,
-    price: "$29",
-    period: "/month",
-    description: "For people publishing multiple apps",
-    icon: Rocket,
-    color: "text-green-400",
+    name: "Unlimited",
+    planId: "unlimited" as PlanId,
+    price: "$179",
+    period: "one-time",
+    description: "For people with more than one app to publish",
+    icon: Infinity,
+    color: "text-primary-400",
     features: [
-      "Everything in Launch",
-      "Submit unlimited apps",
-      "Unlimited privacy policies",
-      "See how your apps are doing",
-      "Always-on review tracking",
-      "Your own privacy policy page",
-      "Priority help when you need it",
+      "Everything in Ship",
+      "Unlimited apps — publish as many as you want",
+      "Priority support when you need help",
     ],
-    cta: "Get Pro",
+    cta: "Get Unlimited — $179",
     ctaVariant: "secondary" as const,
   },
 ];
@@ -84,10 +80,10 @@ export const Pricing = () => {
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
       <div className="text-center max-w-2xl mx-auto mb-16">
         <h1 className="text-3xl sm:text-4xl font-bold">
-          Simple pricing. No surprises.
+          Pay once. Get your app live.
         </h1>
         <p className="mt-4 text-surface-400 text-lg">
-          Check your app for free. Only pay when you're ready to publish.
+          No subscriptions. No monthly fees. Just a one-time payment.
         </p>
       </div>
 
@@ -101,10 +97,10 @@ export const Pricing = () => {
         {plans.map((plan) => (
           <Card
             key={plan.name}
-            className={`relative flex flex-col ${plan.popular ? "border-primary-500/30 bg-primary-500/5" : ""}`}
+            className={`relative flex flex-col ${plan.popular ? "border-green-500/30 bg-green-500/5" : ""}`}
           >
             {plan.popular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary-600 px-3 py-0.5 text-xs font-semibold text-white">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-green-600 px-3 py-0.5 text-xs font-semibold text-white">
                 Most popular
               </div>
             )}
@@ -152,7 +148,7 @@ export const Pricing = () => {
 
       <div className="mt-16 text-center">
         <p className="text-surface-500 text-sm">
-          All plans include a 14-day money-back guarantee. No questions asked.
+          14-day money-back guarantee. No questions asked.
         </p>
       </div>
     </div>
