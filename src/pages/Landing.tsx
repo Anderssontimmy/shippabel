@@ -47,7 +47,7 @@ export const Landing = () => {
               <h1 className="animate-fade-up-delay-1 text-6xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.04]">
                 Get your app
                 <br />
-                <span className="bg-gradient-to-r from-green-600 to-teal-500 bg-clip-text text-transparent">
+                <span className="text-green-600">
                   in the store.
                 </span>
               </h1>
@@ -169,7 +169,7 @@ export const Landing = () => {
         <div className="mx-auto max-w-3xl px-6 text-center">
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
             Ready to{" "}
-            <span className="bg-gradient-to-r from-green-600 to-teal-500 bg-clip-text text-transparent">
+            <span className="text-green-600">
               go live?
             </span>
           </h2>
