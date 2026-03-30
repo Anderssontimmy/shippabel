@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useCredentials } from "@/hooks/useCredentials";
 import type { Project } from "@/lib/types";
@@ -30,6 +31,7 @@ export const useScan = () => {
 
   const scanFromUrl = async (repoUrl: string) => {
     setState({ scanning: true, progress: "Creating project...", error: null, projectId: null });
+    trackEvent("Scan Started", { source: "url" });
 
     try {
       // 1. Create project record
@@ -57,6 +59,8 @@ export const useScan = () => {
       if (fnError) {
         throw new Error(fnError.message ?? "Scan failed");
       }
+
+      trackEvent("Scan Completed");
 
       setState({
         scanning: false,

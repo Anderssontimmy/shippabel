@@ -46,6 +46,29 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Rate limiting: max 10 scans per IP per hour for unauthenticated users
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      ?? req.headers.get("cf-connecting-ip")
+      ?? "unknown";
+    const authHeader = req.headers.get("Authorization");
+    const isAuthenticated = !!authHeader && authHeader !== "Bearer placeholder-key";
+
+    if (!isAuthenticated) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .is("user_id", null)
+        .gte("created_at", oneHourAgo);
+
+      if (count !== null && count >= 20) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please sign in for unlimited scans." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Fetch project files for analysis
     let appConfig: Record<string, unknown> | null = null;
     let fileList: string[] = [];

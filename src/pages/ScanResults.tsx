@@ -23,6 +23,7 @@ import { AppPotentialCard } from "@/components/AppPotentialCard";
 import { useFix } from "@/hooks/useFix";
 import { useConvert } from "@/hooks/useConvert";
 import { useAuth } from "@/hooks/useAuth";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { supabase } from "@/lib/supabase";
 import type { Issue, IssueSeverity, ScanResult } from "@/lib/types";
 
@@ -207,6 +208,13 @@ export const ScanResults = () => {
   const { fixingIssueId, fixing, fixAll, fixOne } = useFix(id ?? "");
   const { converting, error: convertError, convert } = useConvert(id ?? "");
   const { user } = useAuth();
+
+  useDocumentHead({
+    title: projectName ? `${projectName} — Score: ${scan?.score ?? "..."}` : "Scan Results",
+    description: scan
+      ? `${projectName} scored ${scan.score}/100 for store readiness. ${scan.summary.critical} critical, ${scan.summary.warning} warnings found.`
+      : "App store readiness scan results",
+  });
   const { toast } = useToast();
 
   const reload = async () => {
