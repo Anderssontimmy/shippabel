@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Github, Upload, ArrowRight, FileArchive, Loader2, AlertCircle, Unlock } from "lucide-react";
+import { Github, Upload, ArrowRight, FileArchive, Loader2, AlertCircle, Unlock, CheckCircle2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useScan } from "@/hooks/useScan";
@@ -18,6 +18,7 @@ export const Scan = () => {
   const [file, setFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const error = validationError ?? scanError;
 
@@ -26,18 +27,18 @@ export const Scan = () => {
 
     if (mode === "url") {
       if (!repoUrl.trim()) {
-        setValidationError("Please enter a GitHub repository URL.");
+        setValidationError("Paste the link to your app above first.");
         return;
       }
       if (!repoUrl.includes("github.com/")) {
-        setValidationError("Please enter a valid GitHub URL (e.g., https://github.com/user/repo).");
+        setValidationError("That doesn't look like a GitHub link. It should start with https://github.com/");
         return;
       }
       const projectId = await scanFromUrl(repoUrl.trim());
       if (projectId) navigate(`/scan/${projectId}`);
     } else {
       if (!file) {
-        setValidationError("Please upload a zip file.");
+        setValidationError("Choose a file to upload first.");
         return;
       }
       const projectId = await scanFromFile(file);
@@ -54,16 +55,16 @@ export const Scan = () => {
       setMode("upload");
       setValidationError(null);
     } else {
-      setValidationError("Please drop a .zip or .tar.gz file.");
+      setValidationError("That file type isn't supported. Please use a .zip file.");
     }
   }, []);
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16 sm:py-24">
       <div className="text-center mb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold">Check your app</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold">Is your app ready for the store?</h1>
         <p className="mt-3 text-surface-400 text-lg">
-          We'll check if your app is ready to be published on the App Store and Google Play.
+          Let's find out. It takes 30 seconds and it's completely free.
         </p>
       </div>
 
@@ -78,7 +79,7 @@ export const Scan = () => {
           }`}
         >
           <Github className="h-4 w-4" />
-          Paste a link
+          I have a link
         </button>
         <button
           onClick={() => { setMode("upload"); setValidationError(null); }}
@@ -89,7 +90,7 @@ export const Scan = () => {
           }`}
         >
           <Upload className="h-4 w-4" />
-          Upload a file
+          I have a file
         </button>
       </div>
 
@@ -97,9 +98,31 @@ export const Scan = () => {
       <Card className="mb-6">
         {mode === "url" ? (
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
-              Link to your app on GitHub
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-surface-300">
+                Paste your GitHub link here
+              </label>
+              <button
+                onClick={() => setShowHelp(!showHelp)}
+                className="text-xs text-surface-500 hover:text-surface-300 flex items-center gap-1 cursor-pointer"
+              >
+                <HelpCircle className="h-3 w-3" />
+                Where do I find this?
+              </button>
+            </div>
+
+            {showHelp && (
+              <div className="rounded-lg bg-surface-800/50 border border-surface-700 px-4 py-3 mb-3 text-sm text-surface-400 space-y-2">
+                <p>Your GitHub link is the web address of your app's code. Here's how to find it:</p>
+                <ol className="list-decimal list-inside space-y-1 text-surface-300">
+                  <li>Go to <span className="text-white">github.com</span> and sign in</li>
+                  <li>Click on your app's project</li>
+                  <li>Copy the link from your browser's address bar</li>
+                </ol>
+                <p className="text-xs text-surface-500">It looks something like: https://github.com/your-name/my-app</p>
+              </div>
+            )}
+
             <input
               type="url"
               value={repoUrl}
@@ -109,11 +132,11 @@ export const Scan = () => {
               className="w-full rounded-lg bg-surface-800 border border-surface-700 px-4 py-3 text-sm text-white placeholder:text-surface-500 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors disabled:opacity-50"
             />
             <p className="mt-2 text-xs text-surface-500">
-{hasGitHub ? (
-                  <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-green-500" /> Works with private and public apps</span>
-                ) : (
-                  <span>Only works with public apps right now. <Link to="/settings" className="text-primary-400 hover:text-primary-300">Connect your GitHub</Link> for private apps, or upload a file instead.</span>
-                )}
+              {hasGitHub ? (
+                <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-green-500" /> Works with all your apps — private and public</span>
+              ) : (
+                <span>Works with public apps. <Link to="/settings" className="text-primary-400 hover:text-primary-300">Connect your GitHub account</Link> to check private apps too.</span>
+              )}
             </p>
           </div>
         ) : (
@@ -148,12 +171,12 @@ export const Scan = () => {
                 <Upload className="h-10 w-10 text-surface-500" />
                 <div>
                   <p className="text-sm text-surface-300">
-                    Drag & drop your app file here
+                    Drop your app's zip file here
                   </p>
                   <p className="text-xs text-surface-500 mt-1">
                     or{" "}
                     <label className="text-primary-400 hover:text-primary-300 cursor-pointer">
-                      browse files
+                      pick a file from your computer
                       <input
                         type="file"
                         accept=".zip,.tar.gz"
@@ -166,7 +189,7 @@ export const Scan = () => {
                     </label>
                   </p>
                 </div>
-                <p className="text-xs text-surface-600">.zip or .tar.gz, max 100MB</p>
+                <p className="text-xs text-surface-600">Zip files up to 100 MB</p>
               </div>
             )}
           </div>
@@ -199,38 +222,46 @@ export const Scan = () => {
         {scanning ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Scanning...
+            Checking your app...
           </>
         ) : (
           <>
-            Scan for free
+            Check my app for free
             <ArrowRight className="h-4 w-4" />
           </>
         )}
       </Button>
 
-      {/* What we check */}
-      <div className="mt-12">
-        <h3 className="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-4">
-          What we check
+      {/* What we look at — friendly version */}
+      <div className="mt-14">
+        <h3 className="text-center text-sm font-semibold text-surface-300 mb-6">
+          Here's what we look at
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            "App settings & configuration",
-            "Unique app name & ID",
-            "App icon & loading screen",
-            "Version numbers",
-            "Hidden passwords or keys",
-            "Privacy policy",
-            "Phone permissions",
-            "Overall app structure",
+            { text: "Does your app have an icon?", detail: "Both stores require one" },
+            { text: "Is there a loading screen?", detail: "Makes your app look polished" },
+            { text: "Are your app's settings correct?", detail: "Name, version, permissions" },
+            { text: "Are any passwords exposed?", detail: "We catch hidden security risks" },
+            { text: "Is there a privacy policy?", detail: "Required by Apple & Google" },
+            { text: "Is your app ready to build?", detail: "We check the full setup" },
           ].map((item) => (
-            <div key={item} className="flex items-center gap-2 text-sm text-surface-400">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary-500" />
-              {item}
+            <div key={item.text} className="flex items-start gap-2.5 rounded-lg bg-surface-900/50 border border-surface-800/50 px-3.5 py-3">
+              <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm text-surface-200">{item.text}</p>
+                <p className="text-xs text-surface-500">{item.detail}</p>
+              </div>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Reassurance */}
+      <div className="mt-10 text-center">
+        <p className="text-xs text-surface-600">
+          We never store your code. Your app is only analyzed, not copied or shared.
+        </p>
       </div>
     </div>
   );
