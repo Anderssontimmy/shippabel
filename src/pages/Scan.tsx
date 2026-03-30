@@ -198,9 +198,14 @@ export const Scan = () => {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 mb-6">
-          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-          <p className="text-sm text-red-300">{error}</p>
+        <div className="flex items-center justify-between rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 mb-6">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+            <p className="text-sm text-red-300">{error}</p>
+          </div>
+          <button onClick={handleScan} className="text-xs text-red-300 hover:text-white font-medium cursor-pointer shrink-0 ml-3">
+            Try again
+          </button>
         </div>
       )}
 

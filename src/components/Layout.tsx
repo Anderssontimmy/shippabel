@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Rocket, Menu, X, LogOut } from "lucide-react";
+import { Rocket, Menu, X, LogOut, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -29,12 +29,12 @@ export const Layout = () => {
       <header
         className={`fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-xl ${
           isLanding
-            ? "border-gray-200/50 bg-white/80"
+            ? "border-gray-200/50 bg-white"
             : "border-surface-800/50 bg-surface-950/80"
         }`}
       >
-        <nav className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6 sm:px-12">
-          <Link to="/" className={`flex items-center gap-2.5 font-bold text-xl ${isLanding ? "text-gray-900" : "text-white"}`}>
+        <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <Link to="/" className={`flex items-center gap-2 font-bold text-base ${isLanding ? "text-gray-900" : "text-white"}`}>
             <Rocket className={`h-5 w-5 ${isLanding ? "text-green-600" : "text-primary-400"}`} />
             <span>Shippabel</span>
           </Link>
@@ -67,7 +67,7 @@ export const Layout = () => {
             )}
             <Link
               to="/scan"
-              className="rounded-full bg-green-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-500"
+              className="rounded-full bg-green-600 px-5 py-2 text-xs font-semibold text-white transition-colors hover:bg-green-500"
             >
               Get started
             </Link>
@@ -117,12 +117,25 @@ export const Layout = () => {
         )}
       </header>
 
-      <main className="flex-1 pt-20">
+      <main className="flex-1 pt-16">
         <Outlet />
       </main>
 
+      {/* Sticky mobile CTA — only on landing page */}
+      {isLanding && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-gray-200 bg-white/95 backdrop-blur-xl px-4 py-3">
+          <Link
+            to="/scan"
+            className="flex items-center justify-center gap-2 rounded-full bg-green-600 px-6 py-3.5 text-sm font-semibold text-white w-full shadow-lg shadow-green-600/20"
+          >
+            Check my app now
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+
       <footer className={`border-t ${isLanding ? "border-gray-100 bg-white" : "border-surface-800/50 bg-surface-950"}`}>
-        <div className={`mx-auto max-w-[1400px] px-6 sm:px-12 py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm ${
+        <div className={`mx-auto max-w-6xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm ${
           isLanding ? "text-gray-400" : "text-surface-500"
         }`}>
           <div className="flex items-center gap-2">

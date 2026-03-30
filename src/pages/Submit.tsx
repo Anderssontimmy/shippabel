@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ShipFlowBar } from "@/components/ShipFlowBar";
+import { useToast } from "@/components/ui/Toast";
 import {
   ArrowLeft,
   ArrowRight,
@@ -49,6 +50,7 @@ export const Submit = () => {
   } = useBuild(id ?? "");
 
   const submission = latestByPlatform(platform);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadProject();
@@ -271,7 +273,7 @@ export const Submit = () => {
 
               {submission.build_status === "failed" && (
                 <Button
-                  onClick={() => triggerBuild(platform)}
+                  onClick={async () => { const r = await triggerBuild(platform); if (r) toast("success", "Build started! This takes 10-20 minutes."); }}
                   disabled={building}
                   className="mt-4 gap-2"
                 >
@@ -289,7 +291,7 @@ export const Submit = () => {
                 {platform === "ios" ? "iOS" : "Android"}. The build typically takes 10-20 minutes.
               </p>
               <Button
-                onClick={() => triggerBuild(platform)}
+                onClick={async () => { const r = await triggerBuild(platform); if (r) toast("success", "Build started! This takes 10-20 minutes."); }}
                 disabled={building}
                 className="gap-2"
               >
@@ -334,7 +336,7 @@ export const Submit = () => {
                 then submit for review.
               </p>
               <Button
-                onClick={() => submission && submitToStore(submission.id)}
+                onClick={async () => { if (submission) { await submitToStore(submission.id); toast("success", "Submitted! We'll track your review status."); } }}
                 disabled={submitting}
                 className="gap-2"
               >

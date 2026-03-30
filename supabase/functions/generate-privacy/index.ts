@@ -19,15 +19,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!anthropicKey) {
-      throw new Error("ANTHROPIC_API_KEY not configured");
-    }
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Sign in to use this feature");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authError || !user) throw new Error("Sign in to use this feature");
+
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicKey) {
+      throw new Error("ANTHROPIC_API_KEY not configured");
+    }
 
     const { project_id, app_name, developer_name, developer_email } =
       (await req.json()) as GeneratePrivacyRequest;
@@ -214,7 +219,12 @@ async function analyzeProjectPrivacy(repoUrl: string) {
   return { services, permissions };
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function generatePrivacyHtml(appName: string, markdown: string): string {
+  const safeAppName = escapeHtml(appName);
   // Basic markdown to HTML
   let html = markdown
     .replace(/^### (.+)$/gm, "<h3>$1</h3>")
@@ -232,7 +242,7 @@ function generatePrivacyHtml(appName: string, markdown: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy — ${appName}</title>
+  <title>Privacy Policy — ${safeAppName}</title>
   <style>
     body { font-family: -apple-system, system-ui, sans-serif; max-width: 720px; margin: 0 auto; padding: 2rem 1rem; line-height: 1.7; color: #1a1a1a; }
     h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }

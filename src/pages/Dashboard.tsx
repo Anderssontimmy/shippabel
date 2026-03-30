@@ -49,9 +49,11 @@ export const Dashboard = () => {
       return;
     }
     if (user) loadProjects();
+    // If auth is done but no user, stop loading
+    if (!authLoading && !user) setLoading(false);
   }, [user, authLoading, navigate, loadProjects]);
 
-  if (authLoading || loading) {
+  if (authLoading || (user && loading)) {
     return (
       <div className="flex items-center justify-center py-32">
         <Loader2 className="h-8 w-8 text-primary-400 animate-spin" />

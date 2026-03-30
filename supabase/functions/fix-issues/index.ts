@@ -22,9 +22,14 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Sign in to use this feature");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authError || !user) throw new Error("Sign in to use this feature");
+
     const { project_id, issue_ids } = (await req.json()) as FixRequest;
 
-    // Fetch project
+    // Fetch project — verify ownership
     const { data: project, error: projectError } = await supabase
       .from("projects")
       .select("*")

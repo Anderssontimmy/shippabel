@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ShipFlowBar } from "@/components/ShipFlowBar";
 import {
   Sparkles,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useStoreListing } from "@/hooks/useStoreListing";
+import { useToast } from "@/components/ui/Toast";
 
 const charLimits: Record<string, Record<string, number>> = {
   ios: { app_name: 30, subtitle: 30, keywords: 100, full_description: 4000 },
@@ -39,6 +40,9 @@ export const Listing = () => {
   const [devName, setDevName] = useState("");
   const [devEmail, setDevEmail] = useState("");
 
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
   const {
     listing,
     variants,
@@ -53,10 +57,34 @@ export const Listing = () => {
     generatePrivacy,
   } = useStoreListing(id ?? "", platform);
 
+  // Rotating loading messages during generation
+  const [loadingMsg, setLoadingMsg] = useState(0);
+  const loadingMessages = [
+    "Analyzing your app...",
+    "Writing your store page...",
+    "Crafting the perfect description...",
+    "Generating keywords...",
+    "Almost done...",
+  ];
+
+  useEffect(() => {
+    if (!generating) { setLoadingMsg(0); return; }
+    const interval = setInterval(() => {
+      setLoadingMsg((m) => (m + 1) % loadingMessages.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [generating, loadingMessages.length]);
+
   useEffect(() => {
     if (id) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, platform]);
+
+  const handleSave = async () => {
+    await save();
+    toast("success", "Store listing saved!");
+    setTimeout(() => navigate(`/app/${id}/screenshots`), 1000);
+  };
 
   const limits = charLimits[platform]!;
   const lim = (key: string) => limits[key] ?? 100;
@@ -129,7 +157,11 @@ export const Listing = () => {
           {generating && (
             <Card className="text-center py-10">
               <Loader2 className="h-8 w-8 text-primary-400 animate-spin mx-auto mb-3" />
-              <p className="text-surface-400">Generating store copy with AI...</p>
+              <p className="text-surface-300 font-medium mb-1">{loadingMessages[loadingMsg]}</p>
+              <p className="text-surface-500 text-xs">This usually takes 15-20 seconds</p>
+              <div className="mt-4 mx-auto max-w-xs h-1.5 rounded-full bg-surface-800 overflow-hidden">
+                <div className="h-full rounded-full bg-primary-500 animate-pulse" style={{ width: `${Math.min(95, (loadingMsg + 1) * 20)}%`, transition: "width 3s ease" }} />
+              </div>
             </Card>
           )}
 
@@ -276,9 +308,9 @@ export const Listing = () => {
 
               {/* Save */}
               <div className="flex gap-3">
-                <Button onClick={save} disabled={saving} className="gap-2">
+                <Button onClick={handleSave} disabled={saving} className="gap-2">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Save listing
+                  {saving ? "Saving..." : "Save & continue →"}
                 </Button>
                 <Button variant="secondary" onClick={() => generateCopy(appContext)} className="gap-2">
                   <Sparkles className="h-4 w-4" />

@@ -41,6 +41,10 @@ body {
   color: var(--color-surface-100);
 }
 
+.font-display {
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+}
+
 @keyframes slide-in {
   from {
     opacity: 0;
@@ -91,6 +95,21 @@ body {
 
 .animate-score-fill {
   animation: score-fill 1.2s ease-out both;
+}
+
+@keyframes rocket-fly {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.2));
+  }
+  50% {
+    transform: translateY(-8px) scale(1.03);
+    filter: drop-shadow(0 0 16px rgba(34, 197, 94, 0.35));
+  }
+}
+
+.animate-rocket-fly {
+  animation: rocket-fly 3s ease-in-out infinite;
 }
 
 /* Hide scrollbar but keep scroll functionality */

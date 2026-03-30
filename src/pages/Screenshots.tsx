@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useToast } from "@/components/ui/Toast";
 import { ShipFlowBar } from "@/components/ShipFlowBar";
 import {
   Upload,
@@ -44,6 +45,7 @@ const storeRequirements = {
 
 export const Screenshots = () => {
   const { id } = useParams();
+  const { toast } = useToast();
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<DeviceFrame>("iphone16pro");
   const [captionColor, setCaptionColor] = useState("#ffffff");
@@ -165,6 +167,7 @@ export const Screenshots = () => {
       a.click();
       URL.revokeObjectURL(url);
     }
+    toast("success", `${screenshots.length} screenshots downloaded!`);
   };
 
   return (
@@ -262,10 +265,17 @@ export const Screenshots = () => {
           </Card>
 
           {screenshots.length > 0 && (
-            <Button onClick={downloadAll} className="w-full gap-2">
-              <Download className="h-4 w-4" />
-              Download all ({screenshots.length})
-            </Button>
+            <>
+              <Button onClick={downloadAll} className="w-full gap-2">
+                <Download className="h-4 w-4" />
+                Download all ({screenshots.length})
+              </Button>
+              <Link to={`/app/${id}/submit`} className="block mt-3">
+                <Button variant="secondary" className="w-full gap-2">
+                  Continue to publish →
+                </Button>
+              </Link>
+            </>
           )}
         </div>
 

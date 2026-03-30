@@ -1,13 +1,31 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
+const TypingText = ({ text }: { text: string }) => {
+  const [displayed, setDisplayed] = useState("");
+  useEffect(() => {
+    setDisplayed("");
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed(text.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 60);
+    return () => clearInterval(interval);
+  }, [text]);
+  return <span>{displayed}</span>;
+};
+
 const PhoneMockup = () => {
   const ref = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
   const rawRotateX = useTransform(mouseY, [-0.5, 0.5], [22, 5]);
-  const rawRotateY = useTransform(mouseX, [-0.5, 0.5], [3, 20]);
+  const rawRotateY = useTransform(mouseX, [-0.5, 0.5], [-20, -3]);
   const rotateX = useSpring(rawRotateX, { stiffness: 100, damping: 22 });
   const rotateY = useSpring(rawRotateY, { stiffness: 100, damping: 22 });
 
@@ -35,13 +53,13 @@ const PhoneMockup = () => {
   }, [handleMouseMove, handleMouseLeave]);
 
   const [stage, setStage] = useState(0);
-  const totalStages = 5;
+  const totalStages = 4;
 
   useEffect(() => {
-    const durations = [2500, 2000, 2200, 2500, 4000];
+    const durations = [3000, 2800, 2500, 4500];
     const timeout = setTimeout(() => {
       setStage((s) => (s + 1) % totalStages);
-    }, durations[stage] ?? 2500);
+    }, durations[stage] ?? 3000);
     return () => clearTimeout(timeout);
   }, [stage]);
 
@@ -69,8 +87,8 @@ const PhoneMockup = () => {
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       >
         <div
-          className="w-[400px] h-[90px] rounded-[50%]"
-          style={{ background: "radial-gradient(ellipse, rgba(0,0,0,0.6) 0%, transparent 70%)", filter: "blur(30px)" }}
+          className="w-[420px] h-[80px] rounded-[50%]"
+          style={{ background: "radial-gradient(ellipse, rgba(0,0,0,0.5) 0%, transparent 70%)", filter: "blur(30px)" }}
         />
       </motion.div>
 
@@ -81,7 +99,7 @@ const PhoneMockup = () => {
         className="relative z-10"
       >
         {/* Phone container */}
-        <div className="relative w-[320px]" style={{ aspectRatio: "886 / 1808" }}>
+        <div className="relative w-[280px]" style={{ aspectRatio: "886 / 1808" }}>
 
           {/* Screen content — behind the bezel frame */}
           {/* Positioned to fill the screen area inside the bezel */}
@@ -115,135 +133,287 @@ const PhoneMockup = () => {
               </div>
             </div>
 
-            {/* App header */}
-            <div className="px-5 pt-1 pb-2">
-              <div className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: "#22c55e" }}>Shippabel</div>
-              <motion.div
-                key={stage}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="text-[16px] font-bold mt-1 leading-tight"
-                style={{ color: "#fff" }}
-              >
-                {stage === 0 && <>Scanning<br /><span style={{ color: "#22c55e" }}>MyFitApp...</span></>}
-                {stage === 1 && <>Auto-fixing<br /><span style={{ color: "#22c55e" }}>5 issues...</span></>}
-                {stage === 2 && <>Generating<br /><span style={{ color: "#22c55e" }}>store listing...</span></>}
-                {stage === 3 && <>Submitting to<br /><span style={{ color: "#22c55e" }}>App Store...</span></>}
-                {stage === 4 && <>You're<br /><span style={{ color: "#4ade80" }}>live! 🎉</span></>}
-              </motion.div>
-            </div>
+            {/* Stage content */}
+            <motion.div
+              key={stage}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex-1 flex flex-col px-4 pt-2"
+            >
+              {/* --- Stage 0: Paste URL --- */}
+              {stage === 0 && (
+                <div className="flex flex-col flex-1">
+                  <div className="text-[10px] font-semibold tracking-widest uppercase mb-4" style={{ color: "#22c55e" }}>Shippabel</div>
+                  <div className="text-[16px] font-bold leading-tight mb-5" style={{ color: "#fff" }}>
+                    Paste your app link
+                  </div>
 
-            {/* Main card */}
-            <div className="mx-3 rounded-2xl p-3.5" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <motion.div key={stage} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-                {stage <= 1 && (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-[8px] font-medium tracking-wider uppercase" style={{ color: "rgba(255,255,255,0.4)" }}>Readiness Score</div>
-                      <div className="flex items-baseline gap-1 mt-1">
-                        <span className="text-[30px] font-bold" style={{ color: "#fff" }}>{stage === 0 ? "73" : "94"}</span>
-                        <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>/100</span>
-                      </div>
-                    </div>
-                    <div className="relative w-[46px] h-[46px]">
-                      <svg className="w-full h-full -rotate-90" viewBox="0 0 50 50">
-                        <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-                        <motion.circle
-                          cx="25" cy="25" r="20" fill="none"
-                          stroke={stage === 0 ? "#f59e0b" : "#4ade80"}
-                          strokeWidth="3" strokeLinecap="round" strokeDasharray={126}
-                          animate={{ strokeDashoffset: stage === 0 ? 126 * 0.27 : 126 * 0.06 }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                        />
-                      </svg>
+                  {/* URL field with typing animation */}
+                  <div className="rounded-xl px-3 py-2.5 mb-3" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div className="text-[8px] mb-1" style={{ color: "rgba(255,255,255,0.3)" }}>GitHub URL</div>
+                    <div className="flex items-center gap-1">
+                      <motion.span
+                        className="text-[10px] font-mono"
+                        style={{ color: "rgba(255,255,255,0.7)" }}
+                        initial={{ width: 0 }}
+                        animate={{ width: "auto" }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                      >
+                        <TypingText text="github.com/you/my-app" />
+                      </motion.span>
+                      <motion.span
+                        className="inline-block w-[1px] h-3"
+                        style={{ background: "#22c55e" }}
+                        animate={{ opacity: [1, 0, 1] }}
+                        transition={{ duration: 0.8, repeat: Infinity }}
+                      />
                     </div>
                   </div>
-                )}
-                {stage === 2 && (
-                  <div>
-                    <div className="text-[8px] font-medium tracking-wider uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>Store Listing</div>
-                    <div className="text-[13px] font-bold" style={{ color: "#fff" }}>MyFitApp</div>
-                    <div className="text-[9px] mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>Your AI-powered fitness companion</div>
-                    <div className="flex gap-1.5 mt-2 flex-wrap">
-                      {["fitness", "workout", "health", "tracker"].map((kw) => (
-                        <span key={kw} className="text-[7px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#4ade80" }}>{kw}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {stage === 3 && (
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl flex items-center justify-center text-[16px]" style={{ background: "rgba(255,255,255,0.08)" }}>🍎</div>
-                    <div>
-                      <div className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>Submitting to</div>
-                      <div className="text-[13px] font-bold" style={{ color: "#fff" }}>App Store Connect</div>
-                    </div>
-                  </div>
-                )}
-                {stage === 4 && (
-                  <div>
-                    <div className="flex items-center gap-2.5 mb-2.5">
-                      <div className="h-10 w-10 rounded-2xl flex items-center justify-center text-[18px]" style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>💪</div>
-                      <div>
-                        <div className="text-[13px] font-bold" style={{ color: "#fff" }}>MyFitApp</div>
-                        <div className="flex items-center gap-0.5 mt-0.5">
-                          {[1,2,3,4,5].map(s => (
-                            <svg key={s} width="9" height="9" viewBox="0 0 20 20" fill="#fbbf24"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                          ))}
-                          <span className="text-[8px] ml-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>4.9</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2.5">
-                      <div className="flex-1 rounded-xl p-2 text-center" style={{ background: "rgba(255,255,255,0.05)" }}>
-                        <motion.div className="text-[14px] font-bold" style={{ color: "#4ade80" }} animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity }}>2,847</motion.div>
-                        <div className="text-[7px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>Downloads</div>
-                      </div>
-                      <div className="flex-1 rounded-xl p-2 text-center" style={{ background: "rgba(255,255,255,0.05)" }}>
-                        <motion.div className="text-[14px] font-bold" style={{ color: "#fff" }} animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}>$2.4K</motion.div>
-                        <div className="text-[7px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>This month</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            </div>
 
-            {/* Progress log */}
-            <div className="mx-3 mt-2.5 rounded-2xl p-2.5 space-y-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="w-full h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{ background: stage === 4 ? "#4ade80" : "linear-gradient(90deg, #22c55e, #16a34a)" }}
-                  animate={{ width: `${[15, 45, 70, 90, 100][stage]}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                />
-              </div>
-              <div className="space-y-1">
-                {[
-                  { text: "Settings checked", at: 0 },
-                  { text: "5 problems fixed", at: 1 },
-                  { text: "Store page written", at: 2 },
-                  { text: "Privacy policy created", at: 2 },
-                  { text: "App uploaded", at: 3 },
-                ].map((line) => (
+                  {/* Check button */}
                   <motion.div
-                    key={line.text}
-                    animate={{ opacity: stage >= line.at ? 0.7 : 0.15 }}
-                    className="text-[8px] font-mono"
-                    style={{ color: stage >= line.at ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)" }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.8 }}
+                    className="rounded-xl py-2.5 text-center text-[11px] font-bold"
+                    style={{ background: "#22c55e", color: "#fff" }}
                   >
-                    {stage > line.at ? "✓" : stage === line.at ? "●" : "○"} {line.text}
+                    Check my app →
                   </motion.div>
-                ))}
-                {stage >= 4 && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-[8px] font-mono font-semibold" style={{ color: "#4ade80" }}>
-                    ✓ Live on App Store & Google Play
+
+                  {/* Progress dots appearing */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2.2 }}
+                    className="flex items-center justify-center gap-1.5 mt-4"
+                  >
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ background: "#22c55e" }}
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                      />
+                    ))}
+                    <span className="text-[8px] ml-1" style={{ color: "rgba(255,255,255,0.4)" }}>Scanning...</span>
                   </motion.div>
-                )}
-              </div>
-            </div>
+                </div>
+              )}
+
+              {/* --- Stage 1: Score result --- */}
+              {stage === 1 && (
+                <div className="flex flex-col items-center flex-1">
+                  <div className="text-[9px] font-semibold tracking-widest uppercase mb-3" style={{ color: "#22c55e" }}>Results</div>
+
+                  {/* Score ring */}
+                  <div className="relative w-[100px] h-[100px] mb-3">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                      <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+                      <motion.circle
+                        cx="60" cy="60" r="50" fill="none"
+                        strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray={314}
+                        initial={{ strokeDashoffset: 314, stroke: "#f59e0b" }}
+                        animate={{ strokeDashoffset: 314 * 0.05, stroke: "#22c55e" }}
+                        transition={{ duration: 2, ease: "easeOut" }}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <motion.span className="text-[28px] font-bold" style={{ color: "#fff" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                        95
+                      </motion.span>
+                      <span className="text-[9px] -mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>/100</span>
+                    </div>
+                  </div>
+
+                  {/* Checkmarks */}
+                  <div className="space-y-1.5 w-full px-1">
+                    {["Settings look good", "No security issues", "Ready to publish"].map((text, i) => (
+                      <motion.div
+                        key={text}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.6 + i * 0.4 }}
+                        className="flex items-center gap-2"
+                      >
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.6 + i * 0.4, type: "spring", stiffness: 300 }}
+                          className="h-4 w-4 rounded-full flex items-center justify-center shrink-0"
+                          style={{ background: "#22c55e" }}
+                        >
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                        </motion.div>
+                        <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.7)" }}>{text}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* --- Stage 2: Fixing problems --- */}
+              {stage === 2 && (
+                <div className="flex flex-col flex-1">
+                  <div className="text-[9px] font-semibold tracking-widest uppercase mb-3 text-center" style={{ color: "#22c55e" }}>Fixing 5 problems</div>
+
+                  <div className="space-y-2.5 px-1">
+                    {[
+                      "Created app settings",
+                      "Set unique app name",
+                      "Added privacy policy",
+                      "Fixed app icon",
+                      "Secured secret keys",
+                    ].map((text, i) => (
+                      <motion.div
+                        key={text}
+                        initial={{ opacity: 0.3 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: i * 0.4 }}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2"
+                        style={{ background: "rgba(255,255,255,0.04)" }}
+                      >
+                        <motion.div
+                          initial={{ scale: 0, background: "rgba(255,255,255,0.1)" }}
+                          animate={{ scale: 1, background: "#22c55e" }}
+                          transition={{ delay: i * 0.4 + 0.2, type: "spring", stiffness: 300 }}
+                          className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6L9 17l-5-5"/>
+                          </svg>
+                        </motion.div>
+                        <span className="text-[10px] font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>{text}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2 }}
+                    className="text-center mt-3"
+                  >
+                    <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>Score: </span>
+                    <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.5)" }}>95</span>
+                    <span className="text-[9px] mx-1" style={{ color: "rgba(255,255,255,0.2)" }}>→</span>
+                    <span className="text-[9px] font-bold" style={{ color: "#22c55e" }}>100</span>
+                  </motion.div>
+                </div>
+              )}
+
+              {/* --- Stage 3: Congratulations! --- */}
+              {stage === 3 && (
+                <div className="flex flex-col items-center flex-1 relative overflow-hidden">
+                  {/* Confetti particles */}
+                  {[...Array(12)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute rounded-full"
+                      style={{
+                        width: 4 + Math.random() * 4,
+                        height: 4 + Math.random() * 4,
+                        background: ["#22c55e", "#4ade80", "#fbbf24", "#60a5fa", "#f472b6", "#a78bfa"][i % 6],
+                        left: `${30 + Math.random() * 40}%`,
+                        top: "30%",
+                      }}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{
+                        opacity: [0, 1, 0],
+                        scale: [0, 1.5, 0],
+                        x: (Math.random() - 0.5) * 120,
+                        y: -40 + Math.random() * 80,
+                      }}
+                      transition={{ delay: 0.2 + i * 0.08, duration: 1.2, ease: "easeOut" }}
+                    />
+                  ))}
+
+                  {/* Big checkmark */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 12 }}
+                    className="h-16 w-16 rounded-full flex items-center justify-center mb-3"
+                    style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)", boxShadow: "0 0 30px rgba(34,197,94,0.4)" }}
+                  >
+                    <motion.svg
+                      width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                    >
+                      <path d="M20 6L9 17l-5-5"/>
+                    </motion.svg>
+                  </motion.div>
+
+                  {/* Congratulations text */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-center mb-3"
+                  >
+                    <div className="text-[18px] font-extrabold" style={{ color: "#fff" }}>Congratulations!</div>
+                    <div className="text-[10px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>Your app is now live</div>
+                  </motion.div>
+
+                  {/* App Store mini card */}
+                  <motion.div
+                    initial={{ y: 15, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 1, type: "spring" }}
+                    className="w-full rounded-xl p-3 flex items-center gap-2.5"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+                  >
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center text-[16px] shrink-0" style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>💪</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-bold" style={{ color: "#fff" }}>MyFitApp</div>
+                      <div className="flex items-center gap-0.5">
+                        {[1,2,3,4,5].map(s => (
+                          <svg key={s} width="8" height="8" viewBox="0 0 20 20" fill="#fbbf24"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        ))}
+                        <span className="text-[8px] ml-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>4.9</span>
+                      </div>
+                    </div>
+                    <div className="rounded-full px-3 py-1 text-[9px] font-bold" style={{ background: "#007AFF", color: "#fff" }}>GET</div>
+                  </motion.div>
+
+                  {/* Stats */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                    className="flex gap-3 w-full mt-3"
+                  >
+                    <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
+                      <motion.div
+                        className="text-[18px] font-bold"
+                        style={{ color: "#4ade80" }}
+                        animate={{ opacity: [0.7, 1, 0.7] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        2,847
+                      </motion.div>
+                      <div className="text-[8px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>Downloads</div>
+                    </div>
+                    <div className="flex-1 rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)" }}>
+                      <motion.div
+                        className="text-[18px] font-bold"
+                        style={{ color: "#fff" }}
+                        animate={{ opacity: [0.7, 1, 0.7] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                      >
+                        $2.4K
+                      </motion.div>
+                      <div className="text-[8px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>This month</div>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </motion.div>
 
             {/* Spacer to push tab bar down */}
             <div className="flex-1" />

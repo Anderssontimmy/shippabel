@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /dashboard
+Disallow: /settings
+
+Sitemap: https://shippabel.com/sitemap.xml

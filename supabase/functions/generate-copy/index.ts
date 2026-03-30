@@ -26,15 +26,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!anthropicKey) {
-      throw new Error("ANTHROPIC_API_KEY not configured");
-    }
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Auth check — require signed-in user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Sign in to use this feature");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authError || !user) throw new Error("Sign in to use this feature");
+
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicKey) {
+      throw new Error("ANTHROPIC_API_KEY not configured");
+    }
 
     const { project_id, platform, app_context } = (await req.json()) as GenerateCopyRequest;
 

@@ -437,6 +437,21 @@ export const ScanResults = () => {
         );
       })}
 
+      {/* Success banner — when app is ready */}
+      {scan.summary.critical === 0 && scan.score >= 80 && id && id !== "demo" && (
+        <div className="mt-8 rounded-2xl border border-green-500/20 bg-green-500/5 p-6 text-center">
+          <div className="text-2xl mb-2">🎉</div>
+          <h3 className="text-lg font-bold mb-1">Your app looks great!</h3>
+          <p className="text-sm text-surface-400 mb-4">No critical issues. You're ready for the next step.</p>
+          <Link to={`/app/${id}/listing`}>
+            <Button className="gap-2">
+              Create your store page
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Guided next step */}
       {id && id !== "demo" && (
         <div className="mt-8">

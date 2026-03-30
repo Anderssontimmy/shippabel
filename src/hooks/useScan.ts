@@ -13,7 +13,7 @@ interface ScanState {
 }
 
 export const useScan = () => {
-  const { githubToken } = useAuth();
+  const { githubToken, user } = useAuth();
   const { getCredential } = useCredentials();
   const [state, setState] = useState<ScanState>({
     scanning: false,
@@ -41,6 +41,7 @@ export const useScan = () => {
           name: extractRepoName(repoUrl),
           repo_url: repoUrl,
           status: "scanning",
+          ...(user ? { user_id: user.id } : {}),
         })
         .select()
         .single();
@@ -86,7 +87,7 @@ export const useScan = () => {
       // 1. Create project record
       const { data: project, error: insertError } = await supabase
         .from("projects")
-        .insert({ name, status: "scanning" })
+        .insert({ name, status: "scanning", ...(user ? { user_id: user.id } : {}) })
         .select()
         .single();
 
