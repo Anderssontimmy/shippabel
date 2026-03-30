@@ -92,3 +92,12 @@ body {
 .animate-score-fill {
   animation: score-fill 1.2s ease-out both;
 }
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

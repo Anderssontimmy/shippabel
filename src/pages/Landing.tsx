@@ -87,7 +87,7 @@ export const Landing = () => {
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
               Everything you need.
               <br />
-              <span className="text-gray-300">Nothing you don't.</span>
+              <span className="text-gray-400">Nothing you don't.</span>
             </h2>
           </div>
 

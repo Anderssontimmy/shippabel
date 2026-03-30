@@ -126,7 +126,7 @@ export const Dashboard = () => {
                         </span>
                       )}
                       <span className="text-xs text-surface-600">
-                        {new Date(project.created_at).toLocaleDateString()}
+                        {new Date(project.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </span>
                     </div>
                   </div>

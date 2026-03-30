@@ -226,14 +226,22 @@ export const Settings = () => {
                             )}
                           </div>
                           {field.multiline ? (
-                            <textarea
-                              value={formData[field.key] ?? ""}
-                              onChange={(e) => setFormData((d) => ({ ...d, [field.key]: e.target.value }))}
-                              placeholder={field.placeholder}
-                              rows={4}
-                              className="w-full rounded-lg bg-surface-800 border border-surface-700 px-3 py-2 text-xs text-white placeholder:text-surface-600 outline-none focus:border-primary-500 font-mono resize-none"
-                              style={{ WebkitTextSecurity: field.secret && !showSecrets[field.key] ? "disc" : "none" } as React.CSSProperties}
-                            />
+                            field.secret && !showSecrets[field.key] ? (
+                              <div
+                                onClick={() => setShowSecrets((s) => ({ ...s, [field.key]: true }))}
+                                className="w-full rounded-lg bg-surface-800 border border-surface-700 px-3 py-2 text-xs text-surface-500 font-mono cursor-pointer min-h-[6rem] flex items-center"
+                              >
+                                {formData[field.key] ? "••••••••••••••••" : field.placeholder}
+                              </div>
+                            ) : (
+                              <textarea
+                                value={formData[field.key] ?? ""}
+                                onChange={(e) => setFormData((d) => ({ ...d, [field.key]: e.target.value }))}
+                                placeholder={field.placeholder}
+                                rows={4}
+                                className="w-full rounded-lg bg-surface-800 border border-surface-700 px-3 py-2 text-xs text-white placeholder:text-surface-600 outline-none focus:border-primary-500 font-mono resize-none"
+                              />
+                            )
                           ) : (
                             <input
                               type={field.secret && !showSecrets[field.key] ? "password" : "text"}

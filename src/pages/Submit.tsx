@@ -496,7 +496,7 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
 
       {submission.submitted_at && (
         <p className="text-xs text-surface-500">
-          Submitted: {new Date(submission.submitted_at).toLocaleString()}
+          Submitted: {new Date(submission.submitted_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
         </p>
       )}
     </div>

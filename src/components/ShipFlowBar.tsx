@@ -49,7 +49,7 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
                 )}
 
                 {i < steps.length - 1 && (
-                  <ChevronRight className={`h-3 w-3 mx-0.5 shrink-0 ${isPast ? "text-emerald-500/40" : "text-surface-800"}`} />
+                  <ChevronRight aria-hidden="true" className={`h-3 w-3 mx-0.5 shrink-0 ${isPast ? "text-emerald-500/40" : "text-surface-800"}`} />
                 )}
               </div>
             );

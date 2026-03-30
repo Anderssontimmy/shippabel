@@ -112,7 +112,7 @@ export const Status = () => {
                         {submission.platform === "ios" ? "iOS" : "Android"} Submission
                       </h3>
                       <p className="text-xs text-surface-500">
-                        {new Date(submission.created_at).toLocaleString()}
+                        {new Date(submission.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                       </p>
                     </div>
                   </div>

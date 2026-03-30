@@ -76,6 +76,7 @@ export const Layout = () => {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
             className={`sm:hidden p-2 cursor-pointer ${isLanding ? "text-gray-500 hover:text-gray-900" : "text-surface-400 hover:text-white"}`}
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
