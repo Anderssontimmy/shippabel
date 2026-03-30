@@ -87,7 +87,7 @@ const PhoneMockup = () => {
           {/* Positioned to fill the screen area inside the bezel */}
           {/* iPhone 16 Pro bezel: screen area is roughly 3.2% inset on sides, 2.8% top, 2.6% bottom */}
           <div
-            className="absolute overflow-hidden z-10"
+            className="absolute overflow-hidden z-10 flex flex-col"
             style={{
               top: "2.6%",
               left: "3.4%",
@@ -222,11 +222,11 @@ const PhoneMockup = () => {
               </div>
               <div className="space-y-1">
                 {[
-                  { text: "Config validated", at: 0 },
-                  { text: "5 issues auto-fixed", at: 1 },
-                  { text: "Store copy generated", at: 2 },
-                  { text: "Privacy policy hosted", at: 2 },
-                  { text: "Binary uploaded", at: 3 },
+                  { text: "Settings checked", at: 0 },
+                  { text: "5 problems fixed", at: 1 },
+                  { text: "Store page written", at: 2 },
+                  { text: "Privacy policy created", at: 2 },
+                  { text: "App uploaded", at: 3 },
                 ].map((line) => (
                   <motion.div
                     key={line.text}
@@ -243,6 +243,46 @@ const PhoneMockup = () => {
                   </motion.div>
                 )}
               </div>
+            </div>
+
+            {/* Spacer to push tab bar down */}
+            <div className="flex-1" />
+
+            {/* Bottom tab bar */}
+            <div className="mx-3 mb-3 mt-2.5 rounded-2xl px-4 py-2.5 flex items-center justify-around" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex flex-col items-center gap-0.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                </svg>
+                <span className="text-[7px] font-medium" style={{ color: "#22c55e" }}>Check</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+                <span className="text-[7px]" style={{ color: "rgba(255,255,255,0.3)" }}>Fix</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h10"/><path d="M7 12h10"/><path d="M7 17h10"/>
+                </svg>
+                <span className="text-[7px]" style={{ color: "rgba(255,255,255,0.3)" }}>Listing</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 relative">
+                <div className="absolute -top-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1">
+                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09zM12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+                    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                  </svg>
+                </div>
+                <span className="text-[7px] mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>Ship</span>
+              </div>
+            </div>
+
+            {/* Home indicator */}
+            <div className="flex justify-center pb-[4%]">
+              <div className="w-[35%] h-[3px] rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
             </div>
           </div>
 
