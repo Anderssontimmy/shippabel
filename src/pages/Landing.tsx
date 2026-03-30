@@ -95,10 +95,10 @@ export const Landing = () => {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="rounded-2xl border border-gray-200/60 bg-white p-10 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all"
+                className="group rounded-2xl border border-gray-200/60 bg-white p-10 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 hover:-translate-y-1 transition-all duration-200"
               >
-                <div className="h-16 w-16 rounded-2xl bg-emerald-50 flex items-center justify-center mb-6">
-                  <f.icon className="h-8 w-8 text-emerald-600" />
+                <div className="h-16 w-16 rounded-2xl bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center mb-6 transition-colors">
+                  <f.icon className="h-8 w-8 text-emerald-600 group-hover:scale-110 transition-transform duration-200" />
                 </div>
                 <h3 className="text-xl font-bold mb-3">{f.title}</h3>
                 <p className="text-[1.05rem] text-gray-500 leading-relaxed">{f.desc}</p>

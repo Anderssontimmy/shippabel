@@ -289,9 +289,9 @@ export const Listing = () => {
           )}
         </div>
 
-        {/* Preview panel */}
+        {/* Preview panel — below form on mobile, sticky sidebar on desktop */}
         <div className="lg:col-span-1">
-          <div className="sticky top-24">
+          <div className="lg:sticky lg:top-24">
             <h3 className="text-sm font-semibold text-surface-300 mb-3">
               {platform === "ios" ? "App Store" : "Google Play"} Preview
             </h3>

@@ -130,49 +130,50 @@ export const Status = () => {
                   )}
                 </div>
 
-                {/* Timeline */}
-                <div className="flex items-center">
-                  {timelineSteps.map((step, i) => (
-                    <div key={step.key} className="flex items-center flex-1">
-                      <div className="flex flex-col items-center gap-1.5">
-                        <div
-                          className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                            i < timeline.active
-                              ? "bg-emerald-500"
-                              : i === timeline.active && timeline.failed
-                              ? "bg-red-500"
-                              : i === timeline.active
-                              ? "bg-primary-600"
-                              : "bg-surface-800"
-                          }`}
-                        >
-                          {i < timeline.active ? (
-                            <CheckCircle2 className="h-4 w-4 text-white" />
-                          ) : i === timeline.active && timeline.failed ? (
-                            <AlertCircle className="h-4 w-4 text-white" />
-                          ) : i === timeline.active ? (
-                            <Loader2 className="h-4 w-4 text-white animate-spin" />
-                          ) : (
-                            <Clock className="h-4 w-4 text-surface-600" />
-                          )}
+                {/* Timeline — vertical on mobile, horizontal on desktop */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0">
+                  {timelineSteps.map((step, i) => {
+                    const stepColor = i < timeline.active
+                      ? "bg-emerald-500"
+                      : i === timeline.active && timeline.failed
+                      ? "bg-red-500"
+                      : i === timeline.active
+                      ? "bg-primary-600"
+                      : "bg-surface-800";
+
+                    const StepIcon = i < timeline.active
+                      ? CheckCircle2
+                      : i === timeline.active && timeline.failed
+                      ? AlertCircle
+                      : i === timeline.active
+                      ? Loader2
+                      : Clock;
+
+                    const iconClass = i < timeline.active || i === timeline.active
+                      ? "h-4 w-4 text-white"
+                      : "h-4 w-4 text-surface-600";
+
+                    return (
+                      <div key={step.key} className="flex sm:flex-1 items-center sm:items-center">
+                        <div className="flex items-center sm:flex-col gap-3 sm:gap-1.5">
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${stepColor}`}>
+                            <StepIcon className={`${iconClass} ${i === timeline.active && !timeline.failed ? "animate-spin" : ""}`} />
+                          </div>
+                          <span className={`text-xs font-medium ${i <= timeline.active ? "text-surface-200" : "text-surface-600"}`}>
+                            {step.label}
+                          </span>
                         </div>
-                        <span
-                          className={`text-xs font-medium ${
-                            i <= timeline.active ? "text-surface-200" : "text-surface-600"
-                          }`}
-                        >
-                          {step.label}
-                        </span>
+                        {i < timelineSteps.length - 1 && (
+                          <>
+                            {/* Vertical connector (mobile) */}
+                            <div className={`hidden max-sm:block w-px h-4 ml-[15px] -mt-1 -mb-1 absolute ${i < timeline.active ? "bg-emerald-500" : "bg-surface-800"}`} />
+                            {/* Horizontal connector (desktop) */}
+                            <div className={`hidden sm:block flex-1 h-px mx-2 ${i < timeline.active ? "bg-emerald-500" : "bg-surface-800"}`} />
+                          </>
+                        )}
                       </div>
-                      {i < timelineSteps.length - 1 && (
-                        <div
-                          className={`flex-1 h-px mx-2 ${
-                            i < timeline.active ? "bg-emerald-500" : "bg-surface-800"
-                          }`}
-                        />
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Status detail */}
