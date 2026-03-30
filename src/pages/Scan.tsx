@@ -61,9 +61,9 @@ export const Scan = () => {
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16 sm:py-24">
       <div className="text-center mb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold">Scan your app</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold">Check your app</h1>
         <p className="mt-3 text-surface-400 text-lg">
-          Check if your Expo project is ready for the App Store and Google Play.
+          We'll check if your app is ready to be published on the App Store and Google Play.
         </p>
       </div>
 
@@ -78,7 +78,7 @@ export const Scan = () => {
           }`}
         >
           <Github className="h-4 w-4" />
-          GitHub URL
+          Paste a link
         </button>
         <button
           onClick={() => { setMode("upload"); setValidationError(null); }}
@@ -89,7 +89,7 @@ export const Scan = () => {
           }`}
         >
           <Upload className="h-4 w-4" />
-          Upload Zip
+          Upload a file
         </button>
       </div>
 
@@ -98,21 +98,21 @@ export const Scan = () => {
         {mode === "url" ? (
           <div>
             <label className="block text-sm font-medium text-surface-300 mb-2">
-              Repository URL
+              Link to your app on GitHub
             </label>
             <input
               type="url"
               value={repoUrl}
               onChange={(e) => { setRepoUrl(e.target.value); setValidationError(null); }}
-              placeholder="https://github.com/username/my-expo-app"
+              placeholder="https://github.com/your-name/your-app"
               disabled={scanning}
               className="w-full rounded-lg bg-surface-800 border border-surface-700 px-4 py-3 text-sm text-white placeholder:text-surface-500 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors disabled:opacity-50"
             />
             <p className="mt-2 text-xs text-surface-500">
 {hasGitHub ? (
-                  <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-emerald-500" /> Private & public repos supported</span>
+                  <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-emerald-500" /> Works with private and public apps</span>
                 ) : (
-                  <span>Public repos only. <Link to="/settings" className="text-primary-400 hover:text-primary-300">Connect GitHub</Link> or use zip upload for private repos.</span>
+                  <span>Only works with public apps right now. <Link to="/settings" className="text-primary-400 hover:text-primary-300">Connect your GitHub</Link> for private apps, or upload a file instead.</span>
                 )}
             </p>
           </div>
@@ -148,7 +148,7 @@ export const Scan = () => {
                 <Upload className="h-10 w-10 text-surface-500" />
                 <div>
                   <p className="text-sm text-surface-300">
-                    Drag & drop your project zip here
+                    Drag & drop your app file here
                   </p>
                   <p className="text-xs text-surface-500 mt-1">
                     or{" "}
@@ -216,14 +216,14 @@ export const Scan = () => {
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            "app.json / app.config.js",
-            "Bundle identifier format",
-            "App icon & splash screen",
-            "SDK version compatibility",
-            "Hardcoded API keys",
-            "Privacy policy URL",
-            "Permission declarations",
-            "Navigation structure",
+            "App settings & configuration",
+            "Unique app name & ID",
+            "App icon & loading screen",
+            "Version numbers",
+            "Hidden passwords or keys",
+            "Privacy policy",
+            "Phone permissions",
+            "Overall app structure",
           ].map((item) => (
             <div key={item} className="flex items-center gap-2 text-sm text-surface-400">
               <div className="h-1.5 w-1.5 rounded-full bg-primary-500" />

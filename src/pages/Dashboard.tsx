@@ -63,13 +63,13 @@ export const Dashboard = () => {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-16">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-          <p className="text-surface-400 text-sm mt-1">Manage your apps</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">My Apps</h1>
+          <p className="text-surface-400 text-sm mt-1">All your apps in one place</p>
         </div>
         <Link to="/scan">
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
-            New scan
+            Check new app
           </Button>
         </Link>
       </div>
@@ -79,12 +79,12 @@ export const Dashboard = () => {
           <Rocket className="h-12 w-12 text-surface-600 mx-auto mb-4" />
           <h2 className="text-lg font-semibold mb-2">No apps yet</h2>
           <p className="text-sm text-surface-400 mb-6 max-w-sm mx-auto">
-            Scan your first Expo project to check if it's ready for the App Store.
+            Check your first app to see if it's ready for the App Store and Google Play.
           </p>
           <Link to="/scan">
             <Button className="gap-2">
               <Scan className="h-4 w-4" />
-              Scan your app
+              Check my app
             </Button>
           </Link>
         </Card>

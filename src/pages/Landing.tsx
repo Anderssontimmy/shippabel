@@ -1,26 +1,26 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Globe, Shield, Layers, Code, Scan, Wrench } from "lucide-react";
+import { ArrowRight, Globe, Shield, Layers, Wand2, Scan, Wrench } from "lucide-react";
 import PhoneMockup from "@/components/PhoneMockup";
 
 const features = [
-  { icon: Scan, title: "Instant scan", desc: "Paste a repo URL or upload a zip. Get a full store-readiness report in 30 seconds. No setup, no signup." },
-  { icon: Wrench, title: "Auto-fix issues", desc: "One click fixes config, bundle IDs, versions, and .gitignore. We commit the changes directly to your repo." },
-  { icon: Shield, title: "Security check", desc: "Catches hardcoded API keys, exposed .env files, and missing encryption before Apple or Google does." },
-  { icon: Globe, title: "AI store listing", desc: "Claude generates your app name, description, keywords, and privacy policy. Pick from 3 optimized variants." },
-  { icon: Layers, title: "Screenshot framing", desc: "Upload raw screenshots. We frame them in iPhone 16 Pro, Pixel 9, and iPad mockups at store-required sizes." },
-  { icon: Code, title: "Vibe-code native", desc: "Built for apps from Claude Code, Cursor, Bolt, and Lovable. We don't care how you built it — we ship it." },
+  { icon: Scan, title: "Check if you're ready", desc: "Just paste a link to your app or upload it. We'll tell you exactly what needs to be fixed before the stores will accept it." },
+  { icon: Wrench, title: "We fix it for you", desc: "Most problems? One click and they're gone. We update your app's settings and push the changes automatically." },
+  { icon: Shield, title: "No hidden secrets", desc: "We catch passwords and keys that are accidentally visible in your code — things that could get your app rejected or hacked." },
+  { icon: Globe, title: "Write your store page", desc: "AI writes your app's name, description, and keywords for you. Pick your favorite from 3 different styles." },
+  { icon: Layers, title: "Beautiful screenshots", desc: "Upload screenshots from your phone. We put them in real device frames so they look professional in the store." },
+  { icon: Wand2, title: "Made for AI builders", desc: "Built your app with Claude, Cursor, Bolt, or Lovable? Perfect — Shippabel is made exactly for you." },
 ];
 
 const steps = [
-  { num: "01", title: "Scan your app", desc: "Paste your GitHub URL or upload a zip. Shippabel analyzes every config, asset, and security detail against App Store and Google Play requirements." },
-  { num: "02", title: "Fix & generate", desc: "Auto-fix issues with one click. Generate your store listing, screenshots, and privacy policy with AI. Everything you need, ready in minutes." },
-  { num: "03", title: "Ship it", desc: "Connect your developer accounts. We build via EAS, upload to both stores, and submit for review. You're live." },
+  { num: "01", title: "Check your app", desc: "Paste a link to your app or upload it as a zip file. We check everything the App Store and Google Play require — icons, settings, security, and more." },
+  { num: "02", title: "Fix & polish", desc: "We show you what needs fixing and can auto-fix most things with one click. Then AI helps you write your store page and create beautiful screenshots." },
+  { num: "03", title: "Go live", desc: "We build your app, send it to the stores, and let you know when it's approved. That's it — your app is live for the world to download." },
 ];
 
 const whyCards = [
-  { title: "Made for makers", desc: "Shippabel is designed for indie hackers, vibe coders, and small teams who want to ship fast and iterate faster." },
-  { title: "Not another PaaS", desc: "We're not Vercel for enterprises. We're the publish button the AI-coding era deserves." },
-  { title: "Obsessively simple", desc: "No dashboards with 47 tabs. No billing surprises. No config files. Just your app, live." },
+  { title: "No coding needed", desc: "You used AI to build your app. Now use Shippabel to publish it. No terminal commands, no config files, no developer jargon." },
+  { title: "Someone finally gets it", desc: "Other tools assume you're a developer. We assume you're not. Every step is explained in plain language." },
+  { title: "Stupidly simple", desc: "No confusing dashboards. No surprise fees. No 40-step guides. Just your app, in the store, fast." },
 ];
 
 export const Landing = () => {
@@ -32,24 +32,29 @@ export const Landing = () => {
 
         <div className="mx-auto max-w-[1400px] px-6 sm:px-12 pt-28 sm:pt-40 pb-28 sm:pb-40">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
-            {/* Left: Text */}
-            <div>
+            {/* Left: Phone mockup */}
+            <div className="relative order-2 lg:order-1 flex justify-center lg:justify-start">
+              <PhoneMockup />
+            </div>
+
+            {/* Right: Text */}
+            <div className="order-1 lg:order-2">
               <div className="animate-fade-up inline-flex items-center gap-2.5 rounded-full border border-gray-200 bg-white px-6 py-2.5 text-base text-gray-500 mb-12 shadow-sm">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
                 Now in public beta
               </div>
 
               <h1 className="animate-fade-up-delay-1 text-6xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.04]">
-                Ship your app.
+                Get your app
                 <br />
                 <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
-                  One click.
+                  in the store.
                 </span>
               </h1>
 
               <p className="animate-fade-up-delay-2 mt-10 text-2xl sm:text-[1.7rem] text-gray-500 leading-relaxed max-w-xl">
-                From vibe-coded prototype to live product in seconds.
-                No config, no devops, no friction.
+                You built an app with AI. Now let us put it on the
+                App Store and Google Play — no tech skills needed.
               </p>
 
               <div className="animate-fade-up-delay-3 mt-14 flex flex-wrap items-center gap-5">
@@ -57,21 +62,16 @@ export const Landing = () => {
                   to="/scan"
                   className="inline-flex items-center gap-2.5 rounded-full bg-emerald-600 px-10 py-5 text-lg font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/25"
                 >
-                  Start shipping free
+                  Check my app for free
                   <ArrowRight className="h-5 w-5" />
                 </Link>
                 <a
                   href="#how-it-works"
                   className="inline-flex items-center gap-2.5 rounded-full border border-gray-200 bg-white px-10 py-5 text-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
                 >
-                  See how it works
+                  How does it work?
                 </a>
               </div>
-            </div>
-
-            {/* Right: Phone mockup */}
-            <div className="relative lg:pl-12">
-              <PhoneMockup />
             </div>
           </div>
         </div>
@@ -83,11 +83,11 @@ export const Landing = () => {
       <section className="py-24 sm:py-32">
         <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
           <div className="text-center mb-16 sm:mb-20">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 mb-4">Features</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 mb-4">What we do for you</p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-              Everything you need.
+              We handle the hard part.
               <br />
-              <span className="text-gray-400">Nothing you don't.</span>
+              <span className="text-gray-400">You just click.</span>
             </h2>
           </div>
 
@@ -116,7 +116,7 @@ export const Landing = () => {
           <div className="text-center mb-16 sm:mb-20">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 mb-4">How it works</p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
-              Three steps. Zero friction.
+              Three steps. That's it.
             </h2>
           </div>
 
@@ -145,8 +145,8 @@ export const Landing = () => {
           <div className="text-center mb-16 sm:mb-20">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 mb-4">Why Shippabel</p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
-              Built different.{" "}
-              <span className="text-gray-300">On purpose.</span>
+              Finally, someone{" "}
+              <span className="text-gray-400">who gets it.</span>
             </h2>
           </div>
 
@@ -168,20 +168,20 @@ export const Landing = () => {
       <section className="py-24 sm:py-32 bg-gradient-to-b from-[#fafafa] to-emerald-50/40">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-            Stop configuring.{" "}
+            Ready to{" "}
             <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
-              Start shipping.
+              go live?
             </span>
           </h2>
           <p className="mt-8 text-2xl text-gray-500 max-w-xl mx-auto">
-            Join thousands of makers who publish their apps in one click.
+            Thousands of people have already published their first app with Shippabel.
           </p>
           <div className="mt-12 flex flex-wrap items-center justify-center gap-5">
             <Link
               to="/scan"
               className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-10 py-5 text-base font-semibold text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/25"
             >
-              Start shipping free
+              Check my app for free
               <ArrowRight className="h-5 w-5" />
             </Link>
             <Link

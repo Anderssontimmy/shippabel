@@ -112,9 +112,9 @@ export const Submit = () => {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Build & Submit</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Publish Your App</h1>
           <p className="text-surface-400 text-sm mt-1">
-            Build your app and submit to the stores
+            We'll prepare your app and send it to the stores for you
           </p>
         </div>
       </div>

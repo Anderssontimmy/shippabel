@@ -71,9 +71,9 @@ export const Listing = () => {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Store Listing</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Your Store Page</h1>
           <p className="text-surface-400 text-sm mt-1">
-            Generate and edit your app store listing copy
+            This is what people will see when they find your app in the store
           </p>
         </div>
       </div>

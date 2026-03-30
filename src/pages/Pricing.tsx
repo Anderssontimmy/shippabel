@@ -11,16 +11,16 @@ const plans = [
     planId: null as PlanId | null,
     price: "$0",
     period: "forever",
-    description: "Find out what's blocking your launch",
+    description: "See what's stopping your app from going live",
     icon: Zap,
     color: "text-surface-300",
     features: [
-      "Unlimited app scans",
-      "Full readiness report",
-      "Issue explanations & fix guidance",
-      "Shareable report link",
+      "Check unlimited apps",
+      "See everything that needs fixing",
+      "Plain-language explanations",
+      "Share your results with anyone",
     ],
-    cta: "Start scanning",
+    cta: "Check my app",
     ctaVariant: "secondary" as const,
     ctaTo: "/scan",
   },
@@ -29,18 +29,18 @@ const plans = [
     planId: "launch" as PlanId,
     price: "$99",
     period: "one-time",
-    description: "Everything you need to ship your first app",
+    description: "Everything you need to get your first app live",
     icon: Sparkles,
     color: "text-primary-400",
     popular: true,
     features: [
       "Everything in Free",
-      "Auto-fix common issues",
-      "AI store copy generation (unlimited)",
-      "Screenshot generator",
-      "Privacy policy hosting (1 app)",
-      "Build & submit (1 submission)",
-      "Review monitoring (30 days)",
+      "Auto-fix problems with one click",
+      "AI writes your store page for you",
+      "Professional screenshot frames",
+      "Privacy policy created & hosted",
+      "We build & submit your app",
+      "Track your app's review status",
     ],
     cta: "Get Launch",
     ctaVariant: "primary" as const,
@@ -50,17 +50,17 @@ const plans = [
     planId: "pro" as PlanId,
     price: "$29",
     period: "/month",
-    description: "For builders shipping multiple apps",
+    description: "For people publishing multiple apps",
     icon: Rocket,
     color: "text-emerald-400",
     features: [
       "Everything in Launch",
-      "Unlimited submissions",
+      "Submit unlimited apps",
       "Unlimited privacy policies",
-      "Dashboard & analytics",
-      "Review monitoring (always on)",
-      "Custom domain privacy page",
-      "Priority support",
+      "See how your apps are doing",
+      "Always-on review tracking",
+      "Your own privacy policy page",
+      "Priority help when you need it",
     ],
     cta: "Get Pro",
     ctaVariant: "secondary" as const,
@@ -84,10 +84,10 @@ export const Pricing = () => {
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
       <div className="text-center max-w-2xl mx-auto mb-16">
         <h1 className="text-3xl sm:text-4xl font-bold">
-          Simple, transparent pricing
+          Simple pricing. No surprises.
         </h1>
         <p className="mt-4 text-surface-400 text-lg">
-          Scan for free. Pay only when you're ready to ship.
+          Check your app for free. Only pay when you're ready to publish.
         </p>
       </div>
 

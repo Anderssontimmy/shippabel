@@ -12,8 +12,8 @@ export const Layout = () => {
   const isLanding = location.pathname === "/";
 
   const navLinks = [
-    ...(user ? [{ to: "/dashboard", label: "Dashboard" }] : []),
-    { to: "/scan", label: "Scan" },
+    ...(user ? [{ to: "/dashboard", label: "My Apps" }] : []),
+    { to: "/scan", label: "Check App" },
     { to: "/pricing", label: "Pricing" },
     ...(user ? [{ to: "/settings", label: "Settings" }] : []),
     ...(!user ? [{ to: "/login", label: "Log in" }] : []),
