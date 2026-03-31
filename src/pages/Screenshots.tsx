@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useToast } from "@/components/ui/Toast";
 import { ShipFlowBar } from "@/components/ShipFlowBar";
@@ -21,6 +21,8 @@ interface Screenshot {
   file: File;
   preview: string;
   caption: string;
+  templateId: string;
+  bgColor: string;
 }
 
 type DeviceFrame = "iphone16pro" | "pixel9" | "ipad";
@@ -46,37 +48,51 @@ const storeRequirements = {
 };
 
 const TemplatePreview = ({ template }: { template: ScreenshotTemplate }) => {
+  const bg = getTemplateBackground(template.id);
+  return (
+    <div className="w-full h-20 rounded-t-md relative overflow-hidden" style={{ background: bg }}>
+      {/* Mini device placeholder */}
+      <div className="absolute left-1/2 -translate-x-1/2 top-[35%] w-[40%] h-[60%] rounded-[4px] bg-black/30 border border-white/10" />
+      {/* Caption placeholder */}
+      <div className="absolute top-[12%] left-1/2 -translate-x-1/2 w-[50%] h-[4px] rounded-full bg-white/30" />
+      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[35%] h-[3px] rounded-full bg-white/15" />
+    </div>
+  );
+};
+
+const LiveTemplatePreview = ({ screenshot, deviceId }: { screenshot: Screenshot; deviceId: DeviceFrame }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useState(() => {
-    // Draw preview on mount
-    setTimeout(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      canvas.width = 120;
-      canvas.height = 200;
-      template.background(ctx, 120, 200);
-      // Draw placeholder device
-      const dx = 120 * template.deviceInset.left;
-      const dw = 120 * template.deviceInset.width;
-      const dy = 200 * template.deviceInset.top;
-      const dh = 200 * 0.75;
-      ctx.fillStyle = "rgba(0,0,0,0.3)";
-      ctx.beginPath();
-      ctx.roundRect(dx, dy, dw, dh, 6);
-      ctx.fill();
-      // Caption placeholder
-      ctx.fillStyle = template.captionStyle.color;
-      ctx.globalAlpha = 0.5;
-      ctx.fillRect(30, 200 * template.captionStyle.yPosition, 60, 6);
-      ctx.fillRect(40, 200 * template.captionStyle.yPosition + 10, 40, 4);
-      ctx.globalAlpha = 1;
-    }, 0);
-  });
+  useEffect(() => {
+    const template = getTemplateById(screenshot.templateId);
+    if (!template || !canvasRef.current) return;
 
-  return <canvas ref={canvasRef} className="w-full h-20 rounded-t-md" />;
+    const req = storeRequirements[deviceId]?.[0];
+    if (!req) return;
+
+    const previewW = 400;
+    const previewH = Math.round(previewW * (req.height / req.width));
+    const canvas = canvasRef.current;
+    canvas.width = previewW;
+    canvas.height = previewH;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, previewW, previewH);
+        template.render(ctx, previewW, previewH, img, screenshot.caption, screenshot.bgColor);
+      }
+    };
+    img.src = screenshot.preview;
+  }, [screenshot.templateId, deviceId, screenshot.caption, screenshot.preview, screenshot.bgColor]);
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-surface-800 aspect-[9/19.5] bg-surface-900">
+      <canvas ref={canvasRef} className="w-full h-full object-contain" />
+    </div>
+  );
 };
 
 export const Screenshots = () => {
@@ -113,6 +129,8 @@ export const Screenshots = () => {
         file,
         preview: URL.createObjectURL(file),
         caption: "",
+        templateId: selectedTemplate,
+        bgColor: bgColor,
       }));
     setScreenshots((prev) => [...prev, ...newScreenshots]);
   }, []);
@@ -123,6 +141,12 @@ export const Screenshots = () => {
       if (removed) URL.revokeObjectURL(removed.preview);
       return prev.filter((s) => s.id !== id);
     });
+  };
+
+  const updateScreenshot = (id: string, updates: Partial<Screenshot>) => {
+    setScreenshots((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    );
   };
 
   const updateCaption = (id: string, caption: string) => {
@@ -206,7 +230,7 @@ export const Screenshots = () => {
   };
 
   const downloadWithTemplate = async (screenshot: Screenshot): Promise<Blob> => {
-    const template = getTemplateById(selectedTemplate);
+    const template = getTemplateById(screenshot.templateId);
     if (!template || !useTemplate) {
       return renderFramedScreenshot(screenshot);
     }
@@ -275,7 +299,11 @@ export const Screenshots = () => {
                 {allTemplates.map((t) => (
                   <button
                     key={t.id}
-                    onClick={() => setSelectedTemplate(t.id)}
+                    onClick={() => {
+                      setSelectedTemplate(t.id);
+                      // Apply to all existing screenshots
+                      setScreenshots((prev) => prev.map((s) => ({ ...s, templateId: t.id })));
+                    }}
                     className={`rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
                       selectedTemplate === t.id ? "border-primary-500 ring-1 ring-primary-500/30" : "border-transparent hover:border-surface-600"
                     }`}
@@ -398,26 +426,28 @@ export const Screenshots = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {screenshots.map((screenshot) => (
               <div key={screenshot.id} className="group relative">
-                <div
-                  className="rounded-xl overflow-hidden border border-surface-800 aspect-[9/19.5]"
-                  style={{ backgroundColor: useTemplate ? undefined : bgColor, background: useTemplate ? getTemplateBackground(selectedTemplate) : undefined }}
-                >
-                  {screenshot.caption && (
-                    <div className="text-center pt-3 px-2">
-                      <p className="text-[10px] font-semibold" style={{ color: captionColor }}>
-                        {screenshot.caption}
-                      </p>
+                {useTemplate ? (
+                  <LiveTemplatePreview
+                    screenshot={screenshot}
+                    deviceId={selectedDevice}
+                  />
+                ) : (
+                  <div
+                    className="rounded-xl overflow-hidden border border-surface-800 aspect-[9/19.5]"
+                    style={{ backgroundColor: bgColor }}
+                  >
+                    {screenshot.caption && (
+                      <div className="text-center pt-3 px-2">
+                        <p className="text-[10px] font-semibold" style={{ color: captionColor }}>
+                          {screenshot.caption}
+                        </p>
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <img src={screenshot.preview} alt="" className="w-full rounded-lg" style={{ borderRadius: `${device.radius * 0.15}px` }} />
                     </div>
-                  )}
-                  <div className="p-3">
-                    <img
-                      src={screenshot.preview}
-                      alt=""
-                      className="w-full rounded-lg"
-                      style={{ borderRadius: `${device.radius * 0.15}px` }}
-                    />
                   </div>
-                </div>
+                )}
 
                 {/* Caption input */}
                 <input
@@ -426,6 +456,28 @@ export const Screenshots = () => {
                   placeholder="Add caption..."
                   className="w-full mt-2 rounded bg-surface-800 border border-surface-700 px-2 py-1.5 text-xs text-white placeholder:text-surface-600 outline-none focus:border-primary-500"
                 />
+
+                {/* Per-screenshot template + color */}
+                {useTemplate && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <select
+                      value={screenshot.templateId}
+                      onChange={(e) => updateScreenshot(screenshot.id, { templateId: e.target.value })}
+                      className="flex-1 rounded bg-surface-800 border border-surface-700 px-1.5 py-1 text-[10px] text-white outline-none cursor-pointer"
+                    >
+                      {allTemplates.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="color"
+                      value={screenshot.bgColor}
+                      onChange={(e) => updateScreenshot(screenshot.id, { bgColor: e.target.value })}
+                      className="h-6 w-6 rounded cursor-pointer border-0 shrink-0"
+                      title="Background color"
+                    />
+                  </div>
+                )}
 
                 {/* Remove button */}
                 <button

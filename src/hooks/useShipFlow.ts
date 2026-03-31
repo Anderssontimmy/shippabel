@@ -100,15 +100,15 @@ export const useShipFlow = (projectId?: string) => {
       checks.isSubmitted = ["waiting_for_review", "in_review", "approved"].includes(latest.review_status);
     }
 
-    // Determine current step
+    // Determine current step — follows the natural flow order
     let currentStep: FlowStep = "scan";
     if (checks.scanned && (checks.criticalIssues as number) > 0) currentStep = "fix";
     else if (checks.scanned && !checks.loggedIn) currentStep = "signup";
     else if (checks.scanned && !checks.hasListing) currentStep = "listing";
-    else if (checks.scanned && checks.hasListing && !(checks.hasEas)) currentStep = "connect";
-    else if (checks.hasEas && !checks.hasBuild) currentStep = "build";
-    else if (checks.hasBuild && !checks.isSubmitted) currentStep = "submit";
-    else if (checks.isSubmitted) currentStep = "submit";
+    else if (checks.scanned && checks.hasListing) currentStep = "screenshots"; // after listing, go to screenshots
+    if (checks.hasEas && checks.hasListing) currentStep = "build"; // if connected, skip to build
+    if (checks.hasBuild && !checks.isSubmitted) currentStep = "submit";
+    if (checks.isSubmitted) currentStep = "submit";
 
     setState({
       currentStep,

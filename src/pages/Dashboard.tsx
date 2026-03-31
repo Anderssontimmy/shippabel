@@ -3,8 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Rocket,
   Scan,
-  FileText,
-  ImageIcon,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -98,63 +96,50 @@ export const Dashboard = () => {
             const score = project.scan_result?.score;
 
             return (
-              <Card key={project.id} hover className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  {/* Score badge */}
-                  {score != null && (
-                    <div
-                      className={`h-12 w-12 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
-                        score >= 80
-                          ? "bg-green-500/10 text-green-400"
-                          : score >= 50
-                          ? "bg-amber-500/10 text-amber-400"
-                          : "bg-red-500/10 text-red-400"
-                      }`}
-                    >
-                      {score}
-                    </div>
-                  )}
+              <Link key={project.id} to={`/scan/${project.id}`} className="block">
+                <Card hover className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Score badge */}
+                    {score != null && (
+                      <div
+                        className={`h-12 w-12 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
+                          score >= 80
+                            ? "bg-green-500/10 text-green-400"
+                            : score >= 50
+                            ? "bg-amber-500/10 text-amber-400"
+                            : "bg-red-500/10 text-red-400"
+                        }`}
+                      >
+                        {score}
+                      </div>
+                    )}
 
-                  <div className="min-w-0">
-                    <h3 className="font-semibold truncate">{project.name}</h3>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className={`flex items-center gap-1 text-xs ${status.color}`}>
-                        <StatusIcon className={`h-3 w-3 ${project.status === "scanning" || project.status === "building" ? "animate-spin" : ""}`} />
-                        {status.label}
-                      </span>
-                      {project.scan_result && (
-                        <span className="text-xs text-surface-500">
-                          {project.scan_result.summary.total} issues
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate">{project.name}</h3>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className={`flex items-center gap-1 text-xs ${status.color}`}>
+                          <StatusIcon className={`h-3 w-3 ${project.status === "scanning" || project.status === "building" ? "animate-spin" : ""}`} />
+                          {status.label}
                         </span>
-                      )}
-                      <span className="text-xs text-surface-600">
-                        {new Date(project.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </span>
+                        {project.scan_result && (
+                          <span className="text-xs text-surface-500">
+                            {project.scan_result.summary.total} issues
+                          </span>
+                        )}
+                        <span className="text-xs text-surface-600">
+                          {new Date(project.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <Link to={`/scan/${project.id}`}>
-                    <Button variant="ghost" size="sm" className="gap-1.5">
-                      <Scan className="h-3.5 w-3.5" />
-                      Report
-                    </Button>
-                  </Link>
-                  <Link to={`/app/${project.id}/listing`}>
-                    <Button variant="ghost" size="sm" className="gap-1.5">
-                      <FileText className="h-3.5 w-3.5" />
-                      Listing
-                    </Button>
-                  </Link>
-                  <Link to={`/app/${project.id}/screenshots`}>
-                    <Button variant="ghost" size="sm" className="gap-1.5">
-                      <ImageIcon className="h-3.5 w-3.5" />
-                      Screenshots
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
+                  <div className="shrink-0">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white">
+                      Continue →
+                    </span>
+                  </div>
+                </Card>
+              </Link>
             );
           })}
         </div>
