@@ -100,15 +100,26 @@ export const useShipFlow = (projectId?: string) => {
       checks.isSubmitted = ["waiting_for_review", "in_review", "approved"].includes(latest.review_status);
     }
 
-    // Determine current step — follows the natural flow order
+    // Determine current step — strictly sequential, never skip
     let currentStep: FlowStep = "scan";
-    if (checks.scanned && (checks.criticalIssues as number) > 0) currentStep = "fix";
-    else if (checks.scanned && !checks.loggedIn) currentStep = "signup";
-    else if (checks.scanned && !checks.hasListing) currentStep = "listing";
-    else if (checks.scanned && checks.hasListing) currentStep = "screenshots"; // after listing, go to screenshots
-    if (checks.hasEas && checks.hasListing) currentStep = "build"; // if connected, skip to build
-    if (checks.hasBuild && !checks.isSubmitted) currentStep = "submit";
-    if (checks.isSubmitted) currentStep = "submit";
+    if (checks.scanned) {
+      if ((checks.criticalIssues as number) > 0) {
+        currentStep = "fix";
+      } else if (!checks.loggedIn) {
+        currentStep = "signup";
+      } else if (!checks.hasListing) {
+        currentStep = "listing";
+      } else if (!checks.hasEas) {
+        // After listing, screenshots are optional — next blocker is credentials
+        currentStep = "connect";
+      } else if (!checks.hasBuild) {
+        currentStep = "build";
+      } else if (!checks.isSubmitted) {
+        currentStep = "submit";
+      } else {
+        currentStep = "submit"; // all done, show final state
+      }
+    }
 
     setState({
       currentStep,
@@ -176,7 +187,7 @@ function buildSteps(checks: Record<string, unknown>) {
       id: "screenshots" as FlowStep,
       label: "Screenshots",
       description: "Add screenshots of your app",
-      completed: false,
+      completed: hasListing, // optional step — mark done once listing exists so flow progresses
       available: scanned && loggedIn,
     },
     {

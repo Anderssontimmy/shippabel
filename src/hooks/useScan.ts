@@ -52,13 +52,21 @@ export const useScan = () => {
 
       setState((s) => ({ ...s, progress: "Scanning project..." }));
 
-      // 2. Call scan edge function
-      const { error: fnError } = await supabase.functions.invoke("scan-project", {
-        body: { project_id: project.id, repo_url: repoUrl, github_token: getGitHubToken() },
-      });
-
-      if (fnError) {
-        throw new Error(fnError.message ?? "Scan failed");
+      // 2. Call scan edge function (with 60s timeout)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60_000);
+      try {
+        const { error: fnError } = await supabase.functions.invoke("scan-project", {
+          body: { project_id: project.id, repo_url: repoUrl, github_token: getGitHubToken() },
+        });
+        if (fnError) throw new Error(fnError.message ?? "Scan failed");
+      } catch (invokeErr) {
+        if (invokeErr instanceof DOMException && invokeErr.name === "AbortError") {
+          throw new Error("Scan took too long. Please try again.");
+        }
+        throw invokeErr;
+      } finally {
+        clearTimeout(timeout);
       }
 
       trackEvent("Scan Completed");

@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
@@ -21,64 +22,60 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const saveGitHubToken = async (s: Session) => {
+  if (s.provider_token && s.user?.app_metadata?.provider === "github") {
+    await supabase.from("user_credentials").upsert(
+      {
+        user_id: s.user.id,
+        provider: "github",
+        credentials: { access_token: s.provider_token },
+        label: "GitHub (auto)",
+        is_valid: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,provider" }
+    );
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Safety timeout — never hang on loading
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (loading) setLoading(false);
-    }, 4000);
-    return () => clearTimeout(timeout);
-  }, [loading]);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      setLoading(false);
-
-      // Save GitHub token if present
-      if (s?.provider_token && s.user?.app_metadata?.provider === "github") {
-        await supabase.from("user_credentials").upsert(
-          {
-            user_id: s.user.id,
-            provider: "github",
-            credentials: { access_token: s.provider_token },
-            label: "GitHub (auto)",
-            is_valid: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,provider" }
-        );
-      }
-    });
-
+    // Use onAuthStateChange as the single source of truth.
+    // The INITIAL_SESSION event fires immediately with the current session,
+    // avoiding the race condition between getSession() and onAuthStateChange.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
 
-      // Auto-save GitHub token to user_credentials for Edge Functions
-      if (s?.provider_token && s.user?.app_metadata?.provider === "github") {
-        await supabase.from("user_credentials").upsert(
-          {
-            user_id: s.user.id,
-            provider: "github",
-            credentials: { access_token: s.provider_token },
-            label: "GitHub (auto)",
-            is_valid: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,provider" }
-        );
+      // Mark loading as done on initial session (whether null or valid)
+      if (!initializedRef.current) {
+        initializedRef.current = true;
+        setLoading(false);
       }
+
+      // Auto-save GitHub token to user_credentials for Edge Functions
+      if (s) saveGitHubToken(s);
     });
 
-    return () => subscription.unsubscribe();
+    // Safety timeout — if INITIAL_SESSION never fires (e.g. network issue)
+    const timeout = setTimeout(() => {
+      if (!initializedRef.current) {
+        initializedRef.current = true;
+        setLoading(false);
+      }
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const signInWithEmail = async (email: string) => {
@@ -109,7 +106,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Always clear local state, even if the API call fails
+    setSession(null);
+    setUser(null);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Network error — local state is already cleared
+    }
   };
 
   // Extract GitHub token from session provider_token

@@ -70,18 +70,10 @@ export const Dashboard = () => {
   }, [user]);
 
   useEffect(() => {
-    if (authLoading) return; // Still loading auth — wait
+    if (authLoading) return;
     if (!user) { navigate("/login"); return; }
     loadProjects();
   }, [user, authLoading, navigate, loadProjects]);
-
-  // Timeout: if loading for more than 5 seconds, stop waiting
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (loading) setLoading(false);
-    }, 5000);
-    return () => clearTimeout(timeout);
-  }, [loading]);
 
   if (authLoading) {
     return <div className="flex items-center justify-center py-32"><Loader2 className="h-8 w-8 text-primary-400 animate-spin" /></div>;

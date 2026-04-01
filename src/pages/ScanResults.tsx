@@ -290,8 +290,10 @@ export const ScanResults = () => {
         .single();
 
       if (error || !data) {
-        setScan(demoScanResult);
-        setProjectName("my-app");
+        setScan(null);
+        setProjectName("");
+        setLoading(false);
+        return;
       } else {
         setScan(data.scan_result as ScanResult);
         setProjectName(data.name);
@@ -473,7 +475,7 @@ export const ScanResults = () => {
             <Card hover className="text-center py-6 h-full">
               <ArrowRight className="h-6 w-6 text-blue-400 mx-auto mb-2" />
               <h4 className="text-sm font-semibold">See Pricing</h4>
-              <p className="text-xs text-surface-500 mt-1">Launch $99, Pro $29/mo</p>
+              <p className="text-xs text-surface-500 mt-1">Ship $99 / Unlimited $179</p>
             </Card>
           </Link>
           <Link to="/login">

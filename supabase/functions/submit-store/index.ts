@@ -1,10 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+  "Access-Control-Allow-Origin": allowed,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+  };
+}
 
 interface SubmitRequest {
   submission_id: string;
@@ -12,7 +18,7 @@ interface SubmitRequest {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -96,14 +102,14 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, status: result.status, details: result.details }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     const status = message === "Unauthorized" ? 401 : 500;
     return new Response(
       JSON.stringify({ error: message }),
-      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });

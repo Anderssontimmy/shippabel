@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -14,10 +14,9 @@ export const Login = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Redirect if already logged in
-  if (user) {
-    navigate("/scan");
-    return null;
-  }
+  useEffect(() => {
+    if (user) navigate("/dashboard");
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
