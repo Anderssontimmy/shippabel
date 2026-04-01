@@ -32,6 +32,7 @@ export interface FlowState {
 
 export const useShipFlow = (projectId?: string) => {
   const { user } = useAuth();
+  const isDemo = projectId === "demo";
   const [state, setState] = useState<FlowState>({
     currentStep: "scan",
     steps: buildSteps({}),
@@ -46,6 +47,34 @@ export const useShipFlow = (projectId?: string) => {
 
   const refresh = useCallback(async () => {
     if (!projectId) return;
+
+    if (isDemo) {
+      const demoChecks = {
+        scanned: true,
+        score: 73,
+        criticalIssues: 0,
+        fixed: true,
+        loggedIn: true,
+        hasListing: true,
+        hasEas: true,
+        hasApple: true,
+        hasGoogle: true,
+        hasBuild: false,
+        isSubmitted: false,
+      };
+      setState({
+        currentStep: "build",
+        steps: buildSteps(demoChecks),
+        projectId: "demo",
+        score: 73,
+        criticalIssues: 0,
+        hasListing: true,
+        hasCredentials: { eas: true, apple: true, google: true },
+        hasBuild: false,
+        isSubmitted: false,
+      });
+      return;
+    }
 
     const checks: Record<string, unknown> = {};
 
@@ -136,7 +165,7 @@ export const useShipFlow = (projectId?: string) => {
       hasBuild: !!checks.hasBuild,
       isSubmitted: !!checks.isSubmitted,
     });
-  }, [projectId, user]);
+  }, [projectId, user, isDemo]);
 
   useEffect(() => {
     refresh();

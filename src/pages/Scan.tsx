@@ -218,24 +218,31 @@ export const Scan = () => {
       )}
 
       {/* Submit */}
-      <Button
-        size="lg"
-        className="w-full gap-2"
-        onClick={handleScan}
-        disabled={scanning}
-      >
-        {scanning ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Checking your app...
-          </>
-        ) : (
-          <>
-            Check my app for free
-            <ArrowRight className="h-4 w-4" />
-          </>
-        )}
-      </Button>
+      <div className="flex gap-3">
+        <Button
+          size="lg"
+          className="flex-1 gap-2"
+          onClick={handleScan}
+          disabled={scanning}
+        >
+          {scanning ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Checking your app...
+            </>
+          ) : (
+            <>
+              Check my app for free
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </Button>
+        <Link to="/scan/demo">
+          <Button size="lg" variant="secondary" className="gap-2 whitespace-nowrap">
+            Try demo
+          </Button>
+        </Link>
+      </div>
 
       {/* What we look at */}
       <div className="mt-16">

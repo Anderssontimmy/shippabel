@@ -11,9 +11,9 @@ import {
   ArrowRight,
   Loader2,
   Rocket,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ScanResultsSkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
@@ -440,7 +440,7 @@ export const ScanResults = () => {
       })}
 
       {/* Success banner — when app is ready */}
-      {scan.summary.critical === 0 && scan.score >= 80 && id && id !== "demo" && (
+      {scan.summary.critical === 0 && scan.score >= 80 && id && (
         <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
           <h3 className="text-lg font-semibold text-surface-900 mb-1">Your app looks great!</h3>
           <p className="text-sm text-surface-500 mb-5">No critical issues. You're ready for the next step.</p>
@@ -460,30 +460,30 @@ export const ScanResults = () => {
         </div>
       )}
 
-      {/* Quick links (for demo or returning users) */}
+      {/* Demo next step — try the full flow */}
       {id === "demo" && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-          <Link to="/scan">
-            <Card hover className="text-center py-6 h-full">
-              <ArrowRight className="h-6 w-6 text-surface-400 mx-auto mb-2" />
-              <h4 className="text-sm font-semibold">Scan Your App</h4>
-              <p className="text-xs text-surface-500 mt-1">Try with your own project</p>
-            </Card>
-          </Link>
-          <Link to="/pricing">
-            <Card hover className="text-center py-6 h-full">
-              <ArrowRight className="h-6 w-6 text-surface-400 mx-auto mb-2" />
-              <h4 className="text-sm font-semibold text-surface-900">See Pricing</h4>
-              <p className="text-xs text-surface-500 mt-1">Ship $99 / Unlimited $179</p>
-            </Card>
-          </Link>
-          <Link to="/login">
-            <Card hover className="text-center py-6 h-full">
-              <ArrowRight className="h-6 w-6 text-surface-400 mx-auto mb-2" />
-              <h4 className="text-sm font-semibold text-surface-900">Sign Up</h4>
-              <p className="text-xs text-surface-500 mt-1">Save scans & unlock features</p>
-            </Card>
-          </Link>
+        <div className="mt-10 rounded-2xl border border-surface-200 bg-surface-50 p-8 text-center">
+          <h3 className="text-lg font-semibold text-surface-900 mb-2">Try the full flow</h3>
+          <p className="text-sm text-surface-500 mb-5">See how the listing editor, screenshots, and submission works — all with demo data.</p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link to="/app/demo/listing">
+              <Button className="gap-2">
+                <FileText className="h-4 w-4" />
+                Try store listing
+              </Button>
+            </Link>
+            <Link to="/app/demo/screenshots">
+              <Button variant="secondary" className="gap-2">
+                Try screenshots
+              </Button>
+            </Link>
+            <Link to="/scan">
+              <Button variant="ghost" className="gap-2">
+                Scan my own app
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </div>

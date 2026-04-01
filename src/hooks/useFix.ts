@@ -8,6 +8,7 @@ interface FixResult {
 }
 
 export const useFix = (projectId: string) => {
+  const isDemo = projectId === "demo";
   const [fixing, setFixing] = useState(false);
   const [fixingIssueId, setFixingIssueId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,6 +17,14 @@ export const useFix = (projectId: string) => {
   const fixAll = async () => {
     setFixing(true);
     setError(null);
+
+    if (isDemo) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const result: FixResult = { fixed: 4, failed: 0, fixed_ids: ["2", "3", "4", "5"] };
+      setLastResult(result);
+      setFixing(false);
+      return result;
+    }
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("fix-issues", {
@@ -36,6 +45,14 @@ export const useFix = (projectId: string) => {
   const fixOne = async (issueId: string) => {
     setFixingIssueId(issueId);
     setError(null);
+
+    if (isDemo) {
+      await new Promise((r) => setTimeout(r, 1500));
+      const result: FixResult = { fixed: 1, failed: 0, fixed_ids: [issueId] };
+      setLastResult(result);
+      setFixingIssueId(null);
+      return result;
+    }
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("fix-issues", {
