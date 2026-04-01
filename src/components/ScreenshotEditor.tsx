@@ -2,42 +2,44 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Smartphone,
   Type,
-  Image,
-  Palette,
+  ImageIcon,
+  Paintbrush,
+  Maximize2,
   Download,
   Trash2,
   Copy,
-  ChevronLeft,
-  ChevronRight,
-  Layers,
   RotateCw,
+  Undo2,
+  Redo2,
+  Plus,
+  Pencil,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { Phone3D } from "@/components/Phone3D";
 
 // --- Types ---
 
 interface EditorObject {
   id: string;
   type: "device" | "text";
-  x: number; // percentage of canvas width (0-100)
-  y: number; // percentage of canvas height (0-100)
-  width: number; // percentage
-  height: number; // percentage
-  rotation: number; // degrees
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
   zIndex: number;
 }
 
 interface DeviceObject extends EditorObject {
   type: "device";
-  deviceType: "iphone" | "android" | "ipad";
   screenshotSrc: string | null;
+  deviceModel: DeviceModel;
 }
 
 interface TextObject extends EditorObject {
   type: "text";
   text: string;
-  fontSize: number; // percentage of canvas width
+  fontSize: number;
   fontWeight: string;
   color: string;
 }
@@ -48,196 +50,154 @@ interface PageData {
   id: string;
   objects: AnyObject[];
   bgColor: string;
-  bgGradient: string | null;
 }
 
-// --- Device frame SVG paths ---
+type DeviceModel = "front" | "left" | "right" | "flat";
+const DEVICE_CONFIGS: { model: DeviceModel; label: string; scale: number }[] = [
+  { model: "front", label: "Front", scale: 35 },
+  { model: "left", label: "Angled Left", scale: 40 },
+  { model: "right", label: "Angled Right", scale: 40 },
+  { model: "flat", label: "Flat", scale: 50 },
+];
+const DEFAULT_DEVICE_ASPECT = 1.5; // 3D viewport aspect
+const PAGE_COUNT = 5;
 
-const DEVICE_ASPECT = 2.17; // iPhone aspect ratio (height/width)
+// --- Sidebar tabs ---
+
+type SideTab = "devices" | "text" | "image" | "background" | "resize" | null;
 
 // --- Component ---
 
 export const ScreenshotEditor = () => {
   const { toast } = useToast();
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const canvasAreaRef = useRef<HTMLDivElement>(null);
 
-  // Pages (5 app store screenshots)
   const [pages, setPages] = useState<PageData[]>(() =>
-    Array.from({ length: 5 }, (_, i) => ({
+    Array.from({ length: PAGE_COUNT }, (_, i) => ({
       id: `page-${i}`,
       objects: [],
       bgColor: "#f0f0ff",
-      bgGradient: null,
     }))
   );
-  const [activePage, setActivePage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<SideTab>("devices");
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeCorner, setResizeCorner] = useState("");
-  const [tool, setTool] = useState<"select" | "device" | "text">("select");
+  const [dragPageIndex, setDragPageIndex] = useState(0);
 
-  const currentPage = pages[activePage]!;
-  const selectedObject = currentPage.objects.find((o) => o.id === selectedId) ?? null;
+  const findObjectPage = (objId: string): number =>
+    pages.findIndex((p) => p.objects.some((o) => o.id === objId));
 
-  // --- Page helpers ---
+  const selectedPageIndex = selectedId !== null ? findObjectPage(selectedId) : -1;
+  const selectedObject = selectedId !== null && selectedPageIndex >= 0
+    ? pages[selectedPageIndex]!.objects.find((o) => o.id === selectedId) ?? null
+    : null;
+
+  // --- Helpers ---
 
   const updatePage = useCallback((pageIndex: number, updater: (p: PageData) => PageData) => {
     setPages((prev) => prev.map((p, i) => (i === pageIndex ? updater(p) : p)));
   }, []);
 
-  const updateObject = useCallback((objId: string, updates: Partial<AnyObject>) => {
-    updatePage(activePage, (p) => ({
+  const updateObject = useCallback((pageIndex: number, objId: string, updates: Partial<AnyObject>) => {
+    updatePage(pageIndex, (p) => ({
       ...p,
       objects: p.objects.map((o) => (o.id === objId ? { ...o, ...updates } as AnyObject : o)),
     }));
-  }, [activePage, updatePage]);
+  }, [updatePage]);
 
-  const addObject = useCallback((obj: AnyObject) => {
-    updatePage(activePage, (p) => ({ ...p, objects: [...p.objects, obj] }));
+  const addObjectToPage = useCallback((pageIndex: number, obj: AnyObject) => {
+    updatePage(pageIndex, (p) => ({ ...p, objects: [...p.objects, obj] }));
     setSelectedId(obj.id);
-    setTool("select");
-  }, [activePage, updatePage]);
+  }, [updatePage]);
 
   const deleteSelected = useCallback(() => {
-    if (!selectedId) return;
-    updatePage(activePage, (p) => ({
-      ...p,
-      objects: p.objects.filter((o) => o.id !== selectedId),
-    }));
+    if (selectedId === null || selectedPageIndex < 0) return;
+    updatePage(selectedPageIndex, (p) => ({ ...p, objects: p.objects.filter((o) => o.id !== selectedId) }));
     setSelectedId(null);
-  }, [selectedId, activePage, updatePage]);
+  }, [selectedId, selectedPageIndex, updatePage]);
 
   const duplicateSelected = useCallback(() => {
-    if (!selectedObject) return;
-    const newObj = { ...selectedObject, id: crypto.randomUUID(), x: selectedObject.x + 3, y: selectedObject.y + 3 };
-    addObject(newObj as AnyObject);
-  }, [selectedObject, addObject]);
+    if (!selectedObject || selectedPageIndex < 0) return;
+    const newObj = { ...selectedObject, id: crypto.randomUUID(), x: selectedObject.x + 5, y: selectedObject.y + 3 };
+    addObjectToPage(selectedPageIndex, newObj as AnyObject);
+  }, [selectedObject, selectedPageIndex, addObjectToPage]);
 
-  // --- Add device ---
+  // --- Add handlers ---
 
-  const addDevice = useCallback(() => {
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "image/*";
-    fileInput.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      const src = URL.createObjectURL(file);
-      const deviceWidth = 25; // 25% of canvas width
-      const obj: DeviceObject = {
-        id: crypto.randomUUID(),
-        type: "device",
-        x: 30 + Math.random() * 20,
-        y: 15,
-        width: deviceWidth,
-        height: deviceWidth * DEVICE_ASPECT,
-        rotation: 0,
-        zIndex: currentPage.objects.length,
-        deviceType: "iphone",
-        screenshotSrc: src,
-      };
-      addObject(obj);
+  const addDeviceToPage = useCallback((pageIndex: number, model: DeviceModel = "front", rotation = 0, scale = 55) => {
+    const w = scale;
+    const obj: DeviceObject = {
+      id: crypto.randomUUID(),
+      type: "device",
+      x: 22,
+      y: 10,
+      width: w,
+      height: w * DEFAULT_DEVICE_ASPECT,
+      rotation,
+      zIndex: (pages[pageIndex]?.objects.length ?? 0),
+      screenshotSrc: null,
+      deviceModel: model,
     };
-    fileInput.click();
-  }, [addObject, currentPage.objects.length]);
+    addObjectToPage(pageIndex, obj);
+  }, [pages, addObjectToPage]);
 
-  // --- Add text ---
-
-  const addText = useCallback(() => {
+  const addTextToPage = useCallback((pageIndex: number) => {
     const obj: TextObject = {
       id: crypto.randomUUID(),
       type: "text",
-      x: 20,
-      y: 8,
-      width: 60,
+      x: 15,
+      y: 5,
+      width: 70,
       height: 10,
       rotation: 0,
-      zIndex: currentPage.objects.length,
+      zIndex: (pages[pageIndex]?.objects.length ?? 0),
       text: "Your Headline",
       fontSize: 5,
       fontWeight: "700",
       color: "#000000",
     };
-    addObject(obj);
-  }, [addObject, currentPage.objects.length]);
+    addObjectToPage(pageIndex, obj);
+  }, [pages, addObjectToPage]);
 
-  // --- Mouse handlers ---
+  // --- Mouse handlers for drag ---
 
-  const getCanvasPos = useCallback((e: React.MouseEvent): { x: number; y: number } => {
-    const rect = canvasContainerRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0 };
+  const getPagePos = useCallback((e: React.MouseEvent, pageEl: HTMLElement): { x: number; y: number } => {
+    const rect = pageEl.getBoundingClientRect();
     return {
       x: ((e.clientX - rect.left) / rect.width) * 100,
       y: ((e.clientY - rect.top) / rect.height) * 100,
     };
   }, []);
 
-  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
-    const pos = getCanvasPos(e);
-
-    // Check if clicked on an object (reverse order for z-index)
-    const sorted = [...currentPage.objects].sort((a, b) => b.zIndex - a.zIndex);
-    for (const obj of sorted) {
-      if (
-        pos.x >= obj.x && pos.x <= obj.x + obj.width &&
-        pos.y >= obj.y && pos.y <= obj.y + obj.height
-      ) {
-        setSelectedId(obj.id);
-        setIsDragging(true);
-        setDragOffset({ x: pos.x - obj.x, y: pos.y - obj.y });
-
-        // Bring to front
-        updateObject(obj.id, { zIndex: Math.max(...currentPage.objects.map((o) => o.zIndex)) + 1 });
-        return;
-      }
-    }
-
-    // Clicked empty space
-    setSelectedId(null);
-  }, [currentPage.objects, getCanvasPos, updateObject]);
-
-  const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || !selectedId) return;
-    const pos = getCanvasPos(e);
-    updateObject(selectedId, {
-      x: Math.max(0, Math.min(90, pos.x - dragOffset.x)),
-      y: Math.max(0, Math.min(90, pos.y - dragOffset.y)),
-    });
-  }, [isDragging, selectedId, dragOffset, getCanvasPos, updateObject]);
-
-  const handleCanvasMouseUp = useCallback(() => {
-    setIsDragging(false);
-    setIsResizing(false);
-  }, []);
-
-  // --- Resize handlers ---
-
-  const handleResizeStart = useCallback((e: React.MouseEvent, corner: string) => {
+  const handleObjectMouseDown = useCallback((e: React.MouseEvent, obj: AnyObject, pageIndex: number, pageEl: HTMLElement) => {
     e.stopPropagation();
-    setIsResizing(true);
-    setResizeCorner(corner);
-  }, []);
+    e.preventDefault();
+    setSelectedId(obj.id);
+    setIsDragging(true);
+    setDragPageIndex(pageIndex);
+    const pos = getPagePos(e, pageEl);
+    setDragOffset({ x: pos.x - obj.x, y: pos.y - obj.y });
+  }, [getPagePos]);
 
-  // Handle resize during mouse move
   useEffect(() => {
-    if (!isResizing || !selectedObject) return;
+    if (!isDragging || selectedId === null) return;
 
     const handleMove = (e: MouseEvent) => {
-      const rect = canvasContainerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      const pageEls = canvasAreaRef.current?.querySelectorAll("[data-page]");
+      if (!pageEls) return;
+      const pageEl = pageEls[dragPageIndex] as HTMLElement | undefined;
+      if (!pageEl) return;
+      const rect = pageEl.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-      if (resizeCorner === "se") {
-        const newW = Math.max(10, x - selectedObject.x);
-        const newH = selectedObject.type === "device" ? newW * DEVICE_ASPECT : Math.max(5, y - selectedObject.y);
-        updateObject(selectedObject.id, { width: newW, height: newH });
-      }
+      updateObject(dragPageIndex, selectedId, {
+        x: x - dragOffset.x,
+        y: y - dragOffset.y,
+      });
     };
 
-    const handleUp = () => setIsResizing(false);
+    const handleUp = () => setIsDragging(false);
 
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
@@ -245,25 +205,19 @@ export const ScreenshotEditor = () => {
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseup", handleUp);
     };
-  }, [isResizing, selectedObject, resizeCorner, updateObject]);
+  }, [isDragging, selectedId, dragPageIndex, dragOffset, updateObject]);
 
-  // --- Keyboard shortcuts ---
+  // --- Keyboard ---
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Delete" || e.key === "Backspace") {
-        if (selectedId && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
-          deleteSelected();
-        }
-      }
-      if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        duplicateSelected();
-      }
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
+      if (e.key === "d" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); duplicateSelected(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedId, deleteSelected, duplicateSelected]);
+  }, [deleteSelected, duplicateSelected]);
 
   // --- Export ---
 
@@ -278,32 +232,19 @@ export const ScreenshotEditor = () => {
 
   const exportPage = useCallback(async (pageIndex: number) => {
     const page = pages[pageIndex]!;
-    const W = 1290;
-    const H = 2796;
+    const W = 1290, H = 2796;
     const canvas = document.createElement("canvas");
-    canvas.width = W;
-    canvas.height = H;
+    canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d")!;
 
-    // Background
-    if (page.bgGradient) {
-      const [c1 = "#fff", c2 = "#fff"] = page.bgGradient.split(",");
-      const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, c1); grad.addColorStop(1, c2);
-      ctx.fillStyle = grad;
-    } else {
-      ctx.fillStyle = page.bgColor;
-    }
+    ctx.fillStyle = page.bgColor;
     ctx.fillRect(0, 0, W, H);
 
-    // Sort by z-index
     const sorted = [...page.objects].sort((a, b) => a.zIndex - b.zIndex);
 
     for (const obj of sorted) {
-      const ox = (obj.x / 100) * W;
-      const oy = (obj.y / 100) * H;
-      const ow = (obj.width / 100) * W;
-      const oh = (obj.height / 100) * H;
+      const ox = (obj.x / 100) * W, oy = (obj.y / 100) * H;
+      const ow = (obj.width / 100) * W, oh = (obj.height / 100) * H;
 
       ctx.save();
       if (obj.rotation) {
@@ -314,418 +255,409 @@ export const ScreenshotEditor = () => {
 
       if (obj.type === "device") {
         const device = obj as DeviceObject;
-        // Device bezel
-        const radius = ow * 0.085;
-        const bezel = ow * 0.015;
-
-        ctx.shadowColor = "rgba(0,0,0,0.3)";
-        ctx.shadowBlur = ow * 0.05;
-        ctx.shadowOffsetY = ow * 0.015;
-
-        // Bezel
+        const radius = ow * 0.085, bezel = ow * 0.015;
+        ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = ow * 0.05; ctx.shadowOffsetY = ow * 0.015;
         ctx.fillStyle = "#1a1a1a";
-        ctx.beginPath();
-        rr(ctx,ox - bezel, oy - bezel, ow + bezel * 2, oh + bezel * 2, radius + bezel);
+        rr(ctx, ox - bezel, oy - bezel, ow + bezel * 2, oh + bezel * 2, radius + bezel);
         ctx.fill();
+        ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
 
-        ctx.shadowColor = "transparent";
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetY = 0;
-
-        // Screen
         if (device.screenshotSrc) {
           const img = document.createElement("img");
           img.crossOrigin = "anonymous";
-          await new Promise<void>((resolve) => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            img.src = device.screenshotSrc!;
-          });
-
+          await new Promise<void>((r) => { img.onload = () => r(); img.onerror = () => r(); img.src = device.screenshotSrc!; });
           ctx.save();
-          ctx.beginPath();
-          rr(ctx,ox, oy, ow, oh, radius);
-          ctx.clip();
-          // Fill to cover
-          const iA = img.width / img.height;
-          const sA = ow / oh;
+          rr(ctx, ox, oy, ow, oh, radius); ctx.clip();
+          const iA = img.width / img.height, sA = ow / oh;
           let dw: number, dh: number, dx: number, dy: number;
           if (iA > sA) { dh = oh; dw = dh * iA; dx = ox - (dw - ow) / 2; dy = oy; }
           else { dw = ow; dh = dw / iA; dx = ox; dy = oy - (dh - oh) / 2; }
           ctx.drawImage(img, dx, dy, dw, dh);
           ctx.restore();
         }
-
-        // Dynamic Island
         const nw = ow * 0.28, nh = ow * 0.05;
-        ctx.fillStyle = "#000";
-        ctx.beginPath();
-        rr(ctx,ox + (ow - nw) / 2, oy + ow * 0.02, nw, nh, nh / 2);
-        ctx.fill();
-
-        // Home indicator
+        ctx.fillStyle = "#000"; rr(ctx, ox + (ow - nw) / 2, oy + ow * 0.02, nw, nh, nh / 2); ctx.fill();
         const hw = ow * 0.35, hh = ow * 0.012;
-        ctx.fillStyle = "rgba(255,255,255,0.2)";
-        ctx.beginPath();
-        rr(ctx,ox + (ow - hw) / 2, oy + oh - ow * 0.035, hw, hh, hh / 2);
-        ctx.fill();
-      } else if (obj.type === "text") {
-        const textObj = obj as TextObject;
-        const fs = (textObj.fontSize / 100) * W;
-        ctx.font = `${textObj.fontWeight} ${fs}px -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif`;
-        ctx.fillStyle = textObj.color;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        ctx.fillText(textObj.text, ox + ow / 2, oy);
+        ctx.fillStyle = "rgba(255,255,255,0.2)"; rr(ctx, ox + (ow - hw) / 2, oy + oh - ow * 0.035, hw, hh, hh / 2); ctx.fill();
+      } else {
+        const t = obj as TextObject;
+        const fs = (t.fontSize / 100) * W;
+        ctx.font = `${t.fontWeight} ${fs}px -apple-system, sans-serif`;
+        ctx.fillStyle = t.color; ctx.textAlign = "center"; ctx.textBaseline = "top";
+        ctx.fillText(t.text, ox + ow / 2, oy);
       }
-
       ctx.restore();
     }
 
     canvas.toBlob((blob) => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `screenshot_${pageIndex + 1}.png`;
-      a.click();
+      const a = document.createElement("a"); a.href = url; a.download = `screenshot_${pageIndex + 1}.png`; a.click();
       URL.revokeObjectURL(url);
     }, "image/png");
-  }, [pages]);
+  }, [pages, rr]);
 
   const exportAll = useCallback(async () => {
     for (let i = 0; i < pages.length; i++) {
-      if (pages[i]!.objects.length > 0) {
-        await exportPage(i);
-      }
+      if (pages[i]!.objects.length > 0) await exportPage(i);
     }
     toast("success", "Screenshots exported!");
   }, [pages, exportPage, toast]);
 
-  // --- Render ---
+  // --- Sidebar tabs ---
 
-  const tools = [
-    { id: "select" as const, icon: Layers, label: "Select" },
-    { id: "device" as const, icon: Smartphone, label: "Device", action: addDevice },
-    { id: "text" as const, icon: Type, label: "Text", action: addText },
+  const tabs: { id: SideTab; icon: typeof Smartphone; label: string }[] = [
+    { id: "devices", icon: Smartphone, label: "Devices" },
+    { id: "text", icon: Type, label: "Text" },
+    { id: "image", icon: ImageIcon, label: "Image" },
+    { id: "background", icon: Paintbrush, label: "Background" },
+    { id: "resize", icon: Maximize2, label: "Resize" },
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      {/* Top toolbar */}
-      <div className="flex items-center justify-between border-b border-surface-800 px-4 py-2 bg-surface-950">
-        <div className="flex items-center gap-1">
-          {tools.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => t.action ? t.action() : setTool(t.id)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-[10px] cursor-pointer transition-colors ${
-                tool === t.id && !t.action ? "bg-primary-500/20 text-primary-300" : "text-surface-400 hover:text-white hover:bg-surface-800"
-              }`}
-            >
-              <t.icon className="h-4 w-4" />
-              {t.label}
-            </button>
-          ))}
-          <div className="w-px h-6 bg-surface-800 mx-1" />
+    <div className="flex h-full bg-gray-50">
+      {/* Left icon tabs */}
+      <div className="w-14 bg-white border-r border-gray-200 flex flex-col items-center py-3 gap-1 shrink-0">
+        {tabs.map((tab) => (
           <button
-            onClick={() => {
-              const input = document.createElement("input");
-              input.type = "file"; input.accept = "image/*";
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (!file) return;
-                // Add as background image (future feature)
-                toast("info", "Background images coming soon!");
-              };
-              input.click();
-            }}
-            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-[10px] text-surface-400 hover:text-white hover:bg-surface-800 cursor-pointer"
-          >
-            <Image className="h-4 w-4" />
-            Image
-          </button>
-          <button
-            onClick={() => {
-              /* bg color picker */
-            }}
-            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-[10px] text-surface-400 hover:text-white hover:bg-surface-800 cursor-pointer"
-          >
-            <Palette className="h-4 w-4" />
-            Background
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {selectedId && (
-            <>
-              <button onClick={duplicateSelected} className="p-1.5 rounded hover:bg-surface-800 text-surface-400 hover:text-white cursor-pointer" title="Duplicate (Ctrl+D)">
-                <Copy className="h-4 w-4" />
-              </button>
-              <button onClick={() => {
-                if (selectedObject) updateObject(selectedId, { rotation: (selectedObject.rotation + 15) % 360 });
-              }} className="p-1.5 rounded hover:bg-surface-800 text-surface-400 hover:text-white cursor-pointer" title="Rotate">
-                <RotateCw className="h-4 w-4" />
-              </button>
-              <button onClick={deleteSelected} className="p-1.5 rounded hover:bg-surface-800 text-red-400 hover:text-red-300 cursor-pointer" title="Delete">
-                <Trash2 className="h-4 w-4" />
-              </button>
-              <div className="w-px h-6 bg-surface-800 mx-1" />
-            </>
-          )}
-          <Button size="sm" onClick={exportAll} className="gap-1.5">
-            <Download className="h-3.5 w-3.5" />
-            Export all
-          </Button>
-        </div>
-      </div>
-
-      {/* Main area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left sidebar — properties */}
-        <div className="w-56 border-r border-surface-800 p-3 overflow-y-auto bg-surface-950 space-y-4">
-          {/* Background */}
-          <div>
-            <h4 className="text-xs font-semibold text-surface-400 mb-2">Background</h4>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={currentPage.bgColor}
-                onChange={(e) => updatePage(activePage, (p) => ({ ...p, bgColor: e.target.value, bgGradient: null }))}
-                className="h-8 w-8 rounded cursor-pointer border-0"
-              />
-              <input
-                type="text"
-                value={currentPage.bgColor}
-                onChange={(e) => updatePage(activePage, (p) => ({ ...p, bgColor: e.target.value, bgGradient: null }))}
-                className="flex-1 rounded bg-surface-800 border border-surface-700 px-2 py-1 text-xs text-white"
-              />
-            </div>
-            {/* Quick gradient presets */}
-            <div className="grid grid-cols-5 gap-1 mt-2">
-              {["#f0f0ff", "#ffffff", "#0a0a0a", "#1e1b4b", "#fdf2f8", "#ecfdf5", "#fef3c7", "#fee2e2", "#f0fdf4", "#eff6ff"].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => updatePage(activePage, (p) => ({ ...p, bgColor: c, bgGradient: null }))}
-                  className="h-6 rounded border border-surface-700 cursor-pointer"
-                  style={{ background: c }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Selected object properties */}
-          {selectedObject && selectedObject.type === "text" && (
-            <div>
-              <h4 className="text-xs font-semibold text-surface-400 mb-2">Text</h4>
-              <input
-                type="text"
-                value={(selectedObject as TextObject).text}
-                onChange={(e) => updateObject(selectedId!, { text: e.target.value } as Partial<TextObject>)}
-                className="w-full rounded bg-surface-800 border border-surface-700 px-2 py-1.5 text-xs text-white mb-2"
-              />
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={(selectedObject as TextObject).color}
-                  onChange={(e) => updateObject(selectedId!, { color: e.target.value } as Partial<TextObject>)}
-                  className="h-7 w-7 rounded cursor-pointer border-0"
-                />
-                <select
-                  value={(selectedObject as TextObject).fontWeight}
-                  onChange={(e) => updateObject(selectedId!, { fontWeight: e.target.value } as Partial<TextObject>)}
-                  className="flex-1 rounded bg-surface-800 border border-surface-700 px-2 py-1 text-xs text-white cursor-pointer"
-                >
-                  <option value="400">Regular</option>
-                  <option value="600">Semibold</option>
-                  <option value="700">Bold</option>
-                  <option value="800">Extra Bold</option>
-                </select>
-              </div>
-              <div className="mt-2">
-                <label className="text-[10px] text-surface-500">Size</label>
-                <input
-                  type="range"
-                  min="2"
-                  max="12"
-                  step="0.5"
-                  value={(selectedObject as TextObject).fontSize}
-                  onChange={(e) => updateObject(selectedId!, { fontSize: parseFloat(e.target.value) } as Partial<TextObject>)}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          )}
-
-          {selectedObject && selectedObject.type === "device" && (
-            <div>
-              <h4 className="text-xs font-semibold text-surface-400 mb-2">Device</h4>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="w-full text-xs"
-                onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "file"; input.accept = "image/*";
-                  input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (!file) return;
-                    updateObject(selectedId!, { screenshotSrc: URL.createObjectURL(file) } as Partial<DeviceObject>);
-                  };
-                  input.click();
-                }}
-              >
-                Change screenshot
-              </Button>
-              <div className="mt-2">
-                <label className="text-[10px] text-surface-500">Rotation</label>
-                <input
-                  type="range"
-                  min="-30"
-                  max="30"
-                  step="1"
-                  value={selectedObject.rotation}
-                  onChange={(e) => updateObject(selectedId!, { rotation: parseFloat(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Objects list */}
-          <div>
-            <h4 className="text-xs font-semibold text-surface-400 mb-2">Layers ({currentPage.objects.length})</h4>
-            <div className="space-y-1">
-              {[...currentPage.objects].sort((a, b) => b.zIndex - a.zIndex).map((obj) => (
-                <button
-                  key={obj.id}
-                  onClick={() => setSelectedId(obj.id)}
-                  className={`w-full text-left px-2 py-1 rounded text-xs cursor-pointer ${
-                    selectedId === obj.id ? "bg-primary-500/20 text-primary-300" : "text-surface-400 hover:bg-surface-800"
-                  }`}
-                >
-                  {obj.type === "device" ? "📱 Device" : `T "${(obj as TextObject).text.slice(0, 15)}"`}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Canvas area */}
-        <div className="flex-1 bg-surface-900 overflow-auto flex items-center justify-center p-8">
-          <div
-            ref={canvasContainerRef}
-            className="relative bg-white shadow-2xl select-none"
-            style={{
-              width: "350px",
-              height: `${350 * (2796 / 1290)}px`,
-              background: currentPage.bgGradient
-                ? `linear-gradient(180deg, ${currentPage.bgGradient})`
-                : currentPage.bgColor,
-            }}
-            onMouseDown={handleCanvasMouseDown}
-            onMouseMove={handleCanvasMouseMove}
-            onMouseUp={handleCanvasMouseUp}
-            onMouseLeave={handleCanvasMouseUp}
-          >
-            {/* Render objects */}
-            {[...currentPage.objects].sort((a, b) => a.zIndex - b.zIndex).map((obj) => {
-              const isSelected = obj.id === selectedId;
-
-              return (
-                <div
-                  key={obj.id}
-                  className={`absolute cursor-move ${isSelected ? "ring-2 ring-blue-500 ring-offset-1" : ""}`}
-                  style={{
-                    left: `${obj.x}%`,
-                    top: `${obj.y}%`,
-                    width: `${obj.width}%`,
-                    height: `${obj.height}%`,
-                    zIndex: obj.zIndex,
-                    transform: obj.rotation ? `rotate(${obj.rotation}deg)` : undefined,
-                  }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    setSelectedId(obj.id);
-                    setIsDragging(true);
-                    const pos = getCanvasPos(e);
-                    setDragOffset({ x: pos.x - obj.x, y: pos.y - obj.y });
-                    updateObject(obj.id, { zIndex: Math.max(...currentPage.objects.map((o) => o.zIndex)) + 1 });
-                  }}
-                >
-                  {obj.type === "device" && (
-                    <div className="w-full h-full relative">
-                      {/* Device bezel */}
-                      <div className="absolute inset-0 rounded-[12%/5.5%] bg-[#1a1a1a] shadow-lg" />
-                      {/* Screen */}
-                      <div className="absolute rounded-[11%/5%] overflow-hidden" style={{ top: "1%", left: "2%", right: "2%", bottom: "1%" }}>
-                        {(obj as DeviceObject).screenshotSrc ? (
-                          <img src={(obj as DeviceObject).screenshotSrc!} alt="" className="w-full h-full object-cover" draggable={false} />
-                        ) : (
-                          <div className="w-full h-full bg-gray-800 flex items-center justify-center text-gray-500 text-[8px]">
-                            Drop screenshot
-                          </div>
-                        )}
-                      </div>
-                      {/* Dynamic Island */}
-                      <div className="absolute top-[2%] left-1/2 -translate-x-1/2 w-[28%] h-[2.3%] bg-black rounded-full" />
-                    </div>
-                  )}
-
-                  {obj.type === "text" && (
-                    <div
-                      className="w-full h-full flex items-start justify-center"
-                      style={{
-                        fontSize: `${(obj as TextObject).fontSize * 3.5}px`,
-                        fontWeight: (obj as TextObject).fontWeight,
-                        color: (obj as TextObject).color,
-                        fontFamily: '-apple-system, "SF Pro Display", "Helvetica Neue", sans-serif',
-                        lineHeight: 1.2,
-                        textAlign: "center",
-                      }}
-                    >
-                      {(obj as TextObject).text}
-                    </div>
-                  )}
-
-                  {/* Resize handle */}
-                  {isSelected && (
-                    <div
-                      className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-blue-500 rounded-full cursor-se-resize"
-                      onMouseDown={(e) => handleResizeStart(e, "se")}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Page navigation */}
-      <div className="flex items-center justify-center gap-2 border-t border-surface-800 px-4 py-2 bg-surface-950">
-        <button onClick={() => setActivePage(Math.max(0, activePage - 1))} className="p-1 text-surface-400 hover:text-white cursor-pointer">
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        {pages.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setActivePage(i)}
-            className={`w-8 h-8 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-              i === activePage ? "bg-primary-500 text-white" : "bg-surface-800 text-surface-400 hover:bg-surface-700"
+            key={tab.id}
+            onClick={() => setActiveTab(activeTab === tab.id ? null : tab.id)}
+            className={`flex flex-col items-center gap-0.5 p-2 rounded-lg cursor-pointer transition-colors w-12 ${
+              activeTab === tab.id ? "bg-indigo-50 text-indigo-600" : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             }`}
           >
-            {i + 1}
+            <tab.icon className="h-4 w-4" />
+            <span className="text-[9px] font-medium">{tab.label}</span>
           </button>
         ))}
-        <button onClick={() => setActivePage(Math.min(pages.length - 1, activePage + 1))} className="p-1 text-surface-400 hover:text-white cursor-pointer">
-          <ChevronRight className="h-4 w-4" />
-        </button>
-        <div className="w-px h-5 bg-surface-800 mx-2" />
-        <Button size="sm" variant="secondary" onClick={() => exportPage(activePage)} className="gap-1.5 text-xs">
-          <Download className="h-3 w-3" />
-          Export page {activePage + 1}
-        </Button>
+      </div>
+
+      {/* Sidebar panel */}
+      {activeTab && (
+        <div className="w-60 bg-white border-r border-gray-200 p-4 overflow-y-auto shrink-0">
+          {activeTab === "devices" && (
+            <div>
+              <label className="text-[10px] text-gray-400 mb-1 block">Device type</label>
+              <select className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700 mb-3 cursor-pointer">
+                <option>iPhone 16 Pro Max</option>
+                <option>iPhone 16 Pro</option>
+                <option>iPhone 15</option>
+                <option>Google Pixel 9</option>
+                <option>iPad Pro</option>
+              </select>
+              <p className="text-xs text-gray-400 mb-3">Click to add to Page 1</p>
+              <div className="grid grid-cols-2 gap-2">
+                {DEVICE_CONFIGS.map((d) => (
+                  <button
+                    key={d.model}
+                    className="border border-gray-200 rounded-lg p-2 hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer transition-all flex flex-col items-center gap-1.5 active:scale-95"
+                    onClick={() => addDeviceToPage(0, d.model, 0, d.scale)}
+                  >
+                    <div className="h-16 w-12">
+                      <Phone3D screenshotUrl={null} angle={d.model} frameColor="#333" />
+                    </div>
+                    <span className="text-[10px] text-gray-500">{d.label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400 mt-3">Click a device on canvas → "Change screenshot" to add your image.</p>
+            </div>
+          )}
+
+          {activeTab === "text" && (
+            <div>
+              <p className="text-xs text-gray-400 mb-3">Click to add to page</p>
+              <button
+                onClick={() => addTextToPage(0)}
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer transition-colors"
+              >
+                <span className="text-sm font-semibold text-gray-700">Add a heading</span>
+              </button>
+            </div>
+          )}
+
+          {activeTab === "background" && (
+            <div>
+              <div className="flex gap-2 mb-3">
+                <button className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-700 cursor-pointer">Color</button>
+                <button className="px-3 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:bg-gray-50 cursor-pointer">Gradient</button>
+              </div>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {["#f0f0ff", "#ffffff", "#000000", "#1e1b4b", "#fdf2f8", "#ecfdf5", "#fef3c7", "#fee2e2", "#dbeafe", "#f3e8ff", "#fce7f3", "#ccfbf1"].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      // Apply to all pages
+                      setPages((prev) => prev.map((p) => ({ ...p, bgColor: c })));
+                    }}
+                    className="h-8 rounded-lg border border-gray-200 cursor-pointer hover:ring-2 hover:ring-indigo-300"
+                    style={{ background: c }}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={pages[0]?.bgColor ?? "#f0f0ff"}
+                  onChange={(e) => setPages((prev) => prev.map((p) => ({ ...p, bgColor: e.target.value })))}
+                  className="h-8 w-8 rounded cursor-pointer border-0"
+                />
+                <input
+                  type="text"
+                  value={pages[0]?.bgColor ?? "#f0f0ff"}
+                  onChange={(e) => setPages((prev) => prev.map((p) => ({ ...p, bgColor: e.target.value })))}
+                  className="flex-1 rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700"
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "image" && (
+            <div>
+              <p className="text-xs text-gray-400 mb-3">Add images to your screenshots</p>
+              <button className="w-full border border-gray-200 rounded-lg px-4 py-8 text-center hover:border-indigo-300 cursor-pointer transition-colors">
+                <ImageIcon className="h-6 w-6 text-gray-300 mx-auto mb-2" />
+                <span className="text-xs text-gray-400">Upload image</span>
+              </button>
+            </div>
+          )}
+
+          {activeTab === "resize" && (
+            <div>
+              <p className="text-xs text-gray-400 mb-3">Screenshot dimensions</p>
+              <div className="space-y-2 text-xs text-gray-600">
+                <div className="flex justify-between"><span>iPhone 6.7"</span><span>1290 × 2796</span></div>
+                <div className="flex justify-between"><span>iPhone 6.5"</span><span>1284 × 2778</span></div>
+                <div className="flex justify-between"><span>iPhone 5.5"</span><span>1242 × 2208</span></div>
+                <div className="flex justify-between"><span>Android</span><span>1080 × 1920</span></div>
+              </div>
+            </div>
+          )}
+
+          {/* Selected object properties */}
+          {selectedObject && (
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <h4 className="text-xs font-semibold text-gray-500 mb-2">
+                {selectedObject.type === "device" ? "Device" : "Text"}
+              </h4>
+
+              {selectedObject.type === "text" && (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={(selectedObject as TextObject).text}
+                    onChange={(e) => updateObject(selectedPageIndex, selectedId!, { text: e.target.value } as Partial<TextObject>)}
+                    className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={(selectedObject as TextObject).color}
+                      onChange={(e) => updateObject(selectedPageIndex, selectedId!, { color: e.target.value } as Partial<TextObject>)}
+                      className="h-7 w-7 rounded cursor-pointer border-0"
+                    />
+                    <select
+                      value={(selectedObject as TextObject).fontWeight}
+                      onChange={(e) => updateObject(selectedPageIndex, selectedId!, { fontWeight: e.target.value } as Partial<TextObject>)}
+                      className="flex-1 rounded-lg border border-gray-200 px-2 py-1 text-xs cursor-pointer"
+                    >
+                      <option value="400">Regular</option>
+                      <option value="600">Semibold</option>
+                      <option value="700">Bold</option>
+                      <option value="800">Extra Bold</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-400">Size</label>
+                    <input
+                      type="range" min="2" max="12" step="0.5"
+                      value={(selectedObject as TextObject).fontSize}
+                      onChange={(e) => updateObject(selectedPageIndex, selectedId!, { fontSize: parseFloat(e.target.value) } as Partial<TextObject>)}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedObject.type === "device" && (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file"; input.accept = "image/*";
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) updateObject(selectedPageIndex, selectedId!, { screenshotSrc: URL.createObjectURL(file) } as Partial<DeviceObject>);
+                      };
+                      input.click();
+                    }}
+                    className="w-full text-xs bg-indigo-50 text-indigo-600 rounded-lg px-3 py-2 hover:bg-indigo-100 cursor-pointer font-medium"
+                  >
+                    Change screenshot
+                  </button>
+                  <div>
+                    <label className="text-[10px] text-gray-400">Rotation</label>
+                    <input
+                      type="range" min="-30" max="30" step="1"
+                      value={selectedObject.rotation}
+                      onChange={(e) => updateObject(selectedPageIndex, selectedId!, { rotation: parseFloat(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main canvas area — all 5 pages side by side */}
+      <div className="flex-1 overflow-auto" ref={canvasAreaRef}>
+        {/* Top bar */}
+        <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button className="p-1.5 rounded hover:bg-gray-100 text-gray-400 cursor-pointer"><Undo2 className="h-4 w-4" /></button>
+            <button className="p-1.5 rounded hover:bg-gray-100 text-gray-400 cursor-pointer"><Redo2 className="h-4 w-4" /></button>
+            <span className="text-xs text-gray-400 ml-2">Autosaved</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedId && (
+              <>
+                <button onClick={duplicateSelected} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 cursor-pointer" title="Duplicate"><Copy className="h-4 w-4" /></button>
+                <button onClick={() => {
+                  if (selectedObject) updateObject(selectedPageIndex, selectedId, { rotation: (selectedObject.rotation + 15) % 360 });
+                }} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 cursor-pointer" title="Rotate"><RotateCw className="h-4 w-4" /></button>
+                <button onClick={deleteSelected} className="p-1.5 rounded hover:bg-gray-100 text-red-400 cursor-pointer" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                <div className="w-px h-5 bg-gray-200 mx-1" />
+              </>
+            )}
+            <button
+              onClick={exportAll}
+              className="flex items-center gap-1.5 bg-indigo-600 text-white rounded-lg px-4 py-2 text-xs font-semibold hover:bg-indigo-500 cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </button>
+          </div>
+        </div>
+
+        {/* Pages grid — horizontal scroll */}
+        <div className="flex gap-3 p-6 min-w-max">
+          {pages.map((page, pageIndex) => (
+            <div
+              key={page.id}
+              data-page={pageIndex}
+              className="relative shrink-0 shadow-lg border border-gray-200 select-none overflow-visible"
+              style={{
+                width: "min(280px, 20vw)",
+                aspectRatio: "1290 / 2796",
+                background: page.bgColor,
+              }}
+              onMouseDown={(e) => {
+                // Click empty space
+                if (e.target === e.currentTarget) setSelectedId(null);
+              }}
+            >
+              {/* Page number */}
+              <div className="absolute -top-5 left-0 text-[10px] text-gray-400 font-medium">
+                Page {pageIndex + 1}
+              </div>
+
+              {/* Objects */}
+              {[...page.objects].sort((a, b) => a.zIndex - b.zIndex).map((obj) => {
+                const isSelected = obj.id === selectedId;
+                return (
+                  <div
+                    key={obj.id}
+                    className={`absolute ${isDragging && isSelected ? "cursor-grabbing" : "cursor-grab"}`}
+                    style={{
+                      left: `${obj.x}%`,
+                      top: `${obj.y}%`,
+                      width: `${obj.width}%`,
+                      height: `${obj.height}%`,
+                      zIndex: obj.zIndex,
+                      transform: obj.rotation ? `rotate(${obj.rotation}deg)` : undefined,
+                    }}
+                    onMouseDown={(e) => {
+                      const pageEl = e.currentTarget.parentElement;
+                      if (pageEl) handleObjectMouseDown(e, obj, pageIndex, pageEl);
+                    }}
+                  >
+                    {obj.type === "device" && (
+                      <div className="w-full h-full pointer-events-none">
+                        <Phone3D
+                          screenshotUrl={(obj as DeviceObject).screenshotSrc}
+                          angle={(obj as DeviceObject).deviceModel as "front" | "left" | "right" | "flat"}
+                          frameColor="#2a2a2a"
+                        />
+                      </div>
+                    )}
+
+                    {obj.type === "text" && (
+                      <div
+                        className="w-full flex items-start justify-center"
+                        style={{
+                          fontSize: `${(obj as TextObject).fontSize * 2.2}px`,
+                          fontWeight: (obj as TextObject).fontWeight,
+                          color: (obj as TextObject).color,
+                          fontFamily: '-apple-system, "Helvetica Neue", sans-serif',
+                          lineHeight: 1.2,
+                          textAlign: "center",
+                        }}
+                      >
+                        {(obj as TextObject).text}
+                      </div>
+                    )}
+
+                    {/* Selection handles */}
+                    {isSelected && (
+                      <>
+                        <div className="absolute inset-0 border-2 border-blue-500 rounded pointer-events-none" />
+                        <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-blue-500 rounded-full" />
+                        <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-blue-500 rounded-full" />
+                        <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-blue-500 rounded-full" />
+                        <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-se-resize" />
+                        {/* Rotation handle */}
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-blue-500" />
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-blue-500 rounded-full cursor-grab" />
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Empty state — click to add */}
+              {page.objects.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    onClick={() => addDeviceToPage(pageIndex)}
+                    className="flex flex-col items-center gap-1 text-gray-300 hover:text-gray-400 cursor-pointer transition-colors"
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span className="text-[8px]">Add device</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom bar */}
+      <div className="absolute bottom-0 left-14 right-0 bg-white border-t border-gray-200 px-4 py-2 flex items-center justify-between z-10"
+        style={{ left: activeTab ? "calc(3.5rem + 15rem)" : "3.5rem" }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-1.5">iPhone 16 Pro Max</span>
+          <button className="p-1.5 rounded hover:bg-gray-100 text-gray-400 cursor-pointer" title="Add to page"><Plus className="h-4 w-4" /></button>
+          <button onClick={duplicateSelected} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 cursor-pointer" title="Duplicate"><Copy className="h-4 w-4" /></button>
+          <button className="p-1.5 rounded hover:bg-gray-100 text-gray-400 cursor-pointer" title="Edit"><Pencil className="h-4 w-4" /></button>
+          <button onClick={deleteSelected} className="p-1.5 rounded hover:bg-gray-100 text-red-400 cursor-pointer" title="Delete"><Trash2 className="h-4 w-4" /></button>
+        </div>
+        <div className="flex items-center gap-2">
+          <input type="range" min="50" max="200" defaultValue="100" className="w-32" />
+          <span className="text-xs text-gray-400">100%</span>
+        </div>
       </div>
     </div>
   );
