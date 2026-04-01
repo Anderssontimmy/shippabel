@@ -18,9 +18,9 @@ const ToastContext = createContext<ToastContextType | null>(null);
 
 const icons = { success: CheckCircle2, error: AlertCircle, info: Info };
 const colors = {
-  success: "border-green-500/30 bg-green-500/10 text-green-300",
-  error: "border-red-500/30 bg-red-500/10 text-red-300",
-  info: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+  success: "border-green-200 bg-green-50 text-green-800",
+  error: "border-red-200 bg-red-50 text-red-800",
+  info: "border-blue-200 bg-blue-50 text-blue-800",
 };
 
 const durations: Record<ToastType, number> = {
@@ -54,7 +54,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
           return (
             <div
               key={t.id}
-              className={`flex items-center gap-3 rounded-xl border px-4 py-3 shadow-xl backdrop-blur-xl transition-all duration-300 ${
+              className={`flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg transition-all duration-300 ${
                 t.exiting ? "opacity-0 translate-x-4" : "animate-slide-in"
               } ${colors[t.type]}`}
               role="alert"
@@ -64,7 +64,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
               <button
                 onClick={() => removeToast(t.id)}
                 aria-label="Dismiss notification"
-                className="text-surface-500 hover:text-white cursor-pointer"
+                className="opacity-50 hover:opacity-100 cursor-pointer"
               >
                 <X aria-hidden="true" className="h-3.5 w-3.5" />
               </button>

@@ -3,7 +3,7 @@ interface SkeletonProps {
 }
 
 export const Skeleton = ({ className = "" }: SkeletonProps) => (
-  <div className={`animate-pulse rounded-lg bg-surface-800 ${className}`} />
+  <div className={`animate-pulse rounded-lg bg-surface-100 ${className}`} />
 );
 
 export const ScanResultsSkeleton = () => (

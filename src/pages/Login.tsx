@@ -47,17 +47,17 @@ export const Login = () => {
 
   if (sent) {
     return (
-      <div className="mx-auto max-w-md px-4 sm:px-6 py-24 sm:py-32">
+      <div className="mx-auto max-w-md px-6 py-24 sm:py-32">
         <Card className="text-center py-10">
-          <CheckCircle2 className="h-12 w-12 text-green-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Check your email</h2>
-          <p className="text-sm text-surface-400 max-w-xs mx-auto">
-            We sent a magic link to <strong className="text-white">{email}</strong>.
+          <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-surface-900 mb-2">Check your email</h2>
+          <p className="text-sm text-surface-500 max-w-xs mx-auto">
+            We sent a magic link to <strong className="text-surface-900">{email}</strong>.
             Click it to sign in.
           </p>
           <button
             onClick={() => { setSent(false); setEmail(""); }}
-            className="mt-4 text-sm text-primary-400 hover:text-primary-300 cursor-pointer"
+            className="mt-4 text-sm text-surface-500 hover:text-surface-700 cursor-pointer"
           >
             Use a different email
           </button>
@@ -67,10 +67,10 @@ export const Login = () => {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 sm:px-6 py-24 sm:py-32">
+    <div className="mx-auto max-w-md px-6 py-24 sm:py-32">
       <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Sign in to Shippabel</h1>
-        <p className="mt-2 text-surface-400">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">Sign in to Shippabel</h1>
+        <p className="mt-2 text-surface-500">
           Save your scans and unlock all features.
         </p>
       </div>
@@ -78,22 +78,22 @@ export const Login = () => {
       <Card>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-surface-300 mb-2">
+            <label className="block text-sm font-medium text-surface-700 mb-2">
               Email address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(null); }}
                 placeholder="you@example.com"
-                className="w-full rounded-lg bg-surface-800 border border-surface-700 pl-10 pr-4 py-3 text-sm text-white placeholder:text-surface-500 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors"
+                className="w-full rounded-lg bg-surface-50 border border-surface-200 pl-10 pr-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-400 transition-colors"
               />
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <Button type="submit" className="w-full gap-2" disabled={loading}>
             {loading ? (
@@ -109,10 +109,10 @@ export const Login = () => {
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-surface-800" />
+            <div className="w-full border-t border-surface-200" />
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="bg-surface-900 px-2 text-surface-500">or</span>
+            <span className="bg-white px-3 text-surface-400">or</span>
           </div>
         </div>
 

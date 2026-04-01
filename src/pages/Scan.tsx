@@ -60,22 +60,22 @@ export const Scan = () => {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16 sm:py-24">
-      <div className="text-center mb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold">Is your app ready for the store?</h1>
-        <p className="mt-3 text-surface-400 text-lg">
+    <div className="mx-auto max-w-2xl px-6 py-16 sm:py-24">
+      <div className="text-center mb-12">
+        <h1 className="text-3xl sm:text-4xl font-semibold text-surface-900">Is your app ready for the store?</h1>
+        <p className="mt-3 text-surface-500 text-lg">
           Let's find out. It takes 30 seconds and it's completely free.
         </p>
       </div>
 
       {/* Mode switcher */}
-      <div className="flex rounded-xl bg-surface-900 border border-surface-800 p-1 mb-6">
+      <div className="flex rounded-xl bg-surface-50 border border-surface-200 p-1 mb-8">
         <button
           onClick={() => { setMode("url"); setValidationError(null); }}
           className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all cursor-pointer ${
             mode === "url"
-              ? "bg-surface-800 text-white shadow-sm"
-              : "text-surface-400 hover:text-surface-200"
+              ? "bg-white text-surface-900 shadow-sm"
+              : "text-surface-500 hover:text-surface-700"
           }`}
         >
           <Github className="h-4 w-4" />
@@ -85,8 +85,8 @@ export const Scan = () => {
           onClick={() => { setMode("upload"); setValidationError(null); }}
           className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all cursor-pointer ${
             mode === "upload"
-              ? "bg-surface-800 text-white shadow-sm"
-              : "text-surface-400 hover:text-surface-200"
+              ? "bg-white text-surface-900 shadow-sm"
+              : "text-surface-500 hover:text-surface-700"
           }`}
         >
           <Upload className="h-4 w-4" />
@@ -99,12 +99,12 @@ export const Scan = () => {
         {mode === "url" ? (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-surface-300">
+              <label className="block text-sm font-medium text-surface-700">
                 Paste your GitHub link here
               </label>
               <button
                 onClick={() => setShowHelp(!showHelp)}
-                className="text-xs text-surface-500 hover:text-surface-300 flex items-center gap-1 cursor-pointer"
+                className="text-xs text-surface-400 hover:text-surface-600 flex items-center gap-1 cursor-pointer"
               >
                 <HelpCircle className="h-3 w-3" />
                 Where do I find this?
@@ -112,14 +112,14 @@ export const Scan = () => {
             </div>
 
             {showHelp && (
-              <div className="rounded-lg bg-surface-800/50 border border-surface-700 px-4 py-3 mb-3 text-sm text-surface-400 space-y-2">
+              <div className="rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 mb-3 text-sm text-surface-600 space-y-2">
                 <p>Your GitHub link is the web address of your app's code. Here's how to find it:</p>
-                <ol className="list-decimal list-inside space-y-1 text-surface-300">
-                  <li>Go to <span className="text-white">github.com</span> and sign in</li>
+                <ol className="list-decimal list-inside space-y-1 text-surface-700">
+                  <li>Go to <span className="font-medium">github.com</span> and sign in</li>
                   <li>Click on your app's project</li>
                   <li>Copy the link from your browser's address bar</li>
                 </ol>
-                <p className="text-xs text-surface-500">It looks something like: https://github.com/your-name/my-app</p>
+                <p className="text-xs text-surface-400">It looks something like: https://github.com/your-name/my-app</p>
               </div>
             )}
 
@@ -129,13 +129,13 @@ export const Scan = () => {
               onChange={(e) => { setRepoUrl(e.target.value); setValidationError(null); }}
               placeholder="https://github.com/your-name/your-app"
               disabled={scanning}
-              className="w-full rounded-lg bg-surface-800 border border-surface-700 px-4 py-3 text-sm text-white placeholder:text-surface-500 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors disabled:opacity-50"
+              className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-400 transition-colors disabled:opacity-50"
             />
-            <p className="mt-2 text-xs text-surface-500">
+            <p className="mt-2 text-xs text-surface-400">
               {hasGitHub ? (
-                <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-green-500" /> Works with all your apps — private and public</span>
+                <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-green-600" /> Works with all your apps — private and public</span>
               ) : (
-                <span>Works with public apps. <Link to="/settings" className="text-primary-400 hover:text-primary-300">Connect your GitHub account</Link> to check private apps too.</span>
+                <span>Works with public apps. <Link to="/settings" className="text-surface-700 hover:text-surface-900 underline">Connect your GitHub account</Link> to check private apps too.</span>
               )}
             </p>
           </div>
@@ -146,36 +146,36 @@ export const Scan = () => {
             onDrop={handleDrop}
             className={`rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
               dragOver
-                ? "border-primary-500 bg-primary-500/5"
+                ? "border-surface-400 bg-surface-50"
                 : file
-                ? "border-green-500/30 bg-green-500/5"
-                : "border-surface-700 hover:border-surface-600"
+                ? "border-green-300 bg-green-50"
+                : "border-surface-200 hover:border-surface-300"
             }`}
           >
             {file ? (
               <div className="flex flex-col items-center gap-2">
-                <FileArchive className="h-10 w-10 text-green-400" />
-                <p className="text-sm font-medium text-white">{file.name}</p>
-                <p className="text-xs text-surface-500">
+                <FileArchive className="h-10 w-10 text-green-600" />
+                <p className="text-sm font-medium text-surface-900">{file.name}</p>
+                <p className="text-xs text-surface-400">
                   {(file.size / 1024 / 1024).toFixed(1)} MB
                 </p>
                 <button
                   onClick={() => setFile(null)}
-                  className="text-xs text-surface-400 hover:text-red-400 mt-1 cursor-pointer"
+                  className="text-xs text-surface-400 hover:text-red-600 mt-1 cursor-pointer"
                 >
                   Remove
                 </button>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <Upload className="h-10 w-10 text-surface-500" />
+                <Upload className="h-10 w-10 text-surface-300" />
                 <div>
-                  <p className="text-sm text-surface-300">
+                  <p className="text-sm text-surface-600">
                     Drop your app's zip file here
                   </p>
-                  <p className="text-xs text-surface-500 mt-1">
+                  <p className="text-xs text-surface-400 mt-1">
                     or{" "}
-                    <label className="text-primary-400 hover:text-primary-300 cursor-pointer">
+                    <label className="text-surface-700 hover:text-surface-900 underline cursor-pointer">
                       pick a file from your computer
                       <input
                         type="file"
@@ -189,7 +189,7 @@ export const Scan = () => {
                     </label>
                   </p>
                 </div>
-                <p className="text-xs text-surface-600">Zip files up to 100 MB</p>
+                <p className="text-xs text-surface-300">Zip files up to 100 MB</p>
               </div>
             )}
           </div>
@@ -198,12 +198,12 @@ export const Scan = () => {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center justify-between rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 mb-6">
+        <div className="flex items-center justify-between rounded-lg bg-red-50 border border-red-200 px-4 py-3 mb-6">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-            <p className="text-sm text-red-300">{error}</p>
+            <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+            <p className="text-sm text-red-700">{error}</p>
           </div>
-          <button onClick={handleScan} className="text-xs text-red-300 hover:text-white font-medium cursor-pointer shrink-0 ml-3">
+          <button onClick={handleScan} className="text-xs text-red-600 hover:text-red-800 font-medium cursor-pointer shrink-0 ml-3">
             Try again
           </button>
         </div>
@@ -211,9 +211,9 @@ export const Scan = () => {
 
       {/* Progress */}
       {scanning && progress && (
-        <div className="flex items-center gap-2 rounded-lg bg-primary-500/10 border border-primary-500/20 px-4 py-3 mb-6">
-          <Loader2 className="h-4 w-4 text-primary-400 animate-spin shrink-0" />
-          <p className="text-sm text-primary-300">{progress}</p>
+        <div className="flex items-center gap-2 rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 mb-6">
+          <Loader2 className="h-4 w-4 text-surface-500 animate-spin shrink-0" />
+          <p className="text-sm text-surface-600">{progress}</p>
         </div>
       )}
 
@@ -237,9 +237,9 @@ export const Scan = () => {
         )}
       </Button>
 
-      {/* What we look at — friendly version */}
-      <div className="mt-14">
-        <h3 className="text-center text-sm font-semibold text-surface-300 mb-6">
+      {/* What we look at */}
+      <div className="mt-16">
+        <h3 className="text-center text-sm font-medium text-surface-500 mb-8">
           Here's what we look at
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -251,11 +251,11 @@ export const Scan = () => {
             { text: "Is there a privacy policy?", detail: "Required by Apple & Google" },
             { text: "Is your app ready to build?", detail: "We check the full setup" },
           ].map((item) => (
-            <div key={item.text} className="flex items-start gap-2.5 rounded-lg bg-surface-900/50 border border-surface-800/50 px-3.5 py-3">
-              <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+            <div key={item.text} className="flex items-start gap-2.5 rounded-xl bg-surface-50 border border-surface-100 px-4 py-3.5">
+              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm text-surface-200">{item.text}</p>
-                <p className="text-xs text-surface-500">{item.detail}</p>
+                <p className="text-sm text-surface-700">{item.text}</p>
+                <p className="text-xs text-surface-400">{item.detail}</p>
               </div>
             </div>
           ))}
@@ -263,8 +263,8 @@ export const Scan = () => {
       </div>
 
       {/* Reassurance */}
-      <div className="mt-10 text-center">
-        <p className="text-xs text-surface-600">
+      <div className="mt-12 text-center">
+        <p className="text-xs text-surface-400">
           We never store your code. Your app is only analyzed, not copied or shared.
         </p>
       </div>

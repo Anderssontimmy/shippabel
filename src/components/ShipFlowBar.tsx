@@ -17,8 +17,8 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
   const { steps, currentStep } = useShipFlow(projectId);
 
   return (
-    <div className="border-b border-surface-800/50 bg-surface-950/80 backdrop-blur-xl">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+    <div className="border-b border-surface-200/60 bg-white/80 backdrop-blur-xl">
+      <div className="mx-auto max-w-6xl px-6">
         <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
           {steps.map((step, i) => {
             const isActive = step.id === currentStep;
@@ -32,24 +32,24 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
                     to={route}
                     className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                       isActive
-                        ? "bg-primary-600 text-white"
+                        ? "bg-surface-900 text-white"
                         : isPast
-                        ? "bg-green-500/10 text-green-400 hover:bg-green-500/20"
-                        : "text-surface-500 hover:text-surface-300"
+                        ? "bg-green-50 text-green-700 hover:bg-green-100"
+                        : "text-surface-500 hover:text-surface-700"
                     }`}
                   >
                     {isPast && <Check className="h-3 w-3" />}
                     {step.label}
                   </Link>
                 ) : (
-                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-surface-600 cursor-not-allowed">
+                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-surface-300 cursor-not-allowed">
                     <Lock className="h-3 w-3" />
                     {step.label}
                   </span>
                 )}
 
                 {i < steps.length - 1 && (
-                  <ChevronRight aria-hidden="true" className={`h-3 w-3 mx-0.5 shrink-0 ${isPast ? "text-green-500/40" : "text-surface-800"}`} />
+                  <ChevronRight aria-hidden="true" className={`h-3 w-3 mx-0.5 shrink-0 ${isPast ? "text-green-300" : "text-surface-200"}`} />
                 )}
               </div>
             );

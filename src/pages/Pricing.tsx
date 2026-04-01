@@ -52,7 +52,7 @@ const plans = [
     period: "one-time",
     description: "For people with more than one app to publish",
     icon: Infinity,
-    color: "text-primary-400",
+    color: "text-surface-500",
     features: [
       "Everything in Ship",
       "Unlimited apps — publish as many as you want",

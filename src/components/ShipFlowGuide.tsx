@@ -31,7 +31,7 @@ const stepIcons: Record<FlowStep, typeof Scan> = {
 const stepColors: Record<FlowStep, string> = {
   scan: "text-blue-400 bg-blue-500/10",
   fix: "text-amber-400 bg-amber-500/10",
-  signup: "text-primary-400 bg-primary-500/10",
+  signup: "text-surface-600 bg-surface-100",
   listing: "text-green-400 bg-green-500/10",
   screenshots: "text-pink-400 bg-pink-500/10",
   connect: "text-cyan-400 bg-cyan-500/10",
@@ -121,9 +121,9 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
         </span>
         <span className="text-xs text-surface-500">{progress}% complete</span>
       </div>
-      <div className="h-1.5 rounded-full bg-surface-800 mb-6">
+      <div className="h-1.5 rounded-full bg-surface-100 mb-6">
         <div
-          className="h-full rounded-full bg-primary-500 transition-all duration-500"
+          className="h-full rounded-full bg-surface-900 transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -145,7 +145,7 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-primary-400 hover:text-primary-300"
+                  className="flex items-center gap-1.5 text-xs text-surface-500 hover:text-surface-700"
                 >
                   <ExternalLink className="h-3 w-3" />
                   {link.label}
@@ -171,7 +171,7 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
       </div>
 
       {/* Mini step overview */}
-      <div className="mt-6 pt-4 border-t border-surface-800/50">
+      <div className="mt-6 pt-4 border-t border-surface-200">
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
           {steps.map((step) => {
             const StepIcon = stepIcons[step.id];
@@ -186,10 +186,10 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
                     step.completed
                       ? "bg-green-500/20 text-green-400"
                       : step.id === currentStep
-                      ? "bg-primary-500/20 text-primary-400"
+                      ? "bg-surface-900 text-white"
                       : step.available
-                      ? "bg-surface-800 text-surface-500"
-                      : "bg-surface-900 text-surface-700"
+                      ? "bg-surface-100 text-surface-500"
+                      : "bg-surface-50 text-surface-400"
                   }`}
                 >
                   {step.completed ? (

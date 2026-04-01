@@ -25,8 +25,8 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
 
       {/* Header + hook */}
       <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="h-4 w-4 text-primary-400" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-primary-400">
+        <Sparkles className="h-4 w-4 text-surface-500" />
+        <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
           Your App's Potential
         </span>
       </div>
@@ -77,13 +77,13 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
         {/* Strengths */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Zap className="h-4 w-4 text-primary-400" />
+            <Zap className="h-4 w-4 text-surface-500" />
             <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-400">Your Strengths</h4>
           </div>
           <div className="space-y-1.5">
             {analysis.strengths.map((s) => (
               <div key={s} className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary-400 mt-1.5 shrink-0" />
+                <div className="h-1.5 w-1.5 rounded-full bg-surface-400 mt-1.5 shrink-0" />
                 <span className="text-xs text-surface-300">{s}</span>
               </div>
             ))}

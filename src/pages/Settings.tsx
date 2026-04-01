@@ -163,19 +163,19 @@ export const Settings = () => {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-16">
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
-        <p className="text-surface-400 text-sm mt-1">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">Settings</h1>
+        <p className="text-surface-500 text-sm mt-1">
           Connect your developer accounts to enable building and store submission.
         </p>
       </div>
 
       {/* Security notice */}
-      <Card className="mb-8 border-primary-500/20 bg-primary-500/5">
+      <Card className="mb-8 border-surface-200">
         <div className="flex items-start gap-3">
-          <Shield className="h-5 w-5 text-primary-400 mt-0.5 shrink-0" />
+          <Shield className="h-5 w-5 text-surface-500 mt-0.5 shrink-0" />
           <div>
-            <h3 className="text-sm font-semibold mb-1">Your credentials are secure</h3>
-            <p className="text-xs text-surface-400">
+            <h3 className="text-sm font-semibold text-surface-900 mb-1">Your credentials are secure</h3>
+            <p className="text-xs text-surface-500">
               Credentials are encrypted at rest in Supabase and only used server-side in Edge Functions.
               They are never exposed to the browser or stored in logs.
             </p>
@@ -192,21 +192,21 @@ export const Settings = () => {
           return (
             <Card key={provider.id}>
               <div className="flex items-start gap-4">
-                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${connected ? "bg-green-500/10" : "bg-surface-800"}`}>
-                  <provider.icon className={`h-5 w-5 ${connected ? "text-green-400" : "text-surface-400"}`} />
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${connected ? "bg-green-50" : "bg-surface-100"}`}>
+                  <provider.icon className={`h-5 w-5 ${connected ? "text-green-600" : "text-surface-400"}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold">{provider.name}</h3>
                     {connected && (
-                      <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
+                      <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
                         <Check className="h-3 w-3" />
                         Connected
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-surface-400 mb-3">{provider.description}</p>
+                  <p className="text-xs text-surface-500 mb-3">{provider.description}</p>
 
                   {/* Edit form */}
                   {isEditing && (
@@ -214,11 +214,11 @@ export const Settings = () => {
                       {provider.fields.map((field) => (
                         <div key={field.key}>
                           <div className="flex justify-between mb-1">
-                            <label className="text-xs font-medium text-surface-300">{field.label}</label>
+                            <label className="text-xs font-medium text-surface-600">{field.label}</label>
                             {field.secret && (
                               <button
                                 onClick={() => setShowSecrets((s) => ({ ...s, [field.key]: !s[field.key] }))}
-                                className="text-xs text-surface-500 hover:text-surface-300 flex items-center gap-1 cursor-pointer"
+                                className="text-xs text-surface-500 hover:text-surface-600 flex items-center gap-1 cursor-pointer"
                               >
                                 {showSecrets[field.key] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                                 {showSecrets[field.key] ? "Hide" : "Show"}
@@ -229,7 +229,7 @@ export const Settings = () => {
                             field.secret && !showSecrets[field.key] ? (
                               <div
                                 onClick={() => setShowSecrets((s) => ({ ...s, [field.key]: true }))}
-                                className="w-full rounded-lg bg-surface-800 border border-surface-700 px-3 py-2 text-xs text-surface-500 font-mono cursor-pointer min-h-[6rem] flex items-center"
+                                className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-xs text-surface-500 font-mono cursor-pointer min-h-[6rem] flex items-center"
                               >
                                 {formData[field.key] ? "••••••••••••••••" : field.placeholder}
                               </div>
@@ -239,7 +239,7 @@ export const Settings = () => {
                                 onChange={(e) => setFormData((d) => ({ ...d, [field.key]: e.target.value }))}
                                 placeholder={field.placeholder}
                                 rows={4}
-                                className="w-full rounded-lg bg-surface-800 border border-surface-700 px-3 py-2 text-xs text-white placeholder:text-surface-600 outline-none focus:border-primary-500 font-mono resize-none"
+                                className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-xs text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 font-mono resize-none"
                               />
                             )
                           ) : (
@@ -248,7 +248,7 @@ export const Settings = () => {
                               value={formData[field.key] ?? ""}
                               onChange={(e) => setFormData((d) => ({ ...d, [field.key]: e.target.value }))}
                               placeholder={field.placeholder}
-                              className="w-full rounded-lg bg-surface-800 border border-surface-700 px-3 py-2 text-xs text-white placeholder:text-surface-600 outline-none focus:border-primary-500 font-mono"
+                              className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-xs text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 font-mono"
                             />
                           )}
                           {field.help && (
@@ -310,10 +310,10 @@ export const Settings = () => {
           ].map((step) => (
             <div key={step.label} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${step.ready ? "bg-green-400" : "bg-surface-600"}`} />
-                <span className="text-sm text-surface-300">{step.label}</span>
+                <div className={`h-2 w-2 rounded-full ${step.ready ? "bg-green-500" : "bg-surface-300"}`} />
+                <span className="text-sm text-surface-700">{step.label}</span>
               </div>
-              <span className={`text-xs ${step.ready ? "text-green-400" : "text-surface-500"}`}>{step.note}</span>
+              <span className={`text-xs ${step.ready ? "text-green-600" : "text-surface-400"}`}>{step.note}</span>
             </div>
           ))}
         </div>

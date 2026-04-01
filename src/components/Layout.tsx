@@ -9,8 +9,6 @@ export const Layout = () => {
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isLanding = location.pathname === "/";
-
   const navLinks = [
     ...(user ? [{ to: "/dashboard", label: "My Apps" }] : []),
     { to: "/scan", label: "Check App" },
@@ -24,31 +22,27 @@ export const Layout = () => {
     navigate("/");
   };
 
+  const isLanding = location.pathname === "/";
+
   return (
     <div className="min-h-screen flex flex-col">
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-xl ${
-          isLanding
-            ? "border-gray-200/50 bg-white"
-            : "border-surface-800/50 bg-surface-950/80"
-        }`}
-      >
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-surface-200/60 bg-white/80 backdrop-blur-xl">
         <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className={`flex items-center gap-2 font-bold text-base ${isLanding ? "text-gray-900" : "text-white"}`}>
-            <Rocket className={`h-5 w-5 ${isLanding ? "text-green-600" : "text-primary-400"}`} />
+          <Link to="/" className="flex items-center gap-2 font-semibold text-surface-900">
+            <Rocket className="h-5 w-5 text-surface-900" />
             <span>Shippabel</span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden sm:flex items-center gap-6">
+          <div className="hidden sm:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`text-sm font-medium transition-colors ${
-                  isLanding
-                    ? location.pathname === link.to ? "text-gray-900" : "text-gray-500 hover:text-gray-900"
-                    : location.pathname === link.to ? "text-white" : "text-surface-400 hover:text-white"
+                className={`text-sm transition-colors ${
+                  location.pathname === link.to
+                    ? "text-surface-900 font-medium"
+                    : "text-surface-500 hover:text-surface-900"
                 }`}
               >
                 {link.label}
@@ -57,9 +51,7 @@ export const Layout = () => {
             {user && (
               <button
                 onClick={handleSignOut}
-                className={`flex items-center gap-1.5 text-sm font-medium transition-colors cursor-pointer ${
-                  isLanding ? "text-gray-500 hover:text-gray-900" : "text-surface-400 hover:text-white"
-                }`}
+                className="flex items-center gap-1.5 text-sm text-surface-500 hover:text-surface-900 transition-colors cursor-pointer"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sign out
@@ -67,7 +59,7 @@ export const Layout = () => {
             )}
             <Link
               to="/scan"
-              className="rounded-full bg-green-600 px-5 py-2 text-xs font-semibold text-white transition-colors hover:bg-green-500"
+              className="rounded-lg bg-surface-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-800"
             >
               Get started
             </Link>
@@ -77,7 +69,7 @@ export const Layout = () => {
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            className={`sm:hidden p-2 cursor-pointer ${isLanding ? "text-gray-500 hover:text-gray-900" : "text-surface-400 hover:text-white"}`}
+            className="sm:hidden p-2 cursor-pointer text-surface-500 hover:text-surface-900"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -85,15 +77,13 @@ export const Layout = () => {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className={`sm:hidden border-t backdrop-blur-xl px-4 py-4 space-y-3 ${
-            isLanding ? "border-gray-200 bg-white/95" : "border-surface-800 bg-surface-950/95"
-          }`}>
+          <div className="sm:hidden border-t border-surface-100 bg-white px-6 py-5 space-y-4">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 onClick={() => setMobileOpen(false)}
-                className={`block text-sm font-medium ${isLanding ? "text-gray-600 hover:text-gray-900" : "text-surface-300 hover:text-white"}`}
+                className="block text-sm text-surface-600 hover:text-surface-900"
               >
                 {link.label}
               </Link>
@@ -101,7 +91,7 @@ export const Layout = () => {
             {user && (
               <button
                 onClick={() => { handleSignOut(); setMobileOpen(false); }}
-                className={`block text-sm font-medium cursor-pointer ${isLanding ? "text-gray-600" : "text-surface-300"}`}
+                className="block text-sm text-surface-600 cursor-pointer"
               >
                 Sign out
               </button>
@@ -109,7 +99,7 @@ export const Layout = () => {
             <Link
               to="/scan"
               onClick={() => setMobileOpen(false)}
-              className="block rounded-full bg-green-600 px-5 py-2.5 text-center text-sm font-semibold text-white"
+              className="block rounded-lg bg-surface-900 px-5 py-3 text-center text-sm font-medium text-white"
             >
               Get started
             </Link>
@@ -123,10 +113,10 @@ export const Layout = () => {
 
       {/* Sticky mobile CTA — only on landing page */}
       {isLanding && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-gray-200 bg-white/95 backdrop-blur-xl px-4 py-3">
+        <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-surface-200 bg-white/95 backdrop-blur-xl px-4 py-3">
           <Link
             to="/scan"
-            className="flex items-center justify-center gap-2 rounded-full bg-green-600 px-6 py-3.5 text-sm font-semibold text-white w-full shadow-lg shadow-green-600/20"
+            className="flex items-center justify-center gap-2 rounded-lg bg-surface-900 px-6 py-3.5 text-sm font-medium text-white w-full"
           >
             Check my app now
             <ArrowRight className="h-4 w-4" />
@@ -134,21 +124,15 @@ export const Layout = () => {
         </div>
       )}
 
-      <footer className={`border-t ${isLanding ? "border-gray-100 bg-white" : "border-surface-800/50 bg-surface-950"}`}>
-        <div className={`mx-auto max-w-6xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm ${
-          isLanding ? "text-gray-400" : "text-surface-500"
-        }`}>
+      <footer className="border-t border-surface-200/60">
+        <div className="mx-auto max-w-6xl px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-surface-400">
           <div className="flex items-center gap-2">
-            <Rocket className={`h-4 w-4 ${isLanding ? "text-green-500" : "text-primary-500"}`} />
+            <Rocket className="h-4 w-4" />
             <span>Shippabel</span>
           </div>
           <div className="flex gap-6">
-            <Link to="/privacy" className={`transition-colors ${isLanding ? "hover:text-gray-600" : "hover:text-surface-300"}`}>
-              Privacy
-            </Link>
-            <Link to="/pricing" className={`transition-colors ${isLanding ? "hover:text-gray-600" : "hover:text-surface-300"}`}>
-              Pricing
-            </Link>
+            <Link to="/privacy" className="hover:text-surface-600 transition-colors">Privacy</Link>
+            <Link to="/pricing" className="hover:text-surface-600 transition-colors">Pricing</Link>
           </div>
         </div>
       </footer>

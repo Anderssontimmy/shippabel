@@ -128,9 +128,9 @@ const severityIcon = {
 };
 
 const severityColor = {
-  critical: "text-red-400",
-  warning: "text-amber-400",
-  info: "text-blue-400",
+  critical: "text-red-600",
+  warning: "text-amber-600",
+  info: "text-blue-600",
 };
 
 const IssueCard = ({ issue, onFix, fixingId }: { issue: Issue; onFix: (id: string) => void; fixingId: string | null }) => {
@@ -139,30 +139,30 @@ const IssueCard = ({ issue, onFix, fixingId }: { issue: Issue; onFix: (id: strin
   const isFixing = fixingId === issue.id;
 
   return (
-    <div className={`border rounded-xl overflow-hidden transition-colors ${issue.fixed ? "border-green-500/20 bg-green-500/5" : "border-surface-800"}`}>
+    <div className={`border rounded-xl overflow-hidden transition-colors ${issue.fixed ? "border-green-200 bg-green-50" : "border-surface-200"}`}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-800/30 transition-colors cursor-pointer"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-50 transition-colors cursor-pointer"
       >
-        <Icon className={`h-4 w-4 shrink-0 ${issue.fixed ? "text-green-400" : severityColor[issue.severity]}`} />
-        <span className={`flex-1 text-sm font-medium ${issue.fixed ? "text-surface-500 line-through" : "text-surface-200"}`}>{issue.friendly_title || issue.title}</span>
+        <Icon className={`h-4 w-4 shrink-0 ${issue.fixed ? "text-green-600" : severityColor[issue.severity]}`} />
+        <span className={`flex-1 text-sm font-medium ${issue.fixed ? "text-surface-400 line-through" : "text-surface-800"}`}>{issue.friendly_title || issue.title}</span>
         <div className="flex items-center gap-2">
           {issue.fixed && (
-            <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Fixed</span>
+            <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">Fixed</span>
           )}
           {!issue.fixed && issue.auto_fixable && (
-            <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Auto-fix</span>
+            <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">Auto-fix</span>
           )}
-          {open ? <ChevronDown className="h-4 w-4 text-surface-500" /> : <ChevronRight className="h-4 w-4 text-surface-500" />}
+          {open ? <ChevronDown className="h-4 w-4 text-surface-400" /> : <ChevronRight className="h-4 w-4 text-surface-400" />}
         </div>
       </button>
       {open && !issue.fixed && (
-        <div className="px-4 pb-4 pt-1 border-t border-surface-800/50">
-          <p className="text-sm text-surface-400 leading-relaxed mb-3">{issue.friendly_description || issue.description}</p>
+        <div className="px-4 pb-4 pt-1 border-t border-surface-100">
+          <p className="text-sm text-surface-500 leading-relaxed mb-3">{issue.friendly_description || issue.description}</p>
           {issue.fix_description && (
-            <div className="rounded-lg bg-surface-800/50 px-3 py-2.5 flex items-start gap-2">
-              <Wrench className="h-3.5 w-3.5 text-primary-400 mt-0.5 shrink-0" />
-              <p className="text-sm text-surface-300">{issue.fix_description}</p>
+            <div className="rounded-lg bg-surface-50 px-3 py-2.5 flex items-start gap-2">
+              <Wrench className="h-3.5 w-3.5 text-surface-500 mt-0.5 shrink-0" />
+              <p className="text-sm text-surface-600">{issue.fix_description}</p>
             </div>
           )}
           {issue.auto_fixable && (
@@ -180,12 +180,12 @@ const IssueCard = ({ issue, onFix, fixingId }: { issue: Issue; onFix: (id: strin
 const ScoreRing = ({ score }: { score: number }) => {
   const circumference = 2 * Math.PI * 52;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 80 ? "text-green-400" : score >= 50 ? "text-amber-400" : "text-red-400";
+  const color = score >= 80 ? "text-green-600" : score >= 50 ? "text-amber-600" : "text-red-600";
 
   return (
     <div className="relative h-36 w-36 sm:h-44 sm:w-44">
       <svg className="h-full w-full -rotate-90" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="8" className="text-surface-800" />
+        <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="8" className="text-surface-100" />
         <circle
           cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="8"
           className={`${color} transition-all duration-1000 ease-out`}
@@ -339,13 +339,13 @@ export const ScanResults = () => {
           <div className="flex items-center gap-2 mb-1">
             <p className="text-sm text-surface-500">{projectName}</p>
             {scan.project_type && (
-              <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-800 text-surface-400">
+              <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-100 text-surface-500">
                 {scan.project_type === "react-web" ? "Web App" : scan.project_type === "nextjs" ? "Next.js" : scan.project_type === "vue" ? "Vue" : scan.project_type === "expo" ? "Expo" : scan.project_type === "react-native" ? "React Native" : scan.project_type === "static" ? "Website" : "Project"}
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Readiness Report</h1>
-          <p className="text-surface-400 mb-4">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900 mb-2">Readiness Report</h1>
+          <p className="text-surface-500 mb-4">
             {scan.score >= 80
               ? "Almost there! A few tweaks and you're ready to ship."
               : scan.score >= 50
@@ -374,14 +374,14 @@ export const ScanResults = () => {
 
       {/* Conversion CTA — for non-Expo projects */}
       {scan.needs_conversion && (
-        <div className="mb-8 rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-transparent p-6 sm:p-8">
+        <div className="mb-8 rounded-2xl border border-green-200 bg-green-50 p-6 sm:p-8">
           <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-green-500/20 flex items-center justify-center shrink-0">
-              <Rocket className="h-6 w-6 text-green-400" />
+            <div className="h-12 w-12 rounded-2xl bg-green-100 flex items-center justify-center shrink-0">
+              <Rocket className="h-6 w-6 text-green-700" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold mb-2">We can make your app store-ready</h3>
-              <p className="text-surface-400 text-sm leading-relaxed mb-4">
+              <h3 className="text-lg font-semibold text-surface-900 mb-2">We can make your app store-ready</h3>
+              <p className="text-surface-500 text-sm leading-relaxed mb-4">
                 {scan.conversion_message}
                 {" "}We'll update your code, push the changes to your GitHub, and re-scan to make sure everything passes.
               </p>
@@ -403,7 +403,7 @@ export const ScanResults = () => {
                 )}
               </Button>
               {convertError && (
-                <p className="text-sm text-red-400 mt-2">{convertError}</p>
+                <p className="text-sm text-red-600 mt-2">{convertError}</p>
               )}
             </div>
           </div>
@@ -425,9 +425,9 @@ export const ScanResults = () => {
         return (
           <div key={severity} className="mb-8">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-surface-500 mb-3 flex items-center gap-2">
-              {severity === "critical" && <AlertCircle className="h-4 w-4 text-red-400" />}
-              {severity === "warning" && <AlertTriangle className="h-4 w-4 text-amber-400" />}
-              {severity === "info" && <Info className="h-4 w-4 text-blue-400" />}
+              {severity === "critical" && <AlertCircle className="h-4 w-4 text-red-600" />}
+              {severity === "warning" && <AlertTriangle className="h-4 w-4 text-amber-600" />}
+              {severity === "info" && <Info className="h-4 w-4 text-blue-600" />}
               {severity} ({issues.length})
             </h2>
             <div className="space-y-2">
@@ -441,10 +441,9 @@ export const ScanResults = () => {
 
       {/* Success banner — when app is ready */}
       {scan.summary.critical === 0 && scan.score >= 80 && id && id !== "demo" && (
-        <div className="mt-8 rounded-2xl border border-green-500/20 bg-green-500/5 p-6 text-center">
-          <div className="text-2xl mb-2">🎉</div>
-          <h3 className="text-lg font-bold mb-1">Your app looks great!</h3>
-          <p className="text-sm text-surface-400 mb-4">No critical issues. You're ready for the next step.</p>
+        <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
+          <h3 className="text-lg font-semibold text-surface-900 mb-1">Your app looks great!</h3>
+          <p className="text-sm text-surface-500 mb-5">No critical issues. You're ready for the next step.</p>
           <Link to={`/app/${id}/listing`}>
             <Button className="gap-2">
               Create your store page
@@ -466,22 +465,22 @@ export const ScanResults = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
           <Link to="/scan">
             <Card hover className="text-center py-6 h-full">
-              <ArrowRight className="h-6 w-6 text-primary-400 mx-auto mb-2" />
+              <ArrowRight className="h-6 w-6 text-surface-400 mx-auto mb-2" />
               <h4 className="text-sm font-semibold">Scan Your App</h4>
               <p className="text-xs text-surface-500 mt-1">Try with your own project</p>
             </Card>
           </Link>
           <Link to="/pricing">
             <Card hover className="text-center py-6 h-full">
-              <ArrowRight className="h-6 w-6 text-blue-400 mx-auto mb-2" />
-              <h4 className="text-sm font-semibold">See Pricing</h4>
+              <ArrowRight className="h-6 w-6 text-surface-400 mx-auto mb-2" />
+              <h4 className="text-sm font-semibold text-surface-900">See Pricing</h4>
               <p className="text-xs text-surface-500 mt-1">Ship $99 / Unlimited $179</p>
             </Card>
           </Link>
           <Link to="/login">
             <Card hover className="text-center py-6 h-full">
-              <ArrowRight className="h-6 w-6 text-green-400 mx-auto mb-2" />
-              <h4 className="text-sm font-semibold">Sign Up</h4>
+              <ArrowRight className="h-6 w-6 text-surface-400 mx-auto mb-2" />
+              <h4 className="text-sm font-semibold text-surface-900">Sign Up</h4>
               <p className="text-xs text-surface-500 mt-1">Save scans & unlock features</p>
             </Card>
           </Link>

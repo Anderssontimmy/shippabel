@@ -1,9 +1,9 @@
 import type { IssueSeverity } from "@/lib/types";
 
 const severityStyles: Record<IssueSeverity, string> = {
-  critical: "bg-red-500/10 text-red-400 border-red-500/20",
-  warning: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  info: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  critical: "bg-red-50 text-red-700 border-red-200",
+  warning: "bg-amber-50 text-amber-700 border-amber-200",
+  info: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 interface BadgeProps {
