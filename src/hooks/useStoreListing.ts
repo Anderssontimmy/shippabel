@@ -39,7 +39,7 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
       .select("*")
       .eq("project_id", projectId)
       .eq("platform", platform)
-      .single();
+      .maybeSingle();
 
     if (data) setListing(data as StoreListing);
     setLoading(false);
