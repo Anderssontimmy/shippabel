@@ -470,27 +470,30 @@ const templates: ScreenshotTemplate[] = [
         drawCaption(ctx, w, caption, w / 2, h * 0.04, fontSize, "#ffffff", "700");
       }
 
-      // Screenshot fills most of the frame — edge to edge horizontally with rounded corners
-      const imgY = h * 0.14;
-      const imgH = h * 0.82;
-      const imgW = w * 0.92;
-      const imgX = (w - imgW) / 2;
-      const radius = w * 0.04;
+      // Screenshot fills almost the entire frame — minimal padding, no device frame
+      const padding = w * 0.03;
+      const imgX = padding;
+      const imgY = caption ? h * 0.12 : padding;
+      const imgW = w - padding * 2;
+      const imgH = h - imgY - padding;
+      const radius = w * 0.035;
 
-      // Shadow
-      ctx.shadowColor = "rgba(0,0,0,0.3)";
-      ctx.shadowBlur = w * 0.03;
+      // Draw shadow behind screenshot area
+      ctx.shadowColor = "rgba(0,0,0,0.4)";
+      ctx.shadowBlur = w * 0.04;
       ctx.shadowOffsetY = w * 0.01;
+      roundRect(ctx, imgX, imgY, imgW, imgH, radius);
+      ctx.fillStyle = "#000";
+      ctx.fill();
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
 
+      // Clip and draw screenshot
       ctx.save();
       roundRect(ctx, imgX, imgY, imgW, imgH, radius);
       ctx.clip();
 
-      // Fill black first (in case image doesn't cover)
-      ctx.fillStyle = "#000";
-      ctx.fill();
-
-      // Draw screenshot to fill
       const imgAspect = img.width / img.height;
       const frameAspect = imgW / imgH;
       let drawW: number, drawH: number, drawX: number, drawY: number;
@@ -503,10 +506,6 @@ const templates: ScreenshotTemplate[] = [
       }
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
       ctx.restore();
-
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
     },
   },
 ];
