@@ -9,9 +9,10 @@ interface PhoneFrameProps {
   width?: number | string;
   frameColor?: string;
   className?: string;
+  compact?: boolean;
 }
 
-export const PhoneFrame = ({ children, width = "100%", frameColor = "#1d1d1f", className = "" }: PhoneFrameProps) => {
+export const PhoneFrame = ({ children, width = "100%", frameColor = "#1d1d1f", className = "", compact = false }: PhoneFrameProps) => {
   return (
     <div className={className} style={{ width, aspectRatio: "430 / 882" }}>
       {/* Outer body */}
@@ -45,13 +46,13 @@ export const PhoneFrame = ({ children, width = "100%", frameColor = "#1d1d1f", c
               className="w-full h-full flex items-center justify-center text-center"
               style={{
                 background: "linear-gradient(155deg, #7dd3fc 0%, #93c5fd 30%, #c4b5fd 65%, #d8b4fe 100%)",
-                color: "rgba(71,85,105,0.8)",
-                fontSize: "clamp(8px, 2.5cqw, 14px)",
-                fontWeight: 600,
-                lineHeight: 1.3,
               }}
             >
-              Insert your<br />Screenshot
+              {!compact && (
+                <span style={{ color: "rgba(71,85,105,0.8)", fontSize: "clamp(8px, 2.5cqw, 14px)", fontWeight: 600, lineHeight: 1.3 }}>
+                  Insert your<br />Screenshot
+                </span>
+              )}
             </div>
           )}
         </div>

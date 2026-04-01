@@ -219,7 +219,7 @@ export const Screenshots = () => {
               <>
                 <button onClick={() => addPhone(0, 45)}
                   className="w-full border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50/30 cursor-pointer transition-colors active:scale-95 flex items-center gap-3">
-                  <div style={{ width: 28 }}><PhoneFrame width={28} /></div>
+                  <div style={{ width: 28 }}><PhoneFrame width={28} compact /></div>
                   <div className="text-left">
                     <div className="text-sm font-semibold text-gray-700">+ Add device</div>
                     <div className="text-[10px] text-gray-400">to Page {activePage + 1} — choose a screenshot</div>
