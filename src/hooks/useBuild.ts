@@ -86,7 +86,7 @@ export const useBuild = (projectId: string) => {
         body: { project_id: projectId, platform },
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError) throw new Error(data?.error ?? fnError.message);
 
       const submissionId = data.submission_id as string;
       startPolling(submissionId);
@@ -117,11 +117,11 @@ export const useBuild = (projectId: string) => {
     }
 
     try {
-      const { error: fnError } = await supabase.functions.invoke("submit-store", {
+      const { data, error: fnError } = await supabase.functions.invoke("submit-store", {
         body: { submission_id: submissionId },
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError) throw new Error(data?.error ?? fnError.message);
 
       startPolling(submissionId);
       await loadSubmissions();

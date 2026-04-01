@@ -148,6 +148,7 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
+    console.error("trigger-build error:", message);
     const status = message === "Unauthorized" ? 401 : 500;
     return new Response(
       JSON.stringify({ error: message }),
