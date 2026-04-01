@@ -222,7 +222,7 @@ export const Screenshots = () => {
                   <div style={{ width: 28 }}><PhoneFrame width={28} /></div>
                   <div className="text-left">
                     <div className="text-sm font-semibold text-gray-700">+ Add device</div>
-                    <div className="text-[10px] text-gray-400">Choose a screenshot, then resize & rotate</div>
+                    <div className="text-[10px] text-gray-400">to Page {activePage + 1} — choose a screenshot</div>
                   </div>
                 </button>
 
@@ -262,6 +262,7 @@ export const Screenshots = () => {
               <>
                 <button onClick={addText} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50/30 cursor-pointer transition-colors">
                   <span className="text-sm font-semibold text-gray-700">+ Add heading</span>
+                  <span className="text-[10px] text-gray-400 block">to Page {activePage + 1}</span>
                 </button>
 
                 {selectedText && (
@@ -342,7 +343,8 @@ export const Screenshots = () => {
                   ref={(el) => { pageRefs.current[pageIdx] = el; }}
                   className={`relative select-none overflow-visible ${pageIdx === activePage ? "ring-2 ring-indigo-400 ring-offset-2" : ""}`}
                   style={{ width: 240, aspectRatio: "1290 / 2796", background: pageBg(pg), boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
-                  onClick={(e) => { if (e.target === e.currentTarget) { setSelected(null); setActivePage(pageIdx); } }}
+                  onMouseDown={() => setActivePage(pageIdx)}
+                  onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
                 >
                   {/* Phones */}
                   {pg.phones.map((phone) => (
