@@ -21,33 +21,20 @@ async function validateCredentials(
 ): Promise<{ valid: boolean; error?: string }> {
   switch (provider) {
     case "github": {
-      const token = creds.access_token;
-      if (!token || token.length < 10) return { valid: false, error: "Token is too short" };
-      try {
-        const res = await fetch("https://api.github.com/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.status === 401) return { valid: false, error: "Invalid token — GitHub rejected it" };
-        if (!res.ok) return { valid: false, error: `GitHub returned ${res.status}` };
-        return { valid: true };
-      } catch {
-        return { valid: false, error: "Could not reach GitHub — check your connection" };
+      const token = creds.access_token?.trim() ?? "";
+      if (!token) return { valid: false, error: "Token is required" };
+      if (token.length < 20) return { valid: false, error: "Token is too short — GitHub tokens are 40+ characters" };
+      if (!/^(ghp_|gho_|github_pat_)/.test(token) && !/^[a-f0-9]{40}$/.test(token)) {
+        return { valid: false, error: "Doesn't look like a GitHub token. It should start with ghp_, gho_, or github_pat_" };
       }
+      return { valid: true };
     }
 
     case "eas": {
-      const token = creds.access_token;
-      if (!token || token.length < 10) return { valid: false, error: "Token is too short" };
-      try {
-        const res = await fetch("https://api.expo.dev/v2/auth/userinfo", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.status === 401) return { valid: false, error: "Invalid token — Expo rejected it" };
-        if (!res.ok) return { valid: false, error: `Expo returned ${res.status}` };
-        return { valid: true };
-      } catch {
-        return { valid: false, error: "Could not reach Expo — check your connection" };
-      }
+      const token = creds.access_token?.trim() ?? "";
+      if (!token) return { valid: false, error: "Token is required" };
+      if (token.length < 20) return { valid: false, error: "Token is too short — Expo tokens are longer" };
+      return { valid: true };
     }
 
     case "apple": {
