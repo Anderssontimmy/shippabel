@@ -49,7 +49,7 @@ export const Status = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 className="h-8 w-8 text-primary-400 animate-spin" />
+        <Loader2 className="h-8 w-8 text-surface-400 animate-spin" />
       </div>
     );
   }
@@ -60,11 +60,11 @@ export const Status = () => {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-16">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <Link to={`/scan/${id}`} className="text-surface-500 hover:text-white transition-colors">
+          <Link to={`/scan/${id}`} className="text-surface-500 hover:text-surface-700 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Submission Status</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">Submission Status</h1>
             <p className="text-surface-400 text-sm mt-1">Track your builds and store reviews</p>
           </div>
         </div>
@@ -76,8 +76,8 @@ export const Status = () => {
 
       {submissions.length === 0 ? (
         <Card className="text-center py-16">
-          <Rocket className="h-12 w-12 text-surface-600 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold mb-2">No submissions yet</h2>
+          <Rocket className="h-12 w-12 text-surface-400 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">No submissions yet</h2>
           <p className="text-sm text-surface-400 mb-6">
             Build and submit your app to see the status here.
           </p>
@@ -99,12 +99,12 @@ export const Status = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     {submission.platform === "ios" ? (
-                      <div className="h-10 w-10 rounded-xl bg-surface-800 flex items-center justify-center">
-                        <Apple className="h-5 w-5 text-surface-300" />
+                      <div className="h-10 w-10 rounded-xl bg-surface-100 flex items-center justify-center">
+                        <Apple className="h-5 w-5 text-surface-400" />
                       </div>
                     ) : (
-                      <div className="h-10 w-10 rounded-xl bg-surface-800 flex items-center justify-center">
-                        <Smartphone className="h-5 w-5 text-surface-300" />
+                      <div className="h-10 w-10 rounded-xl bg-surface-100 flex items-center justify-center">
+                        <Smartphone className="h-5 w-5 text-surface-400" />
                       </div>
                     )}
                     <div>
@@ -122,7 +122,7 @@ export const Status = () => {
                       href={`https://expo.dev/builds/${submission.eas_build_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-primary-400 hover:text-primary-300"
+                      className="flex items-center gap-1 text-xs text-surface-400 hover:text-surface-700"
                     >
                       EAS Build
                       <ExternalLink className="h-3 w-3" />
@@ -138,8 +138,8 @@ export const Status = () => {
                       : i === timeline.active && timeline.failed
                       ? "bg-red-500"
                       : i === timeline.active
-                      ? "bg-primary-600"
-                      : "bg-surface-800";
+                      ? "bg-surface-900"
+                      : "bg-surface-100";
 
                     const StepIcon = i < timeline.active
                       ? CheckCircle2
@@ -151,7 +151,7 @@ export const Status = () => {
 
                     const iconClass = i < timeline.active || i === timeline.active
                       ? "h-4 w-4 text-white"
-                      : "h-4 w-4 text-surface-600";
+                      : "h-4 w-4 text-surface-400";
 
                     return (
                       <div key={step.key} className="flex sm:flex-1 items-center sm:items-center">
@@ -159,16 +159,16 @@ export const Status = () => {
                           <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${stepColor}`}>
                             <StepIcon className={`${iconClass} ${i === timeline.active && !timeline.failed ? "animate-spin" : ""}`} />
                           </div>
-                          <span className={`text-xs font-medium ${i <= timeline.active ? "text-surface-200" : "text-surface-600"}`}>
+                          <span className={`text-xs font-medium ${i <= timeline.active ? "text-surface-700" : "text-surface-400"}`}>
                             {step.label}
                           </span>
                         </div>
                         {i < timelineSteps.length - 1 && (
                           <>
                             {/* Vertical connector (mobile) */}
-                            <div className={`hidden max-sm:block w-px h-4 ml-[15px] -mt-1 -mb-1 absolute ${i < timeline.active ? "bg-green-500" : "bg-surface-800"}`} />
+                            <div className={`hidden max-sm:block w-px h-4 ml-[15px] -mt-1 -mb-1 absolute ${i < timeline.active ? "bg-green-500" : "bg-surface-100"}`} />
                             {/* Horizontal connector (desktop) */}
-                            <div className={`hidden sm:block flex-1 h-px mx-2 ${i < timeline.active ? "bg-green-500" : "bg-surface-800"}`} />
+                            <div className={`hidden sm:block flex-1 h-px mx-2 ${i < timeline.active ? "bg-green-500" : "bg-surface-100"}`} />
                           </>
                         )}
                       </div>
@@ -178,15 +178,15 @@ export const Status = () => {
 
                 {/* Status detail */}
                 {submission.rejection_reason && (
-                  <div className="mt-4 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
-                    <p className="text-sm font-medium text-red-300 mb-1">Rejection Reason</p>
+                  <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+                    <p className="text-sm font-medium text-red-700 mb-1">Rejection Reason</p>
                     <p className="text-sm text-surface-400">{submission.rejection_reason}</p>
                   </div>
                 )}
 
                 {submission.review_status === "approved" && (
-                  <div className="mt-4 rounded-lg bg-green-500/10 border border-green-500/20 px-4 py-3 text-center">
-                    <p className="text-sm font-semibold text-green-300">
+                  <div className="mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-center">
+                    <p className="text-sm font-semibold text-green-700">
                       Your app is live on the {submission.platform === "ios" ? "App Store" : "Google Play Store"}!
                     </p>
                   </div>

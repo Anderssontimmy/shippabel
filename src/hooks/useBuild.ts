@@ -24,6 +24,7 @@ export interface Submission {
 }
 
 export const useBuild = (projectId: string) => {
+  const isDemo = projectId === "demo";
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [building, setBuilding] = useState(false);
@@ -32,6 +33,10 @@ export const useBuild = (projectId: string) => {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadSubmissions = useCallback(async () => {
+    if (isDemo) {
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from("submissions")
       .select("*")
@@ -40,7 +45,7 @@ export const useBuild = (projectId: string) => {
 
     setSubmissions((data ?? []) as Submission[]);
     setLoading(false);
-  }, [projectId]);
+  }, [projectId, isDemo]);
 
   useEffect(() => {
     if (projectId) loadSubmissions();
@@ -53,6 +58,29 @@ export const useBuild = (projectId: string) => {
     setBuilding(true);
     setError(null);
 
+    if (isDemo) {
+      // Simulate build: queued -> in_progress -> completed
+      const demoSub: Submission = {
+        id: "demo-sub",
+        project_id: "demo",
+        platform,
+        eas_build_id: null,
+        build_status: "queued",
+        review_status: "not_submitted",
+        rejection_reason: null,
+        submitted_at: null,
+        reviewed_at: null,
+        created_at: new Date().toISOString(),
+      };
+      setSubmissions([demoSub]);
+      await new Promise((r) => setTimeout(r, 1500));
+      setSubmissions([{ ...demoSub, build_status: "in_progress" }]);
+      await new Promise((r) => setTimeout(r, 3000));
+      setSubmissions([{ ...demoSub, build_status: "completed" }]);
+      setBuilding(false);
+      return "demo-sub";
+    }
+
     try {
       const { data, error: fnError } = await supabase.functions.invoke("trigger-build", {
         body: { project_id: projectId, platform },
@@ -60,7 +88,6 @@ export const useBuild = (projectId: string) => {
 
       if (fnError) throw new Error(fnError.message);
 
-      // Start polling for build status
       const submissionId = data.submission_id as string;
       startPolling(submissionId);
 
@@ -78,6 +105,17 @@ export const useBuild = (projectId: string) => {
     setSubmitting(true);
     setError(null);
 
+    if (isDemo) {
+      const base = submissions[0]!;
+      setSubmissions([{ ...base, review_status: "waiting_for_review", submitted_at: new Date().toISOString() }]);
+      await new Promise((r) => setTimeout(r, 2000));
+      setSubmissions([{ ...base, review_status: "in_review", submitted_at: new Date().toISOString() }]);
+      await new Promise((r) => setTimeout(r, 3000));
+      setSubmissions([{ ...base, review_status: "approved", submitted_at: new Date().toISOString(), reviewed_at: new Date().toISOString() }]);
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const { error: fnError } = await supabase.functions.invoke("submit-store", {
         body: { submission_id: submissionId },
@@ -85,7 +123,6 @@ export const useBuild = (projectId: string) => {
 
       if (fnError) throw new Error(fnError.message);
 
-      // Start polling for review status
       startPolling(submissionId);
       await loadSubmissions();
     } catch (err) {

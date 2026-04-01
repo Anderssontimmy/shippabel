@@ -60,6 +60,24 @@ export const Submit = () => {
   const loadProject = async () => {
     if (!id) return;
 
+    if (id === "demo") {
+      setProject({
+        id: "demo",
+        name: "demo-app",
+        repo_url: "https://github.com/demo/fitness-app",
+        status: "scanned",
+        scan_result: { score: 73, summary: { critical: 0, warning: 5, info: 3, total: 8 }, issues: [], project_type: "expo" },
+        created_at: new Date().toISOString(),
+        user_id: "demo",
+        platform: null,
+        framework: null,
+        updated_at: new Date().toISOString(),
+      } as unknown as Project);
+      setHasListing(true);
+      setLoadingProject(false);
+      return;
+    }
+
     const [projectRes, listingRes] = await Promise.all([
       supabase.from("projects").select("*").eq("id", id).single(),
       supabase.from("store_listings").select("id").eq("project_id", id).eq("platform", platform),
@@ -97,7 +115,7 @@ export const Submit = () => {
   if (loadingProject) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 className="h-8 w-8 text-primary-400 animate-spin" />
+        <Loader2 className="h-8 w-8 text-surface-400 animate-spin" />
       </div>
     );
   }
@@ -110,11 +128,11 @@ export const Submit = () => {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-16">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <Link to={`/scan/${id}`} className="text-surface-500 hover:text-white transition-colors">
+        <Link to={`/scan/${id}`} className="text-surface-500 hover:text-surface-700 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Publish Your App</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">Publish Your App</h1>
           <p className="text-surface-400 text-sm mt-1">
             We'll prepare your app and send it to the stores for you
           </p>
@@ -122,11 +140,11 @@ export const Submit = () => {
       </div>
 
       {/* Platform selector */}
-      <div className="flex rounded-xl bg-surface-900 border border-surface-800 p-1 mb-8 max-w-xs">
+      <div className="flex rounded-xl bg-surface-50 border border-surface-200 p-1 mb-8 max-w-xs">
         <button
           onClick={() => setPlatform("ios")}
           className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all cursor-pointer ${
-            platform === "ios" ? "bg-surface-800 text-white shadow-sm" : "text-surface-400"
+            platform === "ios" ? "bg-white text-surface-900 shadow-sm" : "text-surface-500"
           }`}
         >
           <Apple className="h-4 w-4" />
@@ -135,7 +153,7 @@ export const Submit = () => {
         <button
           onClick={() => setPlatform("android")}
           className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all cursor-pointer ${
-            platform === "android" ? "bg-surface-800 text-white shadow-sm" : "text-surface-400"
+            platform === "android" ? "bg-white text-surface-900 shadow-sm" : "text-surface-500"
           }`}
         >
           <Smartphone className="h-4 w-4" />
@@ -150,7 +168,7 @@ export const Submit = () => {
             <button
               onClick={() => setCurrentStep(step.id)}
               className={`flex items-center gap-2 cursor-pointer ${
-                i <= currentStepIndex ? "text-white" : "text-surface-600"
+                i <= currentStepIndex ? "text-surface-900" : "text-surface-400"
               }`}
             >
               <div
@@ -158,8 +176,8 @@ export const Submit = () => {
                   i < currentStepIndex
                     ? "bg-green-500 text-white"
                     : i === currentStepIndex
-                    ? "bg-primary-600 text-white"
-                    : "bg-surface-800 text-surface-500"
+                    ? "bg-surface-900 text-white"
+                    : "bg-surface-100 text-surface-500"
                 }`}
               >
                 {i < currentStepIndex ? <Check className="h-4 w-4" /> : i + 1}
@@ -167,16 +185,16 @@ export const Submit = () => {
               <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
             </button>
             {i < steps.length - 1 && (
-              <div className={`flex-1 h-px mx-3 ${i < currentStepIndex ? "bg-green-500" : "bg-surface-800"}`} />
+              <div className={`flex-1 h-px mx-3 ${i < currentStepIndex ? "bg-green-500" : "bg-surface-100"}`} />
             )}
           </div>
         ))}
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 mb-6">
-          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-          <p className="text-sm text-red-300">{error}</p>
+        <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 mb-6">
+          <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
@@ -184,7 +202,7 @@ export const Submit = () => {
       {currentStep === "review" && (
         <div className="space-y-6">
           <Card>
-            <h3 className="font-semibold mb-4">Pre-flight Checklist</h3>
+            <h3 className="font-semibold text-surface-900 mb-4">Pre-flight Checklist</h3>
             <div className="space-y-3">
               <CheckItem
                 label="No critical issues"
@@ -212,10 +230,10 @@ export const Submit = () => {
           </Card>
 
           {scan && scan.summary.critical > 0 && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
-              <p className="text-sm text-red-300">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+              <p className="text-sm text-red-700">
                 You have {scan.summary.critical} critical issue{scan.summary.critical > 1 ? "s" : ""} that must be fixed before building.{" "}
-                <Link to={`/scan/${id}`} className="underline hover:text-red-200">
+                <Link to={`/scan/${id}`} className="underline hover:text-red-600">
                   View report
                 </Link>
               </p>
@@ -227,30 +245,30 @@ export const Submit = () => {
       {currentStep === "configure" && (
         <div className="space-y-6">
           <Card>
-            <h3 className="font-semibold mb-4">Build Configuration</h3>
+            <h3 className="font-semibold text-surface-900 mb-4">Build Configuration</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Platform</label>
-                <p className="text-sm text-white">{platform === "ios" ? "iOS (App Store)" : "Android (Google Play)"}</p>
+                <label className="block text-sm font-medium text-surface-400 mb-1">Platform</label>
+                <p className="text-sm text-surface-900">{platform === "ios" ? "iOS (App Store)" : "Android (Google Play)"}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Build Profile</label>
-                <p className="text-sm text-white">Production</p>
+                <label className="block text-sm font-medium text-surface-400 mb-1">Build Profile</label>
+                <p className="text-sm text-surface-900">Production</p>
                 <p className="text-xs text-surface-500 mt-1">
                   Optimized, signed build ready for store submission
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1">Repository</label>
-                <p className="text-sm text-primary-400">{project?.repo_url ?? "No repo linked"}</p>
+                <label className="block text-sm font-medium text-surface-400 mb-1">Repository</label>
+                <p className="text-sm text-surface-400">{project?.repo_url ?? "No repo linked"}</p>
               </div>
             </div>
           </Card>
 
           {platform === "ios" && (
-            <Card className="border-amber-500/20 bg-amber-500/5">
+            <Card className="border-amber-200 bg-amber-50">
               <div className="flex gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                 <div>
                   <h4 className="text-sm font-semibold mb-1">Apple Developer Account Required</h4>
                   <p className="text-xs text-surface-400">
@@ -268,7 +286,7 @@ export const Submit = () => {
         <div className="space-y-6">
           {submission && submission.build_status !== "idle" ? (
             <Card>
-              <h3 className="font-semibold mb-4">Build Status</h3>
+              <h3 className="font-semibold text-surface-900 mb-4">Build Status</h3>
               <BuildStatusDisplay submission={submission} />
 
               {submission.build_status === "failed" && (
@@ -284,8 +302,8 @@ export const Submit = () => {
             </Card>
           ) : (
             <Card className="text-center py-10">
-              <Package className="h-12 w-12 text-primary-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Ready to build</h3>
+              <Package className="h-12 w-12 text-surface-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-surface-900 mb-2">Ready to build</h3>
               <p className="text-sm text-surface-400 mb-6 max-w-md mx-auto">
                 This will trigger a production build via EAS Build for{" "}
                 {platform === "ios" ? "iOS" : "Android"}. The build typically takes 10-20 minutes.
@@ -316,21 +334,21 @@ export const Submit = () => {
         <div className="space-y-6">
           {submission?.build_status !== "completed" ? (
             <Card className="text-center py-10">
-              <AlertCircle className="h-12 w-12 text-surface-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Build not ready</h3>
+              <AlertCircle className="h-12 w-12 text-surface-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-surface-900 mb-2">Build not ready</h3>
               <p className="text-sm text-surface-400">
                 Complete the build step first before submitting to the store.
               </p>
             </Card>
           ) : submission.review_status !== "not_submitted" ? (
             <Card>
-              <h3 className="font-semibold mb-4">Submission Status</h3>
+              <h3 className="font-semibold text-surface-900 mb-4">Submission Status</h3>
               <ReviewStatusDisplay submission={submission} />
             </Card>
           ) : (
             <Card className="text-center py-10">
-              <Send className="h-12 w-12 text-primary-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Submit to {platform === "ios" ? "App Store" : "Google Play"}</h3>
+              <Send className="h-12 w-12 text-surface-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-surface-900 mb-2">Submit to {platform === "ios" ? "App Store" : "Google Play"}</h3>
               <p className="text-sm text-surface-400 mb-6 max-w-md mx-auto">
                 Your build is ready. We'll upload it along with your store listing and screenshots,
                 then submit for review.
@@ -399,17 +417,17 @@ const CheckItem = ({
     <div className="flex items-center gap-3">
       <div
         className={`h-5 w-5 rounded-full flex items-center justify-center ${
-          checked ? "bg-green-500" : "bg-surface-800 border border-surface-700"
+          checked ? "bg-green-500" : "bg-surface-100 border border-surface-200"
         }`}
       >
         {checked && <Check className="h-3 w-3 text-white" />}
       </div>
-      <span className={`text-sm ${checked ? "text-surface-200" : "text-surface-500"}`}>
+      <span className={`text-sm ${checked ? "text-surface-700" : "text-surface-500"}`}>
         {label}
       </span>
     </div>
     {!checked && link && (
-      <Link to={link} className="text-xs text-primary-400 hover:text-primary-300">
+      <Link to={link} className="text-xs text-surface-400 hover:text-surface-700">
         {linkText}
       </Link>
     )}
@@ -418,10 +436,10 @@ const CheckItem = ({
 
 const BuildStatusDisplay = ({ submission }: { submission: Submission }) => {
   const statusMap: Record<string, { label: string; color: string; animate?: boolean }> = {
-    queued: { label: "Queued", color: "text-surface-400" },
-    in_progress: { label: "Building...", color: "text-blue-400", animate: true },
-    completed: { label: "Build Complete", color: "text-green-400" },
-    failed: { label: "Build Failed", color: "text-red-400" },
+    queued: { label: "Queued", color: "text-surface-500" },
+    in_progress: { label: "Building...", color: "text-blue-600", animate: true },
+    completed: { label: "Build Complete", color: "text-green-600" },
+    failed: { label: "Build Failed", color: "text-red-600" },
   };
 
   const status = statusMap[submission.build_status] ?? statusMap["queued"]!;
@@ -454,27 +472,27 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
     pending_credentials: {
       label: "Credentials Needed",
       desc: "Please configure your Apple/Google developer account credentials.",
-      color: "text-amber-400",
+      color: "text-amber-600",
     },
     waiting_for_review: {
       label: "Waiting for Review",
       desc: "Your app has been submitted and is in the review queue.",
-      color: "text-blue-400",
+      color: "text-blue-600",
     },
     in_review: {
       label: "In Review",
       desc: "A reviewer is currently looking at your app.",
-      color: "text-blue-400",
+      color: "text-blue-600",
     },
     approved: {
       label: "Approved!",
       desc: "Your app has been approved and is live on the store.",
-      color: "text-green-400",
+      color: "text-green-600",
     },
     rejected: {
       label: "Rejected",
       desc: submission.rejection_reason ?? "Your app was rejected. Check the reason below.",
-      color: "text-red-400",
+      color: "text-red-600",
     },
   };
 
