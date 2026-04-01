@@ -217,20 +217,14 @@ export const Screenshots = () => {
             {/* Device tab */}
             {activeTab === "device" && (
               <>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    { label: "Front", rot: 0, scale: 45 },
-                    { label: "Tilted L", rot: -12, scale: 42 },
-                    { label: "Tilted R", rot: 12, scale: 42 },
-                    { label: "Small", rot: 0, scale: 30 },
-                  ].map((d) => (
-                    <button key={d.label} onClick={() => addPhone(d.rot, d.scale)}
-                      className="border border-gray-200 rounded-lg p-2 text-[10px] text-gray-500 hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer active:scale-95 text-center">
-                      <div className="mx-auto mb-1" style={{ width: 22, transform: `rotate(${d.rot}deg)` }}><PhoneFrame width={22} /></div>
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
+                <button onClick={() => addPhone(0, 45)}
+                  className="w-full border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50/30 cursor-pointer transition-colors active:scale-95 flex items-center gap-3">
+                  <div style={{ width: 28 }}><PhoneFrame width={28} /></div>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-gray-700">+ Add device</div>
+                    <div className="text-[10px] text-gray-400">Choose a screenshot, then resize & rotate</div>
+                  </div>
+                </button>
 
                 {selectedPhone && (
                   <div className="pt-3 border-t border-gray-100 space-y-2">
