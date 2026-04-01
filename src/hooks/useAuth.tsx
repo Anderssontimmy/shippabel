@@ -26,6 +26,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Safety timeout — never hang on loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) setLoading(false);
+    }, 4000);
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session: s } }) => {
       setSession(s);

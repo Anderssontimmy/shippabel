@@ -55,22 +55,39 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const loadProjects = useCallback(async () => {
-    const { data } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("user_id", user!.id)
-      .order("created_at", { ascending: false });
-    setProjects((data ?? []) as Project[]);
+    if (!user) { setLoading(false); return; }
+    try {
+      const { data } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      setProjects((data ?? []) as Project[]);
+    } catch {
+      // Silently fail — show empty state
+    }
     setLoading(false);
   }, [user]);
 
   useEffect(() => {
-    if (!authLoading && !user) { navigate("/login"); return; }
-    if (user) loadProjects();
-    if (!authLoading && !user) setLoading(false);
+    if (authLoading) return; // Still loading auth — wait
+    if (!user) { navigate("/login"); return; }
+    loadProjects();
   }, [user, authLoading, navigate, loadProjects]);
 
-  if (authLoading || (user && loading)) {
+  // Timeout: if loading for more than 5 seconds, stop waiting
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) setLoading(false);
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
+  if (authLoading) {
+    return <div className="flex items-center justify-center py-32"><Loader2 className="h-8 w-8 text-primary-400 animate-spin" /></div>;
+  }
+
+  if (loading && user) {
     return <div className="flex items-center justify-center py-32"><Loader2 className="h-8 w-8 text-primary-400 animate-spin" /></div>;
   }
 
