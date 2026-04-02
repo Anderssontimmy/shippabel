@@ -86,7 +86,18 @@ export const useBuild = (projectId: string) => {
         body: { project_id: projectId, platform },
       });
 
-      if (fnError) throw new Error(data?.error ?? fnError.message);
+      if (fnError) {
+        // Extract real error from response body, fall back to generic message
+        const realError = data?.error ?? fnError.message;
+        const friendlyError = realError.includes("app.json")
+          ? "Your app needs to be converted to a mobile app first. Go back to your scan results and click 'Make it App Store ready'."
+          : realError.includes("EAS token")
+          ? "Please connect your Expo account in Settings first."
+          : realError.includes("Unauthorized")
+          ? "Please sign in again to continue."
+          : realError;
+        throw new Error(friendlyError);
+      }
 
       const submissionId = data.submission_id as string;
       startPolling(submissionId);
