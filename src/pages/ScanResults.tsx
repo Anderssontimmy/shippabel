@@ -326,7 +326,7 @@ export const ScanResults = () => {
     info: scan.issues.filter((i) => i.severity === "info"),
   };
 
-  const autoFixable = scan.issues.filter((i) => i.auto_fixable).length;
+  const autoFixable = scan.issues.filter((i) => i.auto_fixable && !i.fixed).length;
 
   return (
     <div>
