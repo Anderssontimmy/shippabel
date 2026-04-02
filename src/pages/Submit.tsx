@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { usePlan } from "@/hooks/usePlan";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useBuild } from "@/hooks/useBuild";
 import { supabase } from "@/lib/supabase";
 import type { Project, ScanResult } from "@/lib/types";
@@ -121,6 +123,18 @@ export const Submit = () => {
   }
 
   const scan = project?.scan_result as ScanResult | null;
+  const { isPaid } = usePlan();
+
+  if (!isPaid) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16 sm:py-24">
+        <UpgradePrompt
+          feature="Build & Publish Your App"
+          description="We'll build your app and submit it to the App Store and Google Play for you. Available on the Ship plan — one-time payment, no subscription."
+        />
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -16,6 +16,8 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useStoreListing } from "@/hooks/useStoreListing";
+import { usePlan } from "@/hooks/usePlan";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useToast } from "@/components/ui/Toast";
 
 const charLimits: Record<string, Record<string, number>> = {
@@ -56,6 +58,7 @@ export const Listing = () => {
     save,
     generatePrivacy,
   } = useStoreListing(id ?? "", platform);
+  const { isPaid } = usePlan();
 
   // Rotating loading messages during generation
   const [loadingMsg, setLoadingMsg] = useState(0);
@@ -133,6 +136,7 @@ export const Listing = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Generate CTA */}
           {!listing?.app_name && !generating && (
+            isPaid ? (
             <Card className="border-surface-200">
               <div className="text-center py-4">
                 <Sparkles className="h-8 w-8 text-surface-400 mx-auto mb-3" />
@@ -152,6 +156,12 @@ export const Listing = () => {
                 </Button>
               </div>
             </Card>
+            ) : (
+              <UpgradePrompt
+                feature="AI Store Page Writer"
+                description="Let AI write your app's name, description, keywords, and more. Available on the Ship plan."
+              />
+            )
           )}
 
           {generating && (

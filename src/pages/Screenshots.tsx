@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { usePlan } from "@/hooks/usePlan";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import html2canvas from "html2canvas";
 
 interface PhoneData {
@@ -179,6 +181,18 @@ export const Screenshots = () => {
   }, [pages, exportPage, toast]);
 
   const pageBg = (pg: PageData) => pg.bgGradient ?? pg.bgColor;
+  const { isPaid } = usePlan();
+
+  if (!isPaid) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16 sm:py-24">
+        <UpgradePrompt
+          feature="Screenshot Editor"
+          description="Frame your screenshots in professional device mockups for the App Store and Google Play. Available on the Ship plan."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">

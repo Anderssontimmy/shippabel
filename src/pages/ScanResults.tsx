@@ -23,7 +23,9 @@ import { AppPotentialCard } from "@/components/AppPotentialCard";
 import { useFix } from "@/hooks/useFix";
 import { useConvert } from "@/hooks/useConvert";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlan } from "@/hooks/usePlan";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { supabase } from "@/lib/supabase";
 import type { Issue, IssueSeverity, ScanResult } from "@/lib/types";
 
@@ -133,7 +135,7 @@ const severityColor = {
   info: "text-blue-600",
 };
 
-const IssueCard = ({ issue, onFix, fixingId }: { issue: Issue; onFix: (id: string) => void; fixingId: string | null }) => {
+const IssueCard = ({ issue, onFix, fixingId, canFix }: { issue: Issue; onFix: (id: string) => void; fixingId: string | null; canFix: boolean }) => {
   const [open, setOpen] = useState(false);
   const Icon = severityIcon[issue.severity];
   const isFixing = fixingId === issue.id;
@@ -165,11 +167,14 @@ const IssueCard = ({ issue, onFix, fixingId }: { issue: Issue; onFix: (id: strin
               <p className="text-sm text-surface-600">{issue.fix_description}</p>
             </div>
           )}
-          {issue.auto_fixable && (
+          {issue.auto_fixable && canFix && (
             <Button size="sm" className="mt-3 gap-1.5" onClick={() => onFix(issue.id)} disabled={isFixing}>
               {isFixing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wrench className="h-3.5 w-3.5" />}
               {isFixing ? "Fixing..." : "Fix this issue"}
             </Button>
+          )}
+          {issue.auto_fixable && !canFix && (
+            <UpgradePrompt feature="Auto-fix" compact />
           )}
         </div>
       )}
@@ -208,6 +213,7 @@ export const ScanResults = () => {
   const { fixingIssueId, fixing, fixAll, fixOne } = useFix(id ?? "");
   const { converting, error: convertError, convert } = useConvert(id ?? "");
   const { user } = useAuth();
+  const { isPaid } = usePlan();
 
   useDocumentHead({
     title: projectName ? `${projectName} — Score: ${scan?.score ?? "..."}` : "Scan Results",
@@ -234,12 +240,8 @@ export const ScanResults = () => {
       window.location.href = "/login";
       return;
     }
-
-    // Check if user has a paid plan (Launch or Pro)
-    const metadata = user.user_metadata as Record<string, unknown> | undefined;
-    const hasPaidPlan = metadata?.stripe_customer_id && metadata?.plan;
-    if (!hasPaidPlan) {
-      toast("error", "Conversion requires a paid plan. Check out our pricing options.");
+    if (!isPaid) {
+      toast("error", "This feature requires the Ship plan.");
       window.location.href = "/pricing";
       return;
     }
@@ -358,11 +360,14 @@ export const ScanResults = () => {
             <Badge severity="info">{scan.summary.info} info</Badge>
           </div>
           <div className="mt-4 flex gap-3 justify-center sm:justify-start">
-            {autoFixable > 0 && (
+            {autoFixable > 0 && isPaid && (
               <Button size="sm" className="gap-1.5" onClick={handleFixAll} disabled={fixing}>
                 {fixing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wrench className="h-3.5 w-3.5" />}
                 {fixing ? "Fixing..." : `Auto-fix ${autoFixable} issues`}
               </Button>
+            )}
+            {autoFixable > 0 && !isPaid && (
+              <UpgradePrompt feature="Auto-fix" compact />
             )}
             <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(window.location.href); toast("success", "Link copied!"); }}>
               <Share2 className="h-3.5 w-3.5" />
@@ -432,7 +437,7 @@ export const ScanResults = () => {
             </h2>
             <div className="space-y-2">
               {issues.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} onFix={handleFixOne} fixingId={fixingIssueId} />
+                <IssueCard key={issue.id} issue={issue} onFix={handleFixOne} fixingId={fixingIssueId} canFix={isPaid} />
               ))}
             </div>
           </div>
