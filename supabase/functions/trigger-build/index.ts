@@ -221,6 +221,30 @@ function extractGitHubPath(url: string): string | null {
   } catch { return null; }
 }
 
+async function fetchAppConfig(repoPath: string, token?: string): Promise<Record<string, unknown> | null> {
+  const h: Record<string, string> = {};
+  if (token) h.Authorization = `token ${token}`;
+  try {
+    let r = await fetch(`https://raw.githubusercontent.com/${repoPath}/main/app.json`, { headers: h });
+    if (r.ok) return await r.json();
+    r = await fetch(`https://raw.githubusercontent.com/${repoPath}/master/app.json`, { headers: h });
+    if (r.ok) return await r.json();
+  } catch {}
+  return null;
+}
+
+async function setGitHubVariable(repoPath: string, name: string, value: string, headers: Record<string, string>): Promise<boolean> {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repoPath}/actions/variables/${name}`, { method: "PATCH", headers, body: JSON.stringify({ name, value }) });
+    if (r.ok) return true;
+    if (r.status === 404) {
+      const c = await fetch(`https://api.github.com/repos/${repoPath}/actions/variables`, { method: "POST", headers, body: JSON.stringify({ name, value }) });
+      return c.ok;
+    }
+    return false;
+  } catch { return false; }
+}
+
 async function getDefaultBranch(repoPath: string, headers: Record<string, string>): Promise<string> {
   try {
     const res = await fetch(`https://api.github.com/repos/${repoPath}`, { headers });
