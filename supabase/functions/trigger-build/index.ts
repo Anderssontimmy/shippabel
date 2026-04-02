@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
     // Step 5: Trigger the workflow
     const workflowTriggered = await triggerWorkflow(repoPath, defaultBranch, platform, ghHeaders);
     if (!workflowTriggered.success) {
-      throw new Error(workflowTriggered.error ?? "We couldn't start the build. Please check your GitHub settings.");
+      throw new Error(workflowTriggered.error ?? "We couldn't start the build.");
     }
 
     // Step 6: Create submission record
@@ -238,9 +238,37 @@ async function triggerWorkflow(
   headers: Record<string, string>
 ): Promise<{ success: boolean; runUrl?: string; error?: string }> {
   try {
-    // Trigger workflow_dispatch
+    // First check if workflow file exists
+    const checkRes = await fetch(
+      `https://api.github.com/repos/${repoPath}/contents/.github/workflows/eas-build.yml?ref=${branch}`,
+      { headers }
+    );
+    if (!checkRes.ok) {
+      return { success: false, error: `Workflow file not found on branch "${branch}". Status: ${checkRes.status}. The file may not have been pushed correctly.` };
+    }
+
+    // Check if GitHub Actions is enabled (list workflows)
+    const listRes = await fetch(
+      `https://api.github.com/repos/${repoPath}/actions/workflows`,
+      { headers }
+    );
+    const listText = await listRes.text();
+    if (!listRes.ok) {
+      return { success: false, error: `GitHub Actions may be disabled. Status: ${listRes.status}. Go to github.com/${repoPath}/settings/actions and enable Actions. Response: ${listText.slice(0, 100)}` };
+    }
+
+    // Find our workflow
+    const listData = JSON.parse(listText);
+    const workflows = listData.workflows ?? [];
+    const ourWorkflow = workflows.find((w: { path: string }) => w.path === ".github/workflows/eas-build.yml");
+
+    if (!ourWorkflow) {
+      return { success: false, error: `GitHub hasn't indexed the workflow yet. Found ${workflows.length} workflows but not eas-build.yml. Try again in 30 seconds. Workflows: ${workflows.map((w: { path: string }) => w.path).join(", ")}` };
+    }
+
+    // Trigger workflow_dispatch using the workflow ID
     const res = await fetch(
-      `https://api.github.com/repos/${repoPath}/actions/workflows/eas-build.yml/dispatches`,
+      `https://api.github.com/repos/${repoPath}/actions/workflows/${ourWorkflow.id}/dispatches`,
       {
         method: "POST",
         headers,
@@ -253,18 +281,12 @@ async function triggerWorkflow(
 
     if (!res.ok) {
       const text = await res.text();
-      if (text.includes("not found") || res.status === 404) {
-        return { success: false, error: "The build workflow wasn't found. It may take a moment for GitHub to recognize the new workflow file. Please try again in 30 seconds." };
-      }
-      return { success: false, error: `GitHub returned an error: ${text.slice(0, 150)}` };
+      return { success: false, error: `Couldn't trigger workflow (${res.status}): ${text.slice(0, 150)}` };
     }
 
-    // Get the workflow run URL (workflow_dispatch doesn't return run ID directly)
-    // We'll construct the URL to the Actions tab
     const runUrl = `https://github.com/${repoPath}/actions/workflows/eas-build.yml`;
-
     return { success: true, runUrl };
-  } catch {
-    return { success: false, error: "Couldn't connect to GitHub. Please try again." };
+  } catch (err) {
+    return { success: false, error: `Error: ${err}` };
   }
 }
