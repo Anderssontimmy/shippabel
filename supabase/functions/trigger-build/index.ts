@@ -35,6 +35,8 @@ jobs:
           token: \${{ secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
       - name: Install dependencies
         run: npm install
+      - name: Initialize EAS project
+        run: eas init --id \${{ vars.EAS_PROJECT_ID }} --non-interactive || eas init --non-interactive || true
       - name: Build
         run: eas build --platform \${{ inputs.platform }} --non-interactive --no-wait
 `;
@@ -110,7 +112,19 @@ Deno.serve(async (req) => {
       throw new Error("We just added the build workflow to your repo. GitHub needs a moment to recognize it. Please click 'Retry build' in about 15 seconds.");
     }
 
-    // Step 4: Set EXPO_TOKEN as GitHub Actions variable
+    // Step 4a: Get EAS account and find/create project for eas init
+    const easAccount = await getEasAccount(easToken);
+    if (easAccount) {
+      const appConfig = await fetchAppConfig(repoPath, ghToken);
+      const expo = appConfig ? ((appConfig.expo ?? appConfig) as Record<string, unknown>) : {};
+      const slug = ((expo.slug ?? expo.name ?? project.name) as string).toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      const easProject = await findOrCreateEasProject(easToken, easAccount, slug);
+      if (easProject?.id) {
+        await setGitHubSecret(repoPath, "EAS_PROJECT_ID", easProject.id, ghHeaders);
+      }
+    }
+
+    // Step 4b: Set EXPO_TOKEN as GitHub Actions variable
     const secretSet = await setGitHubSecret(repoPath, "EXPO_TOKEN", easToken, ghHeaders);
     if (!secretSet) {
       // Also need to update the workflow to not require the token from secrets
@@ -321,4 +335,38 @@ async function triggerWorkflow(
   } catch (err) {
     return { success: false, error: `Error: ${err}` };
   }
+}
+
+async function getEasAccount(token: string): Promise<{ id: string; username: string } | null> {
+  try {
+    const res = await fetch("https://api.expo.dev/graphql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ query: `query { meActor { ... on User { id username accounts { id name } } ... on Robot { id firstName accounts { id name } } } }` }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const actor = data?.data?.meActor;
+    if (!actor) return null;
+    return { id: actor.accounts?.[0]?.id ?? actor.id, username: actor.username ?? actor.firstName };
+  } catch { return null; }
+}
+
+async function findOrCreateEasProject(token: string, account: { id: string; username: string }, slug: string): Promise<{ id: string } | null> {
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+  try {
+    // Find
+    const findRes = await fetch("https://api.expo.dev/graphql", { method: "POST", headers, body: JSON.stringify({ query: `query { app { byFullName(fullName: "@${account.username}/${slug}") { id } } }` }) });
+    if (findRes.ok) {
+      const d = await findRes.json();
+      if (d?.data?.app?.byFullName?.id) return { id: d.data.app.byFullName.id };
+    }
+    // Create
+    const createRes = await fetch("https://api.expo.dev/graphql", { method: "POST", headers, body: JSON.stringify({ query: `mutation { app { createApp(appInput: { accountId: "${account.id}", projectName: "${slug}" }) { id } } }` }) });
+    if (createRes.ok) {
+      const d = await createRes.json();
+      if (d?.data?.app?.createApp?.id) return { id: d.data.app.createApp.id };
+    }
+    return null;
+  } catch { return null; }
 }
