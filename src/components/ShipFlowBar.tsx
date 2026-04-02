@@ -13,14 +13,23 @@ const stepRoutes: Record<FlowStep, (id: string) => string> = {
   submit: (id) => `/app/${id}/submit`,
 };
 
+// Steps to hide when completed (infrastructure steps, not user-facing)
+const hideWhenDone: Set<FlowStep> = new Set(["signup", "connect"]);
+
 export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
   const { steps, currentStep } = useShipFlow(projectId);
+
+  // Filter out completed infrastructure steps to reduce clutter
+  const visibleSteps = steps.filter((step) => {
+    if (hideWhenDone.has(step.id) && step.completed) return false;
+    return true;
+  });
 
   return (
     <div className="border-b border-surface-200/60 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
-          {steps.map((step, i) => {
+          {visibleSteps.map((step, i) => {
             const isActive = step.id === currentStep;
             const isPast = step.completed;
             const route = stepRoutes[step.id](projectId);
@@ -48,7 +57,7 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
                   </span>
                 )}
 
-                {i < steps.length - 1 && (
+                {i < visibleSteps.length - 1 && (
                   <ChevronRight aria-hidden="true" className={`h-3 w-3 mx-0.5 shrink-0 ${isPast ? "text-green-300" : "text-surface-200"}`} />
                 )}
               </div>

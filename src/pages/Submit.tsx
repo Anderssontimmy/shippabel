@@ -39,7 +39,7 @@ export const Submit = () => {
   const [platform, setPlatform] = useState<"ios" | "android">("ios");
   const [project, setProject] = useState<Project | null>(null);
   const [hasListing, setHasListing] = useState(false);
-  const [hasScreenshots] = useState(false);
+  const [hasScreenshots, setHasScreenshots] = useState(false);
   const [loadingProject, setLoadingProject] = useState(true);
 
   const {
@@ -82,11 +82,13 @@ export const Submit = () => {
 
     const [projectRes, listingRes] = await Promise.all([
       supabase.from("projects").select("*").eq("id", id).single(),
-      supabase.from("store_listings").select("id").eq("project_id", id).eq("platform", platform),
+      supabase.from("store_listings").select("id, app_name, screenshots").eq("project_id", id),
     ]);
 
     if (projectRes.data) setProject(projectRes.data as Project);
-    setHasListing((listingRes.data?.length ?? 0) > 0);
+    const listings = listingRes.data ?? [];
+    setHasListing(listings.some((l) => l.app_name && l.app_name.trim() !== ""));
+    setHasScreenshots(listings.some((l) => Array.isArray(l.screenshots) && l.screenshots.length > 0));
     setLoadingProject(false);
   };
 
