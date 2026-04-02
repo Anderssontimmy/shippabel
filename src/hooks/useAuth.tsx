@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       provider: "github",
       options: {
         redirectTo: window.location.origin,
-        scopes: "repo read:user",
+        scopes: "repo read:user workflow",
       },
     });
     return { error: error as Error | null };
