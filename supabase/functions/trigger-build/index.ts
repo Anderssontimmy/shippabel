@@ -29,12 +29,12 @@ Deno.serve(async (req) => {
     );
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Unauthorized");
+    if (!authHeader) throw new Error("Please sign in to continue.");
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace("Bearer ", "")
     );
-    if (authError || !user) throw new Error("Unauthorized");
+    if (authError || !user) throw new Error("Please sign in to continue.");
 
     // Get EAS token from user credentials, fall back to env
     let easToken = Deno.env.get("EAS_ACCESS_TOKEN") ?? "";
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     if (easCred?.credentials) {
       easToken = (easCred.credentials as Record<string, string>).access_token ?? easToken;
     }
-    if (!easToken) throw new Error("EAS token not configured. Go to Settings to connect your Expo account.");
+    if (!easToken) throw new Error("Please connect your Expo account in Settings first.");
 
     const { project_id, platform } = (await req.json()) as BuildRequest;
 
@@ -59,21 +59,37 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (projectError || !project) throw new Error("Project not found");
-    if (!project.repo_url) throw new Error("No repository URL linked to this project");
+    if (projectError || !project) throw new Error("We couldn't find this app. Please go back and try again.");
+    if (!project.repo_url) throw new Error("This app doesn't have a GitHub link. Please go back to the scan page and add one.");
 
     // Extract Expo project slug from app.json
     const repoPath = extractGitHubPath(project.repo_url);
-    if (!repoPath) throw new Error("Invalid GitHub URL");
+    if (!repoPath) throw new Error("The GitHub link for this app doesn't look right. Please check it in the scan page.");
 
-    const appConfig = await fetchAppConfig(repoPath);
-    if (!appConfig) throw new Error("Could not read app.json from repository");
+    // Get GitHub token for private repos
+    const { data: ghCred } = await supabase
+      .from("user_credentials")
+      .select("credentials")
+      .eq("user_id", user.id)
+      .eq("provider", "github")
+      .single();
+    const ghToken = (ghCred?.credentials as Record<string, string> | undefined)?.access_token;
+
+    const appConfig = await fetchAppConfig(repoPath, ghToken);
+    if (!appConfig) throw new Error("Your app needs to be converted to a mobile format first. Go back to your scan results and click 'Make it App Store ready'.");
 
     const expo = (appConfig.expo ?? appConfig) as Record<string, unknown>;
     const slug = (expo.slug ?? expo.name ?? project.name) as string;
-    const owner = (expo.owner ?? "") as string;
 
-    // Create submission record
+    // Step 1: Get EAS account info
+    const accountName = await getEasAccountName(easToken);
+    if (!accountName) throw new Error("We couldn't connect to your Expo account. Please check your EAS token in Settings.");
+
+    // Step 2: Find or create the EAS project
+    const easProjectId = await findOrCreateEasProject(easToken, accountName, slug);
+    if (!easProjectId) throw new Error("We couldn't set up your app on Expo. Please try again or check your Expo account at expo.dev.");
+
+    // Step 3: Create submission record
     const { data: submission, error: subError } = await supabase
       .from("submissions")
       .insert({
@@ -85,7 +101,7 @@ Deno.serve(async (req) => {
       .select()
       .single();
 
-    if (subError || !submission) throw new Error("Failed to create submission record");
+    if (subError || !submission) throw new Error("Something went wrong saving your build. Please try again.");
 
     // Update project status
     await supabase
@@ -93,69 +109,40 @@ Deno.serve(async (req) => {
       .update({ status: "building", updated_at: new Date().toISOString() })
       .eq("id", project_id);
 
-    // Trigger EAS Build
-    const buildResponse = await fetch("https://api.expo.dev/v2/builds", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${easToken}`,
-      },
-      body: JSON.stringify({
-        projectId: `@${owner}/${slug}`,
-        platform: platform === "ios" ? "IOS" : "ANDROID",
-        profile: "production",
-        gitUrl: project.repo_url,
-        channel: "production",
-      }),
-    });
+    // Step 4: Trigger EAS Build using the GraphQL API
+    const buildResult = await triggerEasBuild(easToken, easProjectId, platform, project.repo_url);
 
-    if (!buildResponse.ok) {
-      const errorText = await buildResponse.text();
-
-      // Update submission with failure
-      await supabase
-        .from("submissions")
-        .update({ build_status: "failed" })
-        .eq("id", submission.id);
-
-      await supabase
-        .from("projects")
-        .update({ status: "issues_found", updated_at: new Date().toISOString() })
-        .eq("id", project_id);
-
-      throw new Error(`EAS Build failed: ${errorText}`);
+    if (!buildResult.success) {
+      await supabase.from("submissions").update({ build_status: "failed" }).eq("id", submission.id);
+      await supabase.from("projects").update({ status: "issues_found", updated_at: new Date().toISOString() }).eq("id", project_id);
+      throw new Error(buildResult.error ?? "The build failed to start. Please check your app settings and try again.");
     }
-
-    const buildData = await buildResponse.json();
-    const easBuildId = buildData.id ?? buildData.buildId ?? "";
 
     // Update submission with build ID
     await supabase
       .from("submissions")
-      .update({
-        eas_build_id: easBuildId,
-        build_status: "in_progress",
-      })
+      .update({ eas_build_id: buildResult.buildId, build_status: "in_progress" })
       .eq("id", submission.id);
 
     return new Response(
       JSON.stringify({
         success: true,
         submission_id: submission.id,
-        eas_build_id: easBuildId,
+        eas_build_id: buildResult.buildId,
       }),
       { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
+    const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
     console.error("trigger-build error:", message);
-    const status = message === "Unauthorized" ? 401 : 500;
     return new Response(
       JSON.stringify({ error: message }),
-      { status, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });
+
+// --- Helpers ---
 
 function extractGitHubPath(url: string): string | null {
   try {
@@ -168,19 +155,134 @@ function extractGitHubPath(url: string): string | null {
   }
 }
 
-async function fetchAppConfig(repoPath: string): Promise<Record<string, unknown> | null> {
+async function fetchAppConfig(repoPath: string, token?: string): Promise<Record<string, unknown> | null> {
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `token ${token}`;
+
   try {
-    const res = await fetch(
-      `https://raw.githubusercontent.com/${repoPath}/main/app.json`
-    );
+    const res = await fetch(`https://raw.githubusercontent.com/${repoPath}/main/app.json`, { headers });
     if (res.ok) return await res.json();
 
-    const masterRes = await fetch(
-      `https://raw.githubusercontent.com/${repoPath}/master/app.json`
-    );
+    const masterRes = await fetch(`https://raw.githubusercontent.com/${repoPath}/master/app.json`, { headers });
     if (masterRes.ok) return await masterRes.json();
   } catch {
     // Non-fatal
   }
   return null;
+}
+
+async function getEasAccountName(token: string): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.expo.dev/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        query: `query { meActor { ... on User { username } ... on Robot { firstName } } }`,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.data?.meActor?.username ?? data?.data?.meActor?.firstName ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function findOrCreateEasProject(token: string, accountName: string, slug: string): Promise<string | null> {
+  try {
+    // First, try to find existing project
+    const findRes = await fetch("https://api.expo.dev/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        query: `query($owner: String!, $slug: String!) {
+          app { byFullName(fullName: $owner, slug: $slug) { id } }
+        }`,
+        variables: { owner: accountName, slug },
+      }),
+    });
+
+    if (findRes.ok) {
+      const findData = await findRes.json();
+      const existingId = findData?.data?.app?.byFullName?.id;
+      if (existingId) return existingId;
+    }
+
+    // Project doesn't exist — create it
+    const createRes = await fetch("https://api.expo.dev/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        query: `mutation($appInput: AppInput!) {
+          app { createApp(appInput: $appInput) { id } }
+        }`,
+        variables: {
+          appInput: {
+            accountName,
+            projectName: slug,
+            privacy: "hidden",
+          },
+        },
+      }),
+    });
+
+    if (!createRes.ok) return null;
+    const createData = await createRes.json();
+    return createData?.data?.app?.createApp?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function triggerEasBuild(
+  token: string,
+  projectId: string,
+  platform: "ios" | "android",
+  gitUrl: string
+): Promise<{ success: boolean; buildId?: string; error?: string }> {
+  try {
+    // Use REST API for builds
+    const res = await fetch("https://api.expo.dev/v2/builds", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        projectId,
+        platform: platform === "ios" ? "IOS" : "ANDROID",
+        profile: "production",
+        gitUrl,
+        channel: "production",
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("EAS Build API error:", errorText);
+
+      // Parse common errors into friendly messages
+      if (errorText.includes("not found")) {
+        return { success: false, error: "Your Expo project couldn't be found. Please check your Expo account." };
+      }
+      if (errorText.includes("credentials")) {
+        return { success: false, error: "Build credentials are missing. For iOS, you need an Apple Developer account configured in Expo." };
+      }
+      return { success: false, error: "The build couldn't start. Please check your app settings and try again." };
+    }
+
+    const data = await res.json();
+    return { success: true, buildId: data.id ?? data.buildId ?? "" };
+  } catch (err) {
+    return { success: false, error: "We couldn't connect to the build service. Please try again." };
+  }
 }
