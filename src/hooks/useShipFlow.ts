@@ -141,6 +141,7 @@ export const useShipFlow = (projectId?: string) => {
     }
 
     // Determine current step — strictly sequential
+    // Screenshots are optional and don't block the flow
     let currentStep: FlowStep = "scan";
     if (checks.scanned) {
       if ((checks.criticalIssues as number) > 0) {
@@ -149,6 +150,9 @@ export const useShipFlow = (projectId?: string) => {
         currentStep = "signup";
       } else if (!checks.hasListing) {
         currentStep = "listing";
+      } else if (!checks.hasScreenshots && !checks.hasEas) {
+        // If no screenshots AND no EAS, suggest screenshots first (but don't block)
+        currentStep = "screenshots";
       } else if (!checks.hasEas) {
         currentStep = "connect";
       } else if (!checks.hasBuild) {
