@@ -182,6 +182,7 @@ export const Screenshots = () => {
 
   const pageBg = (pg: PageData) => pg.bgGradient ?? pg.bgColor;
   const { isPaid } = usePlan();
+  const allEmpty = pages.every((pg) => pg.phones.length === 0 && pg.texts.length === 0);
 
   if (!isPaid) {
     return (
@@ -214,6 +215,44 @@ export const Screenshots = () => {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
+
+        {/* Onboarding — shows when editor is empty */}
+        {allEmpty && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/95 backdrop-blur-sm" style={{ top: "auto", bottom: 0, height: "calc(100% - 105px)" }}>
+            <div className="max-w-lg px-6 text-center">
+              <div className="h-14 w-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-5">
+                <Smartphone className="h-7 w-7 text-green-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-surface-900 mb-2">Create your store screenshots</h2>
+              <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
+                The App Store and Google Play show screenshots of your app to help people decide to download it.
+                You need 3-5 screenshots that show what your app looks like.
+              </p>
+
+              <div className="text-left max-w-sm mx-auto space-y-3 mb-8">
+                <div className="flex gap-3 items-start">
+                  <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-500 flex items-center justify-center text-xs font-semibold shrink-0">1</div>
+                  <p className="text-sm text-surface-600">Take screenshots of your app on your phone (or use the simulator)</p>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-500 flex items-center justify-center text-xs font-semibold shrink-0">2</div>
+                  <p className="text-sm text-surface-600">Click <strong>"Add device"</strong> on any page below and upload your screenshot</p>
+                </div>
+                <div className="flex gap-3 items-start">
+                  <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-500 flex items-center justify-center text-xs font-semibold shrink-0">3</div>
+                  <p className="text-sm text-surface-600">We frame it in a phone mockup — add captions and colors to make it pop</p>
+                </div>
+              </div>
+
+              <Button onClick={() => { setActivePage(0); addPhone(0, 45); }} className="gap-2">
+                <Smartphone className="h-4 w-4" />
+                Add my first screenshot
+              </Button>
+              <p className="text-xs text-surface-400 mt-3">You can also drag and drop images directly onto the pages</p>
+            </div>
+          </div>
+        )}
+
         {/* Sidebar */}
         <div className="w-56 border-r border-gray-200 bg-white overflow-y-auto shrink-0">
           {/* Tabs */}
