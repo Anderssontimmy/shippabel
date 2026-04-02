@@ -13,6 +13,10 @@ import {
   EyeOff,
   Shield,
   Key,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -25,6 +29,8 @@ interface ProviderConfig {
   name: string;
   icon: typeof Apple;
   description: string;
+  setupSteps: string[];
+  setupLink?: { label: string; url: string };
   fields: { key: string; label: string; placeholder: string; secret: boolean; multiline?: boolean; help?: string }[];
 }
 
@@ -33,14 +39,24 @@ const providers: ProviderConfig[] = [
     id: "github" as Provider,
     name: "GitHub",
     icon: Github,
-    description: "Connect to scan private repos directly. If you signed in with GitHub, this is already connected.",
+    description: "Connect to scan private apps. If you signed in with GitHub, this is already connected.",
+    setupSteps: [
+      "Go to github.com and sign in",
+      "Click your profile picture → Settings",
+      "Scroll down to Developer settings → Personal access tokens → Fine-grained tokens",
+      "Click 'Generate new token'",
+      "Name it 'Shippabel', set expiration to 90 days",
+      "Under 'Repository access', select your app repos",
+      "Under 'Permissions', enable 'Contents: Read'",
+      "Click 'Generate token' and copy it",
+    ],
+    setupLink: { label: "Open GitHub Token Settings", url: "https://github.com/settings/tokens?type=beta" },
     fields: [
       {
         key: "access_token",
         label: "Personal Access Token",
-        placeholder: "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        placeholder: "github_pat_xxxxxxxxxxxxxxxxxxxx",
         secret: true,
-        help: "Create at github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Grant 'Contents: Read' access to your repos.",
       },
     ],
   },
@@ -48,14 +64,22 @@ const providers: ProviderConfig[] = [
     id: "eas",
     name: "Expo (EAS)",
     icon: Rocket,
-    description: "Required for building your app. Get a token from expo.dev/accounts/[you]/settings/access-tokens",
+    description: "Required for building your app. Free to create — you just need an Expo account.",
+    setupSteps: [
+      "Go to expo.dev and create a free account (or sign in)",
+      "Click your profile picture → Account settings",
+      "Click 'Access Tokens' in the left sidebar",
+      "Click 'Create Token'",
+      "Name it 'Shippabel' and click 'Create'",
+      "Copy the token — you won't be able to see it again!",
+    ],
+    setupLink: { label: "Open Expo Token Settings", url: "https://expo.dev/settings/access-tokens" },
     fields: [
       {
         key: "access_token",
         label: "EAS Access Token",
         placeholder: "expo_xxxxxxxxxxxx",
         secret: true,
-        help: "Create at expo.dev → Settings → Access Tokens",
       },
     ],
   },
@@ -63,21 +87,33 @@ const providers: ProviderConfig[] = [
     id: "apple",
     name: "Apple App Store",
     icon: Apple,
-    description: "Required for iOS submission. You need an Apple Developer account ($99/year).",
+    description: "Required to publish on the App Store. You need an Apple Developer account ($99/year).",
+    setupSteps: [
+      "Go to appstoreconnect.apple.com and sign in",
+      "Click 'Users and Access' in the top menu",
+      "Click the 'Integrations' tab, then 'App Store Connect API'",
+      "Click the + button to create a new key",
+      "Name it 'Shippabel' and select 'Admin' access",
+      "Note the Key ID (shown in the table)",
+      "Note the Issuer ID (shown at the top of the page)",
+      "Click 'Download API Key' — this downloads a .p8 file",
+      "Open the .p8 file with any text editor and copy everything inside",
+    ],
+    setupLink: { label: "Open App Store Connect", url: "https://appstoreconnect.apple.com/access/integrations/api" },
     fields: [
       {
         key: "key_id",
         label: "API Key ID",
         placeholder: "XXXXXXXXXX",
         secret: false,
-        help: "From App Store Connect → Users → Keys",
+        help: "The 10-character ID shown in the Keys table",
       },
       {
         key: "issuer_id",
         label: "Issuer ID",
         placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
         secret: false,
-        help: "Found at the top of the API Keys page",
+        help: "The UUID shown at the top of the API Keys page",
       },
       {
         key: "private_key",
@@ -85,7 +121,7 @@ const providers: ProviderConfig[] = [
         placeholder: "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
         secret: true,
         multiline: true,
-        help: "Download the .p8 file and paste its contents here",
+        help: "Open the downloaded .p8 file in a text editor, then copy and paste everything",
       },
     ],
   },
@@ -93,7 +129,21 @@ const providers: ProviderConfig[] = [
     id: "google",
     name: "Google Play",
     icon: Smartphone,
-    description: "Required for Android submission. You need a Google Play Developer account ($25 one-time).",
+    description: "Required to publish on Google Play. You need a Google Play Developer account ($25 one-time).",
+    setupSteps: [
+      "Go to play.google.com/console and sign in",
+      "Click 'Setup' → 'API access' in the left sidebar",
+      "Click 'Create new service account'",
+      "This opens Google Cloud Console — click 'Create Service Account'",
+      "Name it 'Shippabel', click 'Create and Continue'",
+      "For role, select 'Service Account User', then click 'Done'",
+      "Click the ⋮ menu next to your new account → 'Manage Keys'",
+      "Click 'Add Key' → 'Create new key' → choose JSON → 'Create'",
+      "A JSON file downloads — open it and copy everything inside",
+      "Back in Play Console, click 'Grant Access' next to the service account",
+      "Enable 'Admin' permissions and click 'Invite User'",
+    ],
+    setupLink: { label: "Open Google Play Console", url: "https://play.google.com/console/developers" },
     fields: [
       {
         key: "service_account_json",
@@ -101,7 +151,7 @@ const providers: ProviderConfig[] = [
         placeholder: '{"type": "service_account", ...}',
         secret: true,
         multiline: true,
-        help: "Create a service account in Google Cloud Console, grant it access in Play Console, then download the JSON key",
+        help: "Open the downloaded JSON file in a text editor, then copy and paste everything",
       },
     ],
   },
@@ -115,6 +165,7 @@ export const Settings = () => {
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [showGuide, setShowGuide] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
@@ -211,6 +262,48 @@ export const Settings = () => {
                   {/* Edit form */}
                   {isEditing && (
                     <div className="space-y-3 mb-4">
+                      {/* Setup guide */}
+                      <div className="rounded-lg border border-surface-200 overflow-hidden">
+                        <button
+                          onClick={() => setShowGuide((s) => ({ ...s, [provider.id]: !s[provider.id] }))}
+                          className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-surface-50 transition-colors cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2 text-xs font-medium text-surface-700">
+                            <HelpCircle className="h-3.5 w-3.5 text-surface-400" />
+                            How do I get this?
+                          </span>
+                          {showGuide[provider.id]
+                            ? <ChevronDown className="h-3.5 w-3.5 text-surface-400" />
+                            : <ChevronRight className="h-3.5 w-3.5 text-surface-400" />
+                          }
+                        </button>
+                        {showGuide[provider.id] && (
+                          <div className="px-3 pb-3 border-t border-surface-100">
+                            <ol className="mt-2.5 space-y-2">
+                              {provider.setupSteps.map((step, i) => (
+                                <li key={i} className="flex gap-2.5 text-xs text-surface-600">
+                                  <span className="flex items-center justify-center h-4.5 w-4.5 rounded-full bg-surface-100 text-surface-500 text-[10px] font-semibold shrink-0 mt-0.5" style={{ minWidth: "18px", minHeight: "18px" }}>
+                                    {i + 1}
+                                  </span>
+                                  <span>{step}</span>
+                                </li>
+                              ))}
+                            </ol>
+                            {provider.setupLink && (
+                              <a
+                                href={provider.setupLink.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-green-700 hover:text-green-800"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                {provider.setupLink.label}
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                       {provider.fields.map((field) => (
                         <div key={field.key}>
                           <div className="flex justify-between mb-1">
