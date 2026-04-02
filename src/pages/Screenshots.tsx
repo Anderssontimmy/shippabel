@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ShipFlowBar } from "@/components/ShipFlowBar";
 import { PhoneFrame } from "@/components/PhoneFrame";
+import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft,
   Smartphone,
@@ -10,6 +11,8 @@ import {
   Trash2,
   Copy,
   Type,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
@@ -180,6 +183,81 @@ export const Screenshots = () => {
     toast("success", "Screenshots exported!");
   }, [pages, exportPage, toast]);
 
+  const [saving, setSaving] = useState(false);
+
+  const saveToSupabase = useCallback(async () => {
+    if (!id || id === "demo") return;
+    setSaving(true);
+
+    try {
+      const urls: string[] = [];
+
+      for (let i = 0; i < PAGE_COUNT; i++) {
+        const pg = pages[i]!;
+        if (pg.phones.length === 0 && pg.texts.length === 0) continue;
+
+        const el = pageRefs.current[i];
+        if (!el) continue;
+
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: null, useCORS: true });
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (!blob) continue;
+
+        const filePath = `screenshots/${id}/page_${i + 1}.png`;
+
+        // Upload to Supabase Storage (overwrite if exists)
+        const { error: uploadError } = await supabase.storage
+          .from("projects")
+          .upload(filePath, blob, { upsert: true, contentType: "image/png" });
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("projects")
+          .getPublicUrl(filePath);
+
+        if (urlData?.publicUrl) {
+          urls.push(urlData.publicUrl);
+        }
+      }
+
+      if (urls.length === 0) {
+        toast("error", "No screenshots to save. Add at least one device first.");
+        setSaving(false);
+        return;
+      }
+
+      // Save URLs to store_listings (update existing or create new)
+      const { data: existing } = await supabase
+        .from("store_listings")
+        .select("id")
+        .eq("project_id", id)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("store_listings")
+          .update({ screenshots: urls })
+          .eq("id", existing.id);
+      } else {
+        await supabase
+          .from("store_listings")
+          .insert({ project_id: id, platform: "ios", screenshots: urls });
+      }
+
+      toast("success", `${urls.length} screenshot${urls.length > 1 ? "s" : ""} saved!`);
+    } catch (err) {
+      toast("error", "Failed to save screenshots. Please try again.");
+      console.error(err);
+    }
+
+    setSaving(false);
+  }, [id, pages, toast]);
+
   const pageBg = (pg: PageData) => pg.bgGradient ?? pg.bgColor;
   const { isPaid } = usePlan();
   const allEmpty = pages.every((pg) => pg.phones.length === 0 && pg.texts.length === 0);
@@ -210,8 +288,12 @@ export const Screenshots = () => {
         <Link to={`/scan/${id}`} className="text-surface-500 hover:text-white"><ArrowLeft className="h-4 w-4" /></Link>
         <h1 className="text-sm font-bold">Screenshot Editor</h1>
         <div className="flex-1" />
-        <Button size="sm" onClick={exportAll} className="gap-1.5 text-xs"><Download className="h-3 w-3" /> Export all</Button>
-        <Link to={`/app/${id}/submit`} className="text-xs text-green-400 hover:text-green-300 font-medium ml-3">Continue →</Link>
+        <Button size="sm" variant="secondary" onClick={exportAll} className="gap-1.5 text-xs"><Download className="h-3 w-3" /> Download</Button>
+        <Button size="sm" onClick={saveToSupabase} disabled={saving || allEmpty} className="gap-1.5 text-xs ml-2">
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+          {saving ? "Saving..." : "Save screenshots"}
+        </Button>
+        <Link to={`/app/${id}/submit`} className="text-xs text-green-600 hover:text-green-700 font-medium ml-3">Continue →</Link>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
