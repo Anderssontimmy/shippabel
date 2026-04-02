@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
 
     // Step 2: Find or create the EAS project
     const easProjectId = await findOrCreateEasProject(easToken, accountName, slug);
-    if (!easProjectId) throw new Error("We couldn't set up your app on Expo. Please try again or check your Expo account at expo.dev.");
+    if (!easProjectId.id) throw new Error(easProjectId.error ?? "We couldn't set up your app on Expo. Please try again.");
 
     // Step 3: Create submission record
     const { data: submission, error: subError } = await supabase
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
       .eq("id", project_id);
 
     // Step 4: Trigger EAS Build using the GraphQL API
-    const buildResult = await triggerEasBuild(easToken, easProjectId, platform, project.repo_url);
+    const buildResult = await triggerEasBuild(easToken, easProjectId.id!, platform, project.repo_url);
 
     if (!buildResult.success) {
       await supabase.from("submissions").update({ build_status: "failed" }).eq("id", submission.id);
@@ -191,14 +191,16 @@ async function getEasAccountName(token: string): Promise<string | null> {
   }
 }
 
-async function findOrCreateEasProject(token: string, accountName: string, slug: string): Promise<string | null> {
+async function findOrCreateEasProject(token: string, accountName: string, slug: string): Promise<{ id: string | null; error?: string }> {
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
 
+  const debugInfo: string[] = [];
+
   try {
-    // 1. Try to find existing project via GraphQL
+    // 1. Try to find existing project
     const findRes = await fetch("https://api.expo.dev/graphql", {
       method: "POST",
       headers,
@@ -207,59 +209,36 @@ async function findOrCreateEasProject(token: string, accountName: string, slug: 
       }),
     });
 
-    if (findRes.ok) {
-      const findData = await findRes.json();
-      console.log("Find project response:", JSON.stringify(findData));
-      const existingId = findData?.data?.app?.byFullName?.id;
-      if (existingId) return existingId;
-    }
+    const findText = await findRes.text();
+    debugInfo.push(`Find: ${findText.slice(0, 300)}`);
 
-    // 2. Not found — create via GraphQL mutation
+    try {
+      const findData = JSON.parse(findText);
+      const existingId = findData?.data?.app?.byFullName?.id;
+      if (existingId) return { id: existingId };
+    } catch {}
+
+    // 2. Create project
     const createRes = await fetch("https://api.expo.dev/graphql", {
       method: "POST",
       headers,
       body: JSON.stringify({
-        query: `mutation CreateApp($appInput: CreateAppInput!) {
-          app { createApp(appInput: $appInput) { id } }
-        }`,
-        variables: {
-          appInput: {
-            accountName,
-            projectName: slug,
-          },
-        },
+        query: `mutation { app { createApp(appInput: { accountName: "${accountName}", projectName: "${slug}" }) { id } } }`,
       }),
     });
 
-    if (createRes.ok) {
-      const createData = await createRes.json();
-      console.log("Create project response:", JSON.stringify(createData));
+    const createText = await createRes.text();
+    debugInfo.push(`Create: ${createText.slice(0, 300)}`);
+
+    try {
+      const createData = JSON.parse(createText);
       const newId = createData?.data?.app?.createApp?.id;
-      if (newId) return newId;
+      if (newId) return { id: newId };
+    } catch {}
 
-      // If GraphQL errors, check if it's because project already exists
-      const errors = createData?.errors;
-      if (errors?.[0]?.message?.includes("already exists")) {
-        // Retry finding it
-        const retryRes = await fetch("https://api.expo.dev/graphql", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            query: `query { app { byFullName(fullName: "@${accountName}/${slug}") { id } } }`,
-          }),
-        });
-        if (retryRes.ok) {
-          const retryData = await retryRes.json();
-          return retryData?.data?.app?.byFullName?.id ?? null;
-        }
-      }
-    }
-
-    console.error("All EAS project creation attempts failed");
-    return null;
+    return { id: null, error: `Expo API debug: ${debugInfo.join(" | ")}` };
   } catch (err) {
-    console.error("findOrCreateEasProject error:", err);
-    return null;
+    return { id: null, error: `Exception: ${err}` };
   }
 }
 
