@@ -1,8 +1,9 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Landing } from "./pages/Landing";
+import { useAuth } from "./hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 // Lazy-load all routes except landing (keep first paint fast)
@@ -25,13 +26,20 @@ const PageLoader = () => (
   </div>
 );
 
+const Home = () => {
+  const { user, loading } = useAuth();
+  if (loading) return <PageLoader />;
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <Landing />;
+};
+
 const App = () => {
   return (
     <ErrorBoundary fallbackTitle="The app encountered an error">
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<Home />} />
             <Route path="/scan" element={<ErrorBoundary fallbackTitle="Scanner error"><Scan /></ErrorBoundary>} />
             <Route path="/scan/:id" element={<ErrorBoundary fallbackTitle="Could not load scan results"><ScanResults /></ErrorBoundary>} />
             <Route path="/app/:id/listing" element={<ErrorBoundary fallbackTitle="Could not load listing editor"><Listing /></ErrorBoundary>} />
