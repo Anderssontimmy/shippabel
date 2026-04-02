@@ -38,7 +38,24 @@ jobs:
       - name: Initialize EAS project
         run: eas init --id \${{ vars.EAS_PROJECT_ID }} --non-interactive || eas init --non-interactive || true
       - name: Build
-        run: eas build --platform \${{ inputs.platform }} --non-interactive --no-wait
+        run: eas build --platform \${{ inputs.platform }} --non-interactive --profile production
+      - name: Submit to Google Play
+        if: success() && inputs.platform == 'android' && vars.GOOGLE_SERVICE_ACCOUNT_KEY != ''
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: \${{ vars.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          echo "$GOOGLE_SERVICE_ACCOUNT_KEY" > google-service-account.json
+          eas submit --platform android --non-interactive --latest --profile production
+        continue-on-error: true
+      - name: Submit to App Store
+        if: success() && inputs.platform == 'ios'
+        run: eas submit --platform ios --non-interactive --latest --profile production
+        continue-on-error: true
+      - name: Notify completion
+        if: always()
+        run: |
+          echo "Build status: \${{ job.status }}"
+          echo "Platform: \${{ inputs.platform }}"
 `;
 
 Deno.serve(async (req) => {
@@ -96,6 +113,14 @@ Deno.serve(async (req) => {
             ios: { simulator: false },
           },
         },
+        submit: {
+          production: {
+            android: {
+              serviceAccountKeyPath: "./google-service-account.json",
+              track: "production",
+            },
+          },
+        },
       }, null, 2);
       const pushOk = await pushFile(repoPath, "eas.json", easJson, "Add eas.json for EAS Build (via Shippabel)", ghHeaders, defaultBranch);
       if (!pushOk) throw new Error("Workflow file not found — couldn't push eas.json to your repo. Your GitHub token may not have write access. Try signing out and back in with GitHub.");
@@ -125,11 +150,20 @@ Deno.serve(async (req) => {
     }
 
     // Step 4b: Set EXPO_TOKEN as GitHub Actions variable
-    const secretSet = await setGitHubSecret(repoPath, "EXPO_TOKEN", easToken, ghHeaders);
-    if (!secretSet) {
-      // Also need to update the workflow to not require the token from secrets
-      // Force update workflow file to use env variable as fallback
-      console.error("Could not set EXPO_TOKEN variable — user may need to add it manually");
+    await setGitHubSecret(repoPath, "EXPO_TOKEN", easToken, ghHeaders);
+
+    // Step 4c: Set Google Play credentials if available
+    const { data: googleCred } = await supabase
+      .from("user_credentials")
+      .select("credentials")
+      .eq("user_id", user.id)
+      .eq("provider", "google")
+      .single();
+    if (googleCred?.credentials) {
+      const googleKey = (googleCred.credentials as Record<string, string>).service_account_json;
+      if (googleKey) {
+        await setGitHubSecret(repoPath, "GOOGLE_SERVICE_ACCOUNT_KEY", googleKey, ghHeaders);
+      }
     }
 
     // Step 5: Trigger the workflow
