@@ -256,38 +256,44 @@ async function triggerEasBuild(
   gitUrl: string
 ): Promise<{ success: boolean; buildId?: string; error?: string }> {
   try {
-    // Use REST API for builds
-    const res = await fetch("https://api.expo.dev/v2/builds", {
+    // Use GraphQL API to create a build
+    const platformEnum = platform === "ios" ? "IOS" : "ANDROID";
+    const res = await fetch("https://api.expo.dev/graphql", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        projectId,
-        platform: platform === "ios" ? "IOS" : "ANDROID",
-        profile: "production",
-        gitUrl,
-        channel: "production",
+        query: `mutation {
+          build {
+            createAndroidBuild: ${platform === "android" ? "createAndroidBuild" : "createIosBuild"}(input: {
+              projectId: "${projectId}"
+              type: MANAGED
+            }) {
+              build { id status }
+            }
+          }
+        }`,
       }),
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("EAS Build API error:", errorText);
+    const text = await res.text();
 
-      // Parse common errors into friendly messages
-      if (errorText.includes("not found")) {
-        return { success: false, error: "Your Expo project couldn't be found. Please check your Expo account." };
-      }
-      if (errorText.includes("credentials")) {
-        return { success: false, error: "Build credentials are missing. For iOS, you need an Apple Developer account configured in Expo." };
-      }
-      return { success: false, error: "The build couldn't start. Please check your app settings and try again." };
-    }
+    try {
+      const data = JSON.parse(text);
+      const buildKey = platform === "android" ? "createAndroidBuild" : "createIosBuild";
+      const buildId = data?.data?.build?.[buildKey]?.build?.id;
+      if (buildId) return { success: true, buildId };
 
-    const data = await res.json();
-    return { success: true, buildId: data.id ?? data.buildId ?? "" };
+      // Check for errors
+      const errors = data?.errors;
+      if (errors?.[0]?.message) {
+        return { success: false, error: `Build error: ${errors[0].message.slice(0, 200)}` };
+      }
+    } catch {}
+
+    return { success: false, error: `Build API response: ${text.slice(0, 200)}` };
   } catch (err) {
     return { success: false, error: "We couldn't connect to the build service. Please try again." };
   }
