@@ -161,12 +161,15 @@ export const Screenshots = () => {
 
   const handleMouseUp = useCallback(() => setIsDragging(false), []);
 
-  // Export
+  // Export at exact App Store size: 1290 × 2796 (iPhone 6.7")
+  // Display width is 240px, so scale = 1290/240 = 5.375
+  const EXPORT_SCALE = 1290 / 240;
+
   const exportPage = useCallback(async (idx: number) => {
     const el = pageRefs.current[idx];
     if (!el) return;
     try {
-      const canvas = await html2canvas(el, { scale: 3, backgroundColor: null, useCORS: true });
+      const canvas = await html2canvas(el, { scale: EXPORT_SCALE, backgroundColor: null, useCORS: true });
       canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
@@ -199,7 +202,7 @@ export const Screenshots = () => {
         const el = pageRefs.current[i];
         if (!el) continue;
 
-        const canvas = await html2canvas(el, { scale: 2, backgroundColor: null, useCORS: true });
+        const canvas = await html2canvas(el, { scale: EXPORT_SCALE, backgroundColor: null, useCORS: true });
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
         if (!blob) continue;
 
