@@ -59,6 +59,9 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
 
   const load = async () => {
     setLoading(true);
+    setListing(null);
+    setVariants([]);
+    setError(null);
     if (isDemo) {
       setLoading(false);
       return;
@@ -70,7 +73,7 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
       .eq("platform", platform)
       .maybeSingle();
 
-    if (data) setListing(data as StoreListing);
+    setListing(data ? (data as StoreListing) : null);
     setLoading(false);
   };
 

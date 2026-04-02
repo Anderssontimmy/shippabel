@@ -27,22 +27,20 @@ interface AppStep {
   actionLabel: string;
 }
 
-const getSteps = (project: Project): AppStep[] => {
+const getSteps = (project: Project, hasListing: boolean): AppStep[] => {
   const scan = project.scan_result as ScanResult | null;
   const scanned = !!scan;
   const hasCritical = (scan?.summary?.critical ?? 0) > 0;
   const fixed = scanned && !hasCritical;
   const status = project.status;
-  // Only mark listing done if we're past the listing stage (building/submitted/live)
-  const pastListing = status === "building" || status === "submitted" || status === "live";
   const isBuilt = status === "submitted" || status === "live";
   const isLive = status === "live";
 
   return [
     { key: "check", label: "Check", icon: Scan, done: scanned, active: !scanned, href: `/scan/${project.id}`, actionLabel: "See results" },
     { key: "fix", label: "Fix", icon: Wrench, done: fixed, active: scanned && !fixed, href: `/scan/${project.id}`, actionLabel: hasCritical ? `Fix ${scan?.summary?.critical} problems` : "All fixed" },
-    { key: "listing", label: "Store page", icon: FileText, done: pastListing, active: fixed && !pastListing, href: `/app/${project.id}/listing`, actionLabel: "Write store page" },
-    { key: "publish", label: "Publish", icon: Send, done: isLive, active: pastListing && !isLive, href: isBuilt ? `/app/${project.id}/status` : `/app/${project.id}/submit`, actionLabel: isBuilt ? "Track review" : "Publish app" },
+    { key: "listing", label: "Store page", icon: FileText, done: hasListing, active: fixed && !hasListing, href: `/app/${project.id}/listing`, actionLabel: "Write store page" },
+    { key: "publish", label: "Publish", icon: Send, done: isLive, active: hasListing && !isLive, href: isBuilt ? `/app/${project.id}/status` : `/app/${project.id}/submit`, actionLabel: isBuilt ? "Track review" : "Publish app" },
   ];
 };
 
@@ -55,6 +53,7 @@ export const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectListings, setProjectListings] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
   const loadProjects = useCallback(async () => {
@@ -65,7 +64,25 @@ export const Dashboard = () => {
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      setProjects((data ?? []) as Project[]);
+
+      const projects = (data ?? []) as Project[];
+      setProjects(projects);
+
+      // Check which projects have listings
+      if (projects.length > 0) {
+        const { data: listings } = await supabase
+          .from("store_listings")
+          .select("project_id, app_name")
+          .in("project_id", projects.map((p) => p.id));
+
+        const listingMap: Record<string, boolean> = {};
+        for (const l of listings ?? []) {
+          if (l.app_name && l.app_name.trim() !== "") {
+            listingMap[l.project_id] = true;
+          }
+        }
+        setProjectListings(listingMap);
+      }
     } catch {
       // Silently fail
     }
@@ -126,7 +143,7 @@ export const Dashboard = () => {
       {hasApps && (
         <div className="space-y-4">
           {projects.map((project) => {
-            const steps = getSteps(project);
+            const steps = getSteps(project, !!projectListings[project.id]);
             const score = project.scan_result?.score;
             const activeStep = steps.find((s) => s.active);
             const completedCount = steps.filter((s) => s.done).length;
