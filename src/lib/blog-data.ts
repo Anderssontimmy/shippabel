@@ -337,4 +337,319 @@ export const blogPosts: BlogPost[] = [
 <p><a href="https://shippabel.com/scan">Generate your privacy policy for free →</a></p>
 `,
   },
+  {
+    slug: "publish-lovable-app",
+    title: "How to publish your Lovable app to the App Store and Google Play",
+    excerpt: "Lovable makes building apps easy. But it doesn't publish them for you. Here's how to take your Lovable project from preview to published — without touching code.",
+    category: "Guide",
+    readTime: "6 min read",
+    date: "Apr 2026",
+    content: `
+<p><strong>Lovable</strong> is amazing for building apps fast. You describe what you want, and it builds it. But when you're done, you have a web app — and Apple and Google don't accept web apps directly.</p>
+
+<p>Here's how to get your Lovable app into both stores.</p>
+
+<h2>Why your Lovable app isn't "store ready" yet</h2>
+
+<p>Lovable creates web applications (React apps). The App Store and Google Play require <strong>native mobile apps</strong> — apps that are compiled specifically for phones.</p>
+
+<p>The good news: you don't need to rebuild anything. Your Lovable app just needs to be <strong>wrapped</strong> — packaged inside a mobile shell that makes it work as a native app.</p>
+
+<h2>Step 1: Get your code on GitHub</h2>
+
+<p>Lovable connects to GitHub automatically. If you haven't already, push your project to a GitHub repository. You'll need this link for the next step.</p>
+
+<h2>Step 2: Scan and convert</h2>
+
+<p>Go to <a href="https://shippabel.com/scan">shippabel.com/scan</a> and paste your GitHub link. Shippabel will:</p>
+
+<ul>
+<li>Detect that it's a web app built with React</li>
+<li>Show you a readiness score</li>
+<li>Offer to <strong>convert it to mobile format</strong> automatically</li>
+</ul>
+
+<p>Click "Make it App Store ready" and Shippabel converts your Lovable app to an Expo project — adding all the mobile configuration files your app needs.</p>
+
+<h2>Step 3: Create your store listing</h2>
+
+<p>Every app in the store needs:</p>
+
+<ul>
+<li><strong>An app name</strong> — what shows under the icon (30 chars max)</li>
+<li><strong>A description</strong> — what your app does and why people should download it</li>
+<li><strong>Screenshots</strong> — at least 3 showing your app's best features</li>
+<li><strong>A privacy policy</strong> — required by both Apple and Google</li>
+</ul>
+
+<p>Shippabel's AI writes all of this for you. Just describe your app in a sentence or two, and it generates 3 versions you can pick from.</p>
+
+<h2>Step 4: Build and submit</h2>
+
+<p>Shippabel triggers a production build through GitHub Actions, then submits to both stores. You just click "Start build" and wait.</p>
+
+<ul>
+<li><strong>Android:</strong> usually approved in a few hours</li>
+<li><strong>iOS:</strong> Apple reviews in 1-3 days</li>
+</ul>
+
+<h2>What you need</h2>
+
+<ul>
+<li>An <strong>Apple Developer account</strong> ($99/year) for the App Store</li>
+<li>A <strong>Google Play Developer account</strong> ($25 one-time) for Google Play</li>
+<li>A free <strong>Expo account</strong> for building</li>
+</ul>
+
+<p>That's it. No Xcode, no Android Studio, no terminal commands.</p>
+
+<p><a href="https://shippabel.com/scan">Check your Lovable app for free →</a></p>
+`,
+  },
+  {
+    slug: "publish-base44-app",
+    title: "How to publish your Base44 app to the App Store",
+    excerpt: "Built your app on Base44? Here's the complete guide to getting it published on the App Store and Google Play — no developer experience required.",
+    category: "Guide",
+    readTime: "5 min read",
+    date: "Apr 2026",
+    content: `
+<p><strong>Base44</strong> lets you build real apps just by describing them. But once your app is ready, Base44 doesn't handle publishing to the App Store or Google Play.</p>
+
+<p>That's where this guide comes in.</p>
+
+<h2>The gap between "built" and "published"</h2>
+
+<p>Building an app and publishing it are two completely different things. Publishing requires:</p>
+
+<ul>
+<li>Converting your app to a mobile-native format</li>
+<li>Creating a unique app identity (bundle ID)</li>
+<li>Designing store screenshots</li>
+<li>Writing a store description that gets downloads</li>
+<li>Setting up a privacy policy</li>
+<li>Building a production version</li>
+<li>Submitting to Apple and Google for review</li>
+</ul>
+
+<p>That's a lot of steps. But each one can be automated.</p>
+
+<h2>The fastest path from Base44 to the stores</h2>
+
+<ol>
+<li><strong>Export your code</strong> to GitHub from Base44</li>
+<li><strong>Scan it</strong> at <a href="https://shippabel.com/scan">shippabel.com/scan</a> — see exactly what needs fixing</li>
+<li><strong>Click "Make it App Store ready"</strong> — converts to mobile format automatically</li>
+<li><strong>Generate your store page</strong> — AI writes your name, description, and keywords</li>
+<li><strong>Create screenshots</strong> — frame them in iPhone mockups</li>
+<li><strong>Build and submit</strong> — one click, both stores</li>
+</ol>
+
+<p>Total hands-on time: about 30 minutes. Then you wait for Apple (1-3 days) and Google (a few hours).</p>
+
+<h2>Cost breakdown</h2>
+
+<table>
+<tr><td>Apple Developer account</td><td>$99/year</td></tr>
+<tr><td>Google Play Developer account</td><td>$25 one-time</td></tr>
+<tr><td>Shippabel (scan + publish)</td><td>$99 one-time</td></tr>
+<tr><td><strong>Total to go live on both stores</strong></td><td><strong>$223</strong></td></tr>
+</table>
+
+<p>Compare that to hiring a developer: $500-$2000+ just for the publishing part.</p>
+
+<p><a href="https://shippabel.com/scan">Check your Base44 app for free →</a></p>
+`,
+  },
+  {
+    slug: "publish-chatgpt-built-app",
+    title: "You built an app with ChatGPT — here's how to actually publish it",
+    excerpt: "ChatGPT can write your app's code. But it can't submit it to the App Store. This guide bridges the gap from 'working prototype' to 'published in the store.'",
+    category: "Guide",
+    readTime: "7 min read",
+    date: "Apr 2026",
+    content: `
+<p>You did it. You used <strong>ChatGPT</strong> to write your app — prompt by prompt, feature by feature. It works. It looks good. Now you want people to actually use it.</p>
+
+<p>But when you ask ChatGPT "how do I publish this to the App Store?" you get a wall of technical instructions about Xcode, certificates, provisioning profiles, and terminal commands. <em>That's not what you signed up for.</em></p>
+
+<h2>Why ChatGPT can't help you publish</h2>
+
+<p>ChatGPT is great at writing code. But publishing an app requires:</p>
+
+<ul>
+<li>Compiling your code into a binary file</li>
+<li>Signing it with Apple or Google credentials</li>
+<li>Uploading it to the stores' servers</li>
+<li>Filling out store metadata</li>
+<li>Creating correctly-sized screenshots</li>
+<li>Passing automated and human reviews</li>
+</ul>
+
+<p>These are <em>actions</em>, not code. ChatGPT can explain them but can't do them for you.</p>
+
+<h2>The solution: let a tool do it</h2>
+
+<p><a href="https://shippabel.com">Shippabel</a> picks up exactly where ChatGPT leaves off. You have working code — Shippabel turns it into a published app.</p>
+
+<h3>What ChatGPT does</h3>
+<p>Writes your app code, helps you debug, creates components and features.</p>
+
+<h3>What Shippabel does</h3>
+<p>Scans your code for store requirements, fixes issues, converts to mobile format, writes your store page, creates screenshots, builds, and submits to both stores.</p>
+
+<h2>How to go from ChatGPT code to App Store</h2>
+
+<ol>
+<li><strong>Put your code on GitHub</strong> — create a repo and push your files</li>
+<li><strong>Scan at shippabel.com</strong> — paste your GitHub link, get a readiness report</li>
+<li><strong>Fix and convert</strong> — auto-fix issues, convert to mobile if needed</li>
+<li><strong>Write store listing</strong> — AI generates your app name, description, keywords</li>
+<li><strong>Build and publish</strong> — automated build and submission</li>
+</ol>
+
+<h2>Common ChatGPT app issues we find</h2>
+
+<ul>
+<li><strong>API keys in the code</strong> — ChatGPT often hardcodes keys that should be hidden</li>
+<li><strong>No error handling</strong> — the app crashes when things go wrong</li>
+<li><strong>Missing mobile config</strong> — no app.json, no bundle ID, no icons</li>
+<li><strong>Web-only code</strong> — needs conversion to work as a mobile app</li>
+</ul>
+
+<p>All of these are fixable — most automatically.</p>
+
+<p><a href="https://shippabel.com/scan">Scan your ChatGPT app for free →</a></p>
+`,
+  },
+  {
+    slug: "publish-claude-code-app",
+    title: "How to publish an app built with Claude Code to the App Store",
+    excerpt: "Claude Code can build entire apps from a conversation. Here's how to take that code and get it published on both app stores — the non-technical way.",
+    category: "Guide",
+    readTime: "6 min read",
+    date: "Apr 2026",
+    content: `
+<p><strong>Claude Code</strong> from Anthropic is one of the most powerful AI coding tools available. It can build complete applications from a conversation — frontend, backend, database, the whole thing.</p>
+
+<p>But when it's time to publish, you're on your own. Here's how to bridge that gap.</p>
+
+<h2>What Claude Code gives you</h2>
+
+<p>Claude Code typically creates:</p>
+
+<ul>
+<li>A React or React Native application</li>
+<li>Backend logic with Supabase, Firebase, or similar</li>
+<li>A complete project structure pushed to GitHub</li>
+</ul>
+
+<p>What it <em>doesn't</em> set up: app store configuration, icons, screenshots, store descriptions, privacy policies, build pipelines, or submission credentials.</p>
+
+<h2>From Claude Code to App Store</h2>
+
+<h3>1. Check what's missing</h3>
+<p>Paste your GitHub link at <a href="https://shippabel.com/scan">shippabel.com/scan</a>. You'll get a detailed report of everything the stores require that your app doesn't have yet.</p>
+
+<p>Typical Claude Code projects score 60-85/100 on first scan — good foundation, but missing store-specific requirements.</p>
+
+<h3>2. Auto-fix and convert</h3>
+<p>If your app is a web app (React, Next.js, Vue), Shippabel converts it to a mobile-compatible format automatically. If it's already React Native or Expo, even better — just fix the config issues.</p>
+
+<h3>3. Generate store assets</h3>
+<p>AI writes your store listing (Shippabel uses Claude for this — fitting, right?). It reads your code, your README, and your package.json to understand what your app does, then writes optimized store copy.</p>
+
+<h3>4. Build and ship</h3>
+<p>One-click build through GitHub Actions. Builds for both iOS and Android. Submits to both stores.</p>
+
+<h2>Why this matters</h2>
+
+<p>Claude Code is democratizing app creation. But the "last mile" — getting from working code to published app — has been a blocker. Not because it's technically hard, but because it involves 40+ steps across 5 different platforms (GitHub, Expo, Apple, Google, and your code).</p>
+
+<p>Shippabel automates every single one of those steps.</p>
+
+<p><a href="https://shippabel.com/scan">Check your Claude Code app for free →</a></p>
+`,
+  },
+  {
+    slug: "vibe-coding-publish-app",
+    title: "The vibe coder's guide to publishing your first app",
+    excerpt: "You built an app using AI. You're not a developer. You don't know what Xcode is. This guide is for you — plain language, no jargon, start to finish.",
+    category: "Beginner",
+    readTime: "10 min read",
+    date: "Apr 2026",
+    content: `
+<p>You had an idea for an app. You used an AI tool — maybe <strong>Cursor, Bolt, Lovable, Claude Code, ChatGPT, or Base44</strong> — and you actually built it. It works. It's real. That's amazing.</p>
+
+<p>Now you want to put it on the App Store so other people can download it. But you have no idea where to start. You're not a developer. You don't know what Xcode is. The word "terminal" makes you nervous.</p>
+
+<p><strong>This guide is for you.</strong></p>
+
+<h2>What "publishing an app" actually means</h2>
+
+<p>Right now, your app lives on your computer (or in the cloud). Publishing means:</p>
+
+<ol>
+<li><strong>Preparing your app</strong> — making sure it meets all the rules Apple and Google have</li>
+<li><strong>Creating a store page</strong> — the page people see when they find your app</li>
+<li><strong>Building a special version</strong> — converting your code into a file Apple/Google can accept</li>
+<li><strong>Submitting for review</strong> — Apple and Google check your app before allowing it</li>
+<li><strong>Going live</strong> — your app appears in the store and people can download it</li>
+</ol>
+
+<h2>What you need (and what it costs)</h2>
+
+<h3>Apple App Store</h3>
+<ul>
+<li><strong>Apple Developer account:</strong> $99/year — sign up at developer.apple.com</li>
+<li>Takes 24-48 hours to get approved</li>
+<li>You need an iPhone or Mac for the account (not for building)</li>
+</ul>
+
+<h3>Google Play Store</h3>
+<ul>
+<li><strong>Google Play Developer account:</strong> $25 one-time — sign up at play.google.com/console</li>
+<li>Usually approved within hours</li>
+<li>You just need a Google account</li>
+</ul>
+
+<h3>Shippabel</h3>
+<ul>
+<li><strong>Scanning:</strong> Free — check as many apps as you want</li>
+<li><strong>Publishing:</strong> $99 one-time — includes everything: auto-fix, store page, screenshots, build, submit</li>
+</ul>
+
+<h2>The step-by-step process</h2>
+
+<h3>Step 1: Put your code on GitHub (5 minutes)</h3>
+<p>GitHub is like Google Drive for code. Most AI tools already put your code there. If not, you'll need to create a free account at github.com and upload your project.</p>
+
+<h3>Step 2: Check your app (30 seconds)</h3>
+<p>Go to <a href="https://shippabel.com/scan">shippabel.com/scan</a> and paste your GitHub link. You'll get a score from 0-100 showing how ready your app is, plus a list of everything that needs fixing.</p>
+
+<h3>Step 3: Fix problems (1 click)</h3>
+<p>Most problems can be fixed automatically. Click "Auto-fix" and Shippabel updates your code directly. No terminal, no config files, no copy-pasting.</p>
+
+<h3>Step 4: Write your store page (2 minutes)</h3>
+<p>Your "store page" is what people see when they find your app. It includes your app's name, description, and keywords. Shippabel's AI writes 3 versions for you — pick the one you like.</p>
+
+<h3>Step 5: Create screenshots (5 minutes)</h3>
+<p>Take screenshots of your app on your phone. Upload them to Shippabel, and we frame them in professional iPhone/Android mockups with captions.</p>
+
+<h3>Step 6: Publish (1 click + wait)</h3>
+<p>Click "Start build." Shippabel builds your app and submits it to both stores. Android goes live in hours. Apple takes 1-3 days to review.</p>
+
+<h2>That's it</h2>
+
+<p>Total time: about <strong>30 minutes of your time</strong>, plus 1-3 days waiting for Apple.</p>
+
+<p>Total cost: <strong>$223</strong> (Apple $99/year + Google $25 + Shippabel $99).</p>
+
+<p>No coding. No terminal. No Xcode. No developer jargon.</p>
+
+<p><strong>You built an app with AI. Now publish it with AI.</strong></p>
+
+<p><a href="https://shippabel.com/scan">Check your app for free →</a></p>
+`,
+  },
 ];
