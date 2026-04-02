@@ -9,6 +9,7 @@ import {
   ArrowRight,
   Wrench,
   FileText,
+  Image,
   Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -27,7 +28,13 @@ interface AppStep {
   actionLabel: string;
 }
 
-const getSteps = (project: Project, hasListing: boolean): AppStep[] => {
+interface ProjectExtra {
+  hasListing: boolean;
+  hasScreenshots: boolean;
+  hasEas: boolean;
+}
+
+const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
   const scan = project.scan_result as ScanResult | null;
   const scanned = !!scan;
   const hasCritical = (scan?.summary?.critical ?? 0) > 0;
@@ -37,23 +44,27 @@ const getSteps = (project: Project, hasListing: boolean): AppStep[] => {
   const isLive = status === "live";
 
   return [
-    { key: "check", label: "Check", icon: Scan, done: scanned, active: !scanned, href: `/scan/${project.id}`, actionLabel: "See results" },
-    { key: "fix", label: "Fix", icon: Wrench, done: fixed, active: scanned && !fixed, href: `/scan/${project.id}`, actionLabel: hasCritical ? `Fix ${scan?.summary?.critical} problems` : "All fixed" },
-    { key: "listing", label: "Store page", icon: FileText, done: hasListing, active: fixed && !hasListing, href: `/app/${project.id}/listing`, actionLabel: "Write store page" },
-    { key: "publish", label: "Publish", icon: Send, done: isLive, active: hasListing && !isLive, href: isBuilt ? `/app/${project.id}/status` : `/app/${project.id}/submit`, actionLabel: isBuilt ? "Track review" : "Publish app" },
+    { key: "check", label: "Check", icon: Scan, done: scanned, active: !scanned,
+      href: `/scan/${project.id}`, actionLabel: "See results" },
+    { key: "fix", label: "Fix", icon: Wrench, done: fixed, active: scanned && !fixed,
+      href: `/scan/${project.id}`, actionLabel: hasCritical ? `Fix ${scan?.summary?.critical} problems` : "All fixed" },
+    { key: "listing", label: "Store page", icon: FileText, done: extra.hasListing, active: fixed && !extra.hasListing,
+      href: `/app/${project.id}/listing`, actionLabel: "Write store page" },
+    { key: "screenshots", label: "Screenshots", icon: Image, done: extra.hasScreenshots, active: extra.hasListing && !extra.hasScreenshots,
+      href: `/app/${project.id}/screenshots`, actionLabel: "Add screenshots" },
+    { key: "publish", label: "Publish", icon: Send, done: isLive, active: extra.hasScreenshots && !isLive,
+      href: extra.hasEas ? `/app/${project.id}/submit` : "/settings", actionLabel: extra.hasEas ? (isBuilt ? "Track review" : "Publish app") : "Connect accounts" },
   ];
 };
 
-const cleanAppName = (name: string) => {
-  // Remove hashes like "-3fb3de3a" from the end
-  return name.replace(/-[a-f0-9]{8,}$/i, "").replace(/-/g, " ");
-};
+const cleanAppName = (name: string) =>
+  name.replace(/-[a-f0-9]{8,}$/i, "").replace(/-/g, " ");
 
 export const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [projectListings, setProjectListings] = useState<Record<string, boolean>>({});
+  const [extras, setExtras] = useState<Record<string, ProjectExtra>>({});
   const [loading, setLoading] = useState(true);
 
   const loadProjects = useCallback(async () => {
@@ -65,23 +76,31 @@ export const Dashboard = () => {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      const projects = (data ?? []) as Project[];
-      setProjects(projects);
+      const projs = (data ?? []) as Project[];
+      setProjects(projs);
 
-      // Check which projects have listings
-      if (projects.length > 0) {
+      if (projs.length > 0) {
+        // Fetch listings with screenshots info
         const { data: listings } = await supabase
           .from("store_listings")
-          .select("project_id, app_name")
-          .in("project_id", projects.map((p) => p.id));
+          .select("project_id, app_name, screenshots")
+          .in("project_id", projs.map((p) => p.id));
 
-        const listingMap: Record<string, boolean> = {};
-        for (const l of listings ?? []) {
-          if (l.app_name && l.app_name.trim() !== "") {
-            listingMap[l.project_id] = true;
-          }
+        // Fetch credentials
+        const { data: creds } = await supabase
+          .from("user_credentials")
+          .select("provider")
+          .eq("user_id", user.id);
+        const hasEas = (creds ?? []).some((c) => c.provider === "eas");
+
+        const extraMap: Record<string, ProjectExtra> = {};
+        for (const p of projs) {
+          const projListings = (listings ?? []).filter((l) => l.project_id === p.id);
+          const hasListing = projListings.some((l) => l.app_name && l.app_name.trim() !== "");
+          const hasScreenshots = projListings.some((l) => Array.isArray(l.screenshots) && l.screenshots.length > 0);
+          extraMap[p.id] = { hasListing, hasScreenshots, hasEas };
         }
-        setProjectListings(listingMap);
+        setExtras(extraMap);
       }
     } catch {
       // Silently fail
@@ -143,7 +162,8 @@ export const Dashboard = () => {
       {hasApps && (
         <div className="space-y-4">
           {projects.map((project) => {
-            const steps = getSteps(project, !!projectListings[project.id]);
+            const extra = extras[project.id] ?? { hasListing: false, hasScreenshots: false, hasEas: false };
+            const steps = getSteps(project, extra);
             const score = project.scan_result?.score;
             const activeStep = steps.find((s) => s.active);
             const completedCount = steps.filter((s) => s.done).length;
@@ -192,7 +212,7 @@ export const Dashboard = () => {
                       const StepIcon = step.icon;
                       return (
                         <div key={step.key} className="flex items-center flex-1">
-                          <div className="flex items-center gap-1.5 sm:gap-2">
+                          <Link to={step.href} className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                             <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                               step.done ? "bg-green-100 text-green-600"
                               : step.active ? "bg-surface-900 text-white ring-2 ring-surface-900/20"
@@ -203,9 +223,9 @@ export const Dashboard = () => {
                             <span className={`text-xs font-medium hidden sm:block ${
                               step.done ? "text-green-600" : step.active ? "text-surface-900" : "text-surface-400"
                             }`}>{step.label}</span>
-                          </div>
+                          </Link>
                           {i < steps.length - 1 && (
-                            <div className={`flex-1 h-px mx-1.5 sm:mx-2 ${i < completedCount ? "bg-green-200" : "bg-surface-200"}`} />
+                            <div className={`flex-1 h-px mx-1.5 sm:mx-2 ${step.done ? "bg-green-200" : "bg-surface-200"}`} />
                           )}
                         </div>
                       );

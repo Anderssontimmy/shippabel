@@ -99,19 +99,18 @@ export const useShipFlow = (projectId?: string) => {
     // Check listing — need at least one platform with app_name filled in
     const { data: listings } = await supabase
       .from("store_listings")
-      .select("id, platform, app_name")
+      .select("id, platform, app_name, screenshots")
       .eq("project_id", projectId);
 
     const completedListings = (listings ?? []).filter((l) => l.app_name && l.app_name.trim() !== "");
     checks.hasListing = completedListings.length > 0;
-    checks.listingCount = completedListings.length;
 
-    // Check screenshots — stored in store_listings.screenshots JSONB
-    const listingsWithScreenshots = (listings ?? []).filter(
-      (l) => l.app_name && Array.isArray((l as Record<string, unknown>).screenshots) && ((l as Record<string, unknown>).screenshots as unknown[]).length > 0
-    );
-    // Screenshots are optional — mark as done if user has at least 1, or skip
-    checks.hasScreenshots = listingsWithScreenshots.length > 0;
+    // Check screenshots — screenshots column is a JSONB array
+    const hasAnyScreenshots = (listings ?? []).some((l) => {
+      const s = l.screenshots;
+      return Array.isArray(s) && s.length > 0;
+    });
+    checks.hasScreenshots = hasAnyScreenshots;
 
     // Check credentials
     if (user) {
@@ -141,7 +140,6 @@ export const useShipFlow = (projectId?: string) => {
     }
 
     // Determine current step — strictly sequential
-    // Screenshots are optional and don't block the flow
     let currentStep: FlowStep = "scan";
     if (checks.scanned) {
       if ((checks.criticalIssues as number) > 0) {
@@ -150,8 +148,7 @@ export const useShipFlow = (projectId?: string) => {
         currentStep = "signup";
       } else if (!checks.hasListing) {
         currentStep = "listing";
-      } else if (!checks.hasScreenshots && !checks.hasEas) {
-        // If no screenshots AND no EAS, suggest screenshots first (but don't block)
+      } else if (!checks.hasScreenshots) {
         currentStep = "screenshots";
       } else if (!checks.hasEas) {
         currentStep = "connect";
