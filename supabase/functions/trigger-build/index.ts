@@ -89,7 +89,28 @@ Deno.serve(async (req) => {
     const easProjectId = await findOrCreateEasProject(easToken, account, slug);
     if (!easProjectId.id) throw new Error(easProjectId.error ?? "We couldn't set up your app on Expo. Please try again.");
 
-    // Step 3: Create submission record
+    // Step 3: Ensure eas.json exists in the repo
+    const hasEasJson = await checkFileExists(repoPath, "eas.json", ghToken);
+    if (!hasEasJson) {
+      // Auto-create eas.json in the repo
+      const easJsonContent = JSON.stringify({
+        cli: { version: ">= 3.0.0" },
+        build: {
+          production: {
+            android: { buildType: "apk" },
+            ios: { simulator: false },
+          },
+        },
+        submit: {
+          production: {},
+        },
+      }, null, 2);
+
+      const pushOk = await pushFileToGitHub(repoPath, "eas.json", easJsonContent, "Add eas.json for EAS Build", ghToken);
+      if (!pushOk) throw new Error("We need to add a build config file (eas.json) to your app but couldn't push to GitHub. Please check your GitHub connection in Settings.");
+    }
+
+    // Step 4: Create submission record
     const { data: submission, error: subError } = await supabase
       .from("submissions")
       .insert({
@@ -110,7 +131,7 @@ Deno.serve(async (req) => {
       .eq("id", project_id);
 
     // Step 4: Trigger EAS Build using the GraphQL API
-    const buildResult = await triggerEasBuild(easToken, easProjectId.id!, platform, project.repo_url);
+    const buildResult = await triggerEasBuild(easToken, easProjectId.id!, platform);
 
     if (!buildResult.success) {
       await supabase.from("submissions").update({ build_status: "failed" }).eq("id", submission.id);
@@ -249,15 +270,49 @@ async function findOrCreateEasProject(token: string, account: { id: string; user
   }
 }
 
+async function checkFileExists(repoPath: string, fileName: string, token?: string): Promise<boolean> {
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `token ${token}`;
+  try {
+    const res = await fetch(`https://raw.githubusercontent.com/${repoPath}/main/${fileName}`, { headers });
+    if (res.ok) return true;
+    const res2 = await fetch(`https://raw.githubusercontent.com/${repoPath}/master/${fileName}`, { headers });
+    return res2.ok;
+  } catch { return false; }
+}
+
+async function pushFileToGitHub(repoPath: string, filePath: string, content: string, message: string, token?: string): Promise<boolean> {
+  if (!token) return false;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repoPath}/contents/${filePath}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `token ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        content: btoa(content),
+        branch: "main",
+      }),
+    });
+    if (res.ok) return true;
+    // Try master branch
+    const res2 = await fetch(`https://api.github.com/repos/${repoPath}/contents/${filePath}`, {
+      method: "PUT",
+      headers: { Authorization: `token ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ message, content: btoa(content), branch: "master" }),
+    });
+    return res2.ok;
+  } catch { return false; }
+}
+
 async function triggerEasBuild(
   token: string,
   projectId: string,
-  platform: "ios" | "android",
-  gitUrl: string
+  platform: "ios" | "android"
 ): Promise<{ success: boolean; buildId?: string; error?: string }> {
   try {
-    // Use GraphQL API to create a build
-    const platformEnum = platform === "ios" ? "IOS" : "ANDROID";
     const res = await fetch("https://api.expo.dev/graphql", {
       method: "POST",
       headers: {
@@ -265,16 +320,7 @@ async function triggerEasBuild(
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        query: `mutation {
-          build {
-            createAndroidBuild: ${platform === "android" ? "createAndroidBuild" : "createIosBuild"}(input: {
-              projectId: "${projectId}"
-              type: MANAGED
-            }) {
-              build { id status }
-            }
-          }
-        }`,
+        query: `mutation { build { ${platform === "android" ? "createAndroidBuild" : "createIosBuild"}(appId: "${projectId}") { build { id status platform } } } }`,
       }),
     });
 
@@ -289,11 +335,19 @@ async function triggerEasBuild(
       // Check for errors
       const errors = data?.errors;
       if (errors?.[0]?.message) {
-        return { success: false, error: `Build error: ${errors[0].message.slice(0, 200)}` };
+        const msg = errors[0].message;
+        // Map technical errors to friendly messages
+        if (msg.includes("credentials") || msg.includes("signing"))
+          return { success: false, error: platform === "ios"
+            ? "iOS builds need Apple Developer credentials. Go to expo.dev, open your project, and add your Apple credentials under 'Credentials'."
+            : "Android build credentials couldn't be set up automatically. Please try again." };
+        if (msg.includes("not found") || msg.includes("does not exist"))
+          return { success: false, error: "Your app project wasn't found on Expo. Please try scanning your app again." };
+        return { success: false, error: `Build couldn't start: ${msg.slice(0, 150)}` };
       }
     } catch {}
 
-    return { success: false, error: `Build API response: ${text.slice(0, 200)}` };
+    return { success: false, error: `Unexpected build response: ${text.slice(0, 150)}` };
   } catch (err) {
     return { success: false, error: "We couldn't connect to the build service. Please try again." };
   }
