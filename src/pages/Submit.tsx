@@ -239,11 +239,89 @@ export const Submit = () => {
         ))}
       </div>
 
-      {error && (
+      {error && !error.includes("Workflow file not found") && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 mb-6">
           <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
           <p className="text-sm text-red-700">{error}</p>
         </div>
+      )}
+
+      {error && error.includes("Workflow file not found") && (
+        <Card className="mb-6 border-amber-200 bg-amber-50">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-surface-900 mb-2">One-time setup needed</h3>
+              <p className="text-sm text-surface-600 mb-4">
+                To build your app, we need to add a build configuration to your GitHub project. This only needs to be done once.
+              </p>
+
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="font-medium text-surface-800 mb-1">Step 1: Go to your GitHub repo</p>
+                  <a href={project?.repo_url?.replace(/\.git$/, "") ?? "#"} target="_blank" rel="noopener noreferrer"
+                    className="text-green-700 hover:text-green-800 underline text-xs">
+                    Open your repo on GitHub →
+                  </a>
+                </div>
+
+                <div>
+                  <p className="font-medium text-surface-800 mb-1">Step 2: Create <code className="bg-white px-1.5 py-0.5 rounded text-xs border border-amber-200">eas.json</code> in the root</p>
+                  <div className="bg-white rounded-lg border border-amber-200 p-3 font-mono text-xs text-surface-700 relative">
+                    <button
+                      onClick={() => { navigator.clipboard.writeText('{\n  "cli": { "version": ">= 3.0.0" },\n  "build": {\n    "production": {\n      "android": { "buildType": "apk" },\n      "ios": { "simulator": false }\n    }\n  }\n}'); toast("success", "Copied!"); }}
+                      className="absolute top-2 right-2 text-[10px] text-amber-600 hover:text-amber-800 cursor-pointer"
+                    >Copy</button>
+                    {`{\n  "cli": { "version": ">= 3.0.0" },\n  "build": {\n    "production": {\n      "android": { "buildType": "apk" },\n      "ios": { "simulator": false }\n    }\n  }\n}`}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-medium text-surface-800 mb-1">Step 3: Create <code className="bg-white px-1.5 py-0.5 rounded text-xs border border-amber-200">.github/workflows/eas-build.yml</code></p>
+                  <div className="bg-white rounded-lg border border-amber-200 p-3 font-mono text-xs text-surface-700 relative whitespace-pre-wrap">
+                    <button
+                      onClick={() => { navigator.clipboard.writeText("name: EAS Build\non:\n  workflow_dispatch:\n    inputs:\n      platform:\n        description: Platform to build for\n        required: true\n        type: choice\n        options:\n          - android\n          - ios\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 20\n      - name: Setup Expo and EAS\n        uses: expo/expo-github-action@v8\n        with:\n          eas-version: latest\n          token: ${{ secrets.EXPO_TOKEN }}\n      - name: Install dependencies\n        run: npm install\n      - name: Build\n        run: eas build --platform ${{ inputs.platform }} --non-interactive --no-wait"); toast("success", "Copied!"); }}
+                      className="absolute top-2 right-2 text-[10px] text-amber-600 hover:text-amber-800 cursor-pointer"
+                    >Copy</button>
+{`name: EAS Build
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        ...
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - checkout, setup node, expo
+      - npm install
+      - eas build --platform ...`}
+                  </div>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText("name: EAS Build\non:\n  workflow_dispatch:\n    inputs:\n      platform:\n        description: Platform to build for\n        required: true\n        type: choice\n        options:\n          - android\n          - ios\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 20\n      - name: Setup Expo and EAS\n        uses: expo/expo-github-action@v8\n        with:\n          eas-version: latest\n          token: ${{ secrets.EXPO_TOKEN }}\n      - name: Install dependencies\n        run: npm install\n      - name: Build\n        run: eas build --platform ${{ inputs.platform }} --non-interactive --no-wait"); toast("success", "Copied full file!"); }}
+                    className="text-xs text-amber-700 hover:text-amber-900 font-medium mt-1 cursor-pointer"
+                  >
+                    Copy full workflow file
+                  </button>
+                </div>
+
+                <div>
+                  <p className="font-medium text-surface-800 mb-1">Step 4: Add your Expo token as a GitHub Secret</p>
+                  <p className="text-xs text-surface-600">Go to your repo → Settings → Secrets → Actions → New secret</p>
+                  <p className="text-xs text-surface-600">Name: <code className="bg-white px-1 py-0.5 rounded border border-amber-200">EXPO_TOKEN</code> — Value: your EAS token from Shippabel Settings</p>
+                </div>
+
+                <div className="pt-2">
+                  <Button size="sm" onClick={() => window.location.reload()} className="gap-1.5">
+                    <Rocket className="h-3.5 w-3.5" />
+                    I've done this — retry build
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* Step content */}
