@@ -161,9 +161,10 @@ export const Screenshots = () => {
 
   const handleMouseUp = useCallback(() => setIsDragging(false), []);
 
-  // Export at exact App Store size: 1290 × 2796 (iPhone 6.7")
-  // Display width is 240px, so scale = 1290/240 = 5.375
-  const EXPORT_SCALE = 1290 / 240;
+  // Export for App Store: target 1290px wide (iPhone 6.7")
+  // Display width is 323px, scale 4 = 1292px output — matches Apple requirement
+  // Scale 5+ crashes some browsers due to canvas memory limits
+  const EXPORT_SCALE = 4;
 
   const exportPage = useCallback(async (idx: number) => {
     const el = pageRefs.current[idx];
@@ -502,7 +503,7 @@ export const Screenshots = () => {
                 <div
                   ref={(el) => { pageRefs.current[pageIdx] = el; }}
                   className={`relative select-none overflow-visible ${pageIdx === activePage ? "ring-2 ring-indigo-400 ring-offset-2" : ""}`}
-                  style={{ width: 240, aspectRatio: "1290 / 2796", background: pageBg(pg), boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
+                  style={{ width: 323, aspectRatio: "1290 / 2796", background: pageBg(pg), boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
                   onMouseDown={() => setActivePage(pageIdx)}
                   onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
                 >
