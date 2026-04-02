@@ -51,7 +51,10 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
                     {step.label}
                   </Link>
                 ) : (
-                  <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-surface-300 cursor-not-allowed">
+                  <span
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-surface-300 cursor-not-allowed"
+                    title={`Complete the previous steps to unlock "${step.label}"`}
+                  >
                     <Lock className="h-3 w-3" />
                     {step.label}
                   </span>

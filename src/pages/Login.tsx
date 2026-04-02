@@ -52,7 +52,7 @@ export const Login = () => {
           <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-surface-900 mb-2">Check your email</h2>
           <p className="text-sm text-surface-500 max-w-xs mx-auto">
-            We sent a magic link to <strong className="text-surface-900">{email}</strong>.
+            We sent a login link to <strong className="text-surface-900">{email}</strong>.
             Click it to sign in.
           </p>
           <button
@@ -102,7 +102,7 @@ export const Login = () => {
                 Sending link...
               </>
             ) : (
-              "Send magic link"
+              "Send me a login link"
             )}
           </Button>
         </form>

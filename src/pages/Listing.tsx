@@ -140,19 +140,20 @@ export const Listing = () => {
             <Card className="border-surface-200">
               <div className="text-center py-4">
                 <Sparkles className="h-8 w-8 text-surface-400 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-surface-900 mb-2">Generate store listing with AI</h3>
+                <h3 className="text-lg font-semibold text-surface-900 mb-2">Let AI write your store page</h3>
                 <p className="text-sm text-surface-500 mb-4 max-w-md mx-auto">
-                  Tell us about your app and we'll generate optimized copy for the {platform === "ios" ? "App Store" : "Google Play Store"}.
+                  Describe your app in a few sentences and we'll write everything the {platform === "ios" ? "App Store" : "Google Play Store"} needs — name, description, keywords, and more.
                 </p>
                 <textarea
                   value={appContext}
                   onChange={(e) => setAppContext(e.target.value)}
-                  placeholder="Describe your app: what it does, who it's for, key features..."
-                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 mb-4 resize-none h-24"
+                  placeholder={"Example: A fitness app that helps new parents do quick 10-minute workouts at home. It has workout videos, a progress tracker, and sends daily reminders."}
+                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 mb-2 resize-none h-28"
                 />
+                <p className="text-xs text-surface-400 mb-4">Tip: Mention what your app does, who it's for, and what makes it special.</p>
                 <Button onClick={() => generateCopy(appContext)} className="gap-2">
                   <Sparkles className="h-4 w-4" />
-                  Generate copy
+                  Write my store page
                 </Button>
               </div>
             </Card>
@@ -191,7 +192,7 @@ export const Listing = () => {
           {/* Variant selector */}
           {variants.length > 1 && (
             <div>
-              <h3 className="text-sm font-medium text-surface-500 mb-3">Choose a variant</h3>
+              <h3 className="text-sm font-medium text-surface-500 mb-3">We wrote 3 versions — pick the one you like best</h3>
               <div className="grid grid-cols-3 gap-3">
                 {["Professional", "Friendly", "Bold"].map((label, i) => (
                   <button
@@ -216,7 +217,7 @@ export const Listing = () => {
               {/* App name */}
               <div>
                 <div className="flex justify-between mb-1.5">
-                  <label className="text-sm font-medium text-surface-700">App Name</label>
+                  <label className="text-sm font-medium text-surface-700">App Name <span className="font-normal text-surface-400">— what people see on their home screen</span></label>
                   <CharCount current={listing?.app_name?.length ?? 0} max={lim("app_name")} />
                 </div>
                 <input
@@ -230,7 +231,7 @@ export const Listing = () => {
               {platform === "ios" ? (
                 <div>
                   <div className="flex justify-between mb-1.5">
-                    <label className="text-sm font-medium text-surface-700">Subtitle</label>
+                    <label className="text-sm font-medium text-surface-700">Subtitle <span className="font-normal text-surface-400">— shown below your app name in search</span></label>
                     <CharCount current={listing?.subtitle?.length ?? 0} max={lim("subtitle")} />
                   </div>
                   <input
@@ -242,7 +243,7 @@ export const Listing = () => {
               ) : (
                 <div>
                   <div className="flex justify-between mb-1.5">
-                    <label className="text-sm font-medium text-surface-700">Short Description</label>
+                    <label className="text-sm font-medium text-surface-700">Short Description <span className="font-normal text-surface-400">— the first thing people read in the store</span></label>
                     <CharCount current={listing?.short_description?.length ?? 0} max={lim("short_description")} />
                   </div>
                   <input
@@ -256,7 +257,7 @@ export const Listing = () => {
               {/* Full description */}
               <div>
                 <div className="flex justify-between mb-1.5">
-                  <label className="text-sm font-medium text-surface-700">Full Description</label>
+                  <label className="text-sm font-medium text-surface-700">Full Description <span className="font-normal text-surface-400">— your app's main sales pitch</span></label>
                   <CharCount current={listing?.full_description?.length ?? 0} max={lim("full_description")} />
                 </div>
                 <textarea
@@ -271,7 +272,7 @@ export const Listing = () => {
               {platform === "ios" && (
                 <div>
                   <div className="flex justify-between mb-1.5">
-                    <label className="text-sm font-medium text-surface-700">Keywords</label>
+                    <label className="text-sm font-medium text-surface-700">Keywords <span className="font-normal text-surface-400">— words people might search for to find your app</span></label>
                     <CharCount current={listing?.keywords?.length ?? 0} max={lim("keywords")} />
                   </div>
                   <input
@@ -280,7 +281,7 @@ export const Listing = () => {
                     placeholder="keyword1, keyword2, keyword3"
                     className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 transition-colors"
                   />
-                  <p className="text-xs text-surface-500 mt-1">Comma-separated. Apple uses these for search ranking.</p>
+                  <p className="text-xs text-surface-500 mt-1">Separate each word with a comma. These help people find your app when they search the App Store.</p>
                 </div>
               )}
 
@@ -305,7 +306,7 @@ export const Listing = () => {
                     ) : (
                       <div>
                         <p className="text-sm text-surface-500 mb-3">
-                          Required by both stores. We'll generate and host one for you.
+                          Apple and Google won't accept your app without a privacy policy. It explains what data your app collects. We'll write one for you and host it — takes one click.
                         </p>
                         <Button
                           size="sm"

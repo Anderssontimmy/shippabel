@@ -349,15 +349,15 @@ export const ScanResults = () => {
           <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900 mb-2">Readiness Report</h1>
           <p className="text-surface-500 mb-4">
             {scan.score >= 80
-              ? "Almost there! A few tweaks and you're ready to ship."
+              ? "Looking great! Just a few small things to take care of."
               : scan.score >= 50
-              ? "Getting closer. Fix the critical issues to improve your score."
-              : "Needs work. Several issues must be resolved before submission."}
+              ? "Getting there! Fix the issues marked in red below to continue."
+              : "Your app needs some work before it can be published. Don't worry — we'll help you fix everything."}
           </p>
           <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
-            <Badge severity="critical">{scan.summary.critical} critical</Badge>
-            <Badge severity="warning">{scan.summary.warning} warnings</Badge>
-            <Badge severity="info">{scan.summary.info} info</Badge>
+            {scan.summary.critical > 0 && <Badge severity="critical">{scan.summary.critical} must fix</Badge>}
+            {scan.summary.warning > 0 && <Badge severity="warning">{scan.summary.warning} should fix</Badge>}
+            {scan.summary.info > 0 && <Badge severity="info">{scan.summary.info} optional</Badge>}
           </div>
           <div className="mt-4 flex gap-3 justify-center sm:justify-start">
             {autoFixable > 0 && isPaid && (

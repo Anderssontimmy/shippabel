@@ -225,10 +225,9 @@ export const Settings = () => {
         <div className="flex items-start gap-3">
           <Shield className="h-5 w-5 text-surface-500 mt-0.5 shrink-0" />
           <div>
-            <h3 className="text-sm font-semibold text-surface-900 mb-1">Your credentials are secure</h3>
+            <h3 className="text-sm font-semibold text-surface-900 mb-1">Your credentials are safe and private</h3>
             <p className="text-xs text-surface-500">
-              Credentials are encrypted at rest in Supabase and only used server-side in Edge Functions.
-              They are never exposed to the browser or stored in logs.
+              We encrypt everything you enter here. Your credentials are only used to publish your app — they're never shared, never visible to anyone, and never stored in plain text.
             </p>
           </div>
         </div>

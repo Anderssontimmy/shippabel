@@ -27,10 +27,10 @@ import type { Project, ScanResult } from "@/lib/types";
 type WizardStep = "review" | "configure" | "build" | "submit";
 
 const steps: { id: WizardStep; label: string; icon: typeof FileText }[] = [
-  { id: "review", label: "Review", icon: FileText },
-  { id: "configure", label: "Configure", icon: Wrench },
+  { id: "review", label: "Checklist", icon: FileText },
+  { id: "configure", label: "Settings", icon: Wrench },
   { id: "build", label: "Build", icon: Package },
-  { id: "submit", label: "Submit", icon: Send },
+  { id: "submit", label: "Go Live", icon: Send },
 ];
 
 export const Submit = () => {
@@ -224,7 +224,8 @@ export const Submit = () => {
       {currentStep === "review" && (
         <div className="space-y-6">
           <Card>
-            <h3 className="font-semibold text-surface-900 mb-4">Pre-flight Checklist</h3>
+            <h3 className="font-semibold text-surface-900 mb-1">Ready to publish?</h3>
+            <p className="text-sm text-surface-500 mb-4">Let's make sure everything is in order before we build your app.</p>
             <div className="space-y-3">
               <CheckItem
                 label="No critical issues"
@@ -274,10 +275,10 @@ export const Submit = () => {
                 <p className="text-sm text-surface-900">{platform === "ios" ? "iOS (App Store)" : "Android (Google Play)"}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Build Profile</label>
-                <p className="text-sm text-surface-900">Production</p>
+                <label className="block text-sm font-medium text-surface-400 mb-1">Build Type</label>
+                <p className="text-sm text-surface-900">Ready for the store</p>
                 <p className="text-xs text-surface-500 mt-1">
-                  Optimized, signed build ready for store submission
+                  We'll create the final version of your app that can be published
                 </p>
               </div>
               <div>
@@ -327,8 +328,8 @@ export const Submit = () => {
               <Package className="h-12 w-12 text-surface-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-surface-900 mb-2">Ready to build</h3>
               <p className="text-sm text-surface-400 mb-6 max-w-md mx-auto">
-                This will trigger a production build via EAS Build for{" "}
-                {platform === "ios" ? "iOS" : "Android"}. The build typically takes 10-20 minutes.
+                We'll build your app for{" "}
+                {platform === "ios" ? "iOS" : "Android"}. This usually takes 10-20 minutes. You can close this page and come back later.
               </p>
               <Button
                 onClick={async () => { const r = await triggerBuild(platform); if (r) toast("success", "Build started! This takes 10-20 minutes."); }}

@@ -334,7 +334,7 @@ export const Screenshots = () => {
               <div className="text-left max-w-sm mx-auto space-y-3 mb-8">
                 <div className="flex gap-3 items-start">
                   <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-500 flex items-center justify-center text-xs font-semibold shrink-0">1</div>
-                  <p className="text-sm text-surface-600">Take screenshots of your app on your phone (or use the simulator)</p>
+                  <p className="text-sm text-surface-600">Take screenshots of your app on your phone</p>
                 </div>
                 <div className="flex gap-3 items-start">
                   <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-500 flex items-center justify-center text-xs font-semibold shrink-0">2</div>
