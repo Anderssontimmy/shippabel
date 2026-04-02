@@ -95,13 +95,17 @@ Deno.serve(async (req) => {
           },
         },
       }, null, 2);
-      await pushFile(repoPath, "eas.json", easJson, "Add eas.json for EAS Build", ghHeaders, defaultBranch);
+      const pushOk = await pushFile(repoPath, "eas.json", easJson, "Add eas.json for EAS Build (via Shippabel)", ghHeaders, defaultBranch);
+      if (!pushOk) throw new Error("Workflow file not found — couldn't push eas.json to your repo. Your GitHub token may not have write access. Try signing out and back in with GitHub.");
     }
 
     // Step 3: Ensure GitHub Actions workflow exists
     const hasWorkflow = await checkFileExists(repoPath, ".github/workflows/eas-build.yml", ghHeaders, defaultBranch);
     if (!hasWorkflow) {
-      await pushFile(repoPath, ".github/workflows/eas-build.yml", EAS_BUILD_WORKFLOW, "Add EAS Build workflow for Shippabel", ghHeaders, defaultBranch);
+      const pushOk = await pushFile(repoPath, ".github/workflows/eas-build.yml", EAS_BUILD_WORKFLOW, "Add EAS Build workflow (via Shippabel)", ghHeaders, defaultBranch);
+      if (!pushOk) throw new Error("Workflow file not found — couldn't push workflow to your repo. Your GitHub token may not have write access. Try signing out and back in with GitHub.");
+      // GitHub needs time to index the new workflow
+      throw new Error("We just added the build workflow to your repo. GitHub needs a moment to recognize it. Please click 'Retry build' in about 15 seconds.");
     }
 
     // Step 4: Set EXPO_TOKEN as GitHub Actions secret
@@ -166,9 +170,12 @@ async function checkFileExists(repoPath: string, path: string, headers: Record<s
 
 async function pushFile(repoPath: string, path: string, content: string, message: string, headers: Record<string, string>, branch: string): Promise<boolean> {
   try {
-    // Check if file already exists (need SHA to update)
-    const checkRes = await fetch(`https://api.github.com/repos/${repoPath}/contents/${path}?ref=${branch}`, { headers });
+    // Get current file SHA if it exists
     let sha: string | undefined;
+    const checkRes = await fetch(
+      `https://api.github.com/repos/${repoPath}/contents/${path}`,
+      { headers: { ...headers, Accept: "application/vnd.github.v3+json" } }
+    );
     if (checkRes.ok) {
       const existing = await checkRes.json();
       sha = existing.sha;
@@ -176,18 +183,32 @@ async function pushFile(repoPath: string, path: string, content: string, message
 
     const body: Record<string, unknown> = {
       message,
-      content: btoa(content),
+      content: btoa(unescape(encodeURIComponent(content))),
       branch,
     };
     if (sha) body.sha = sha;
 
-    const res = await fetch(`https://api.github.com/repos/${repoPath}/contents/${path}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify(body),
-    });
+    const res = await fetch(
+      `https://api.github.com/repos/${repoPath}/contents/${path}`,
+      {
+        method: "PUT",
+        headers: {
+          ...headers,
+          Accept: "application/vnd.github.v3+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`Push ${path} failed (${res.status}):`, errText.slice(0, 200));
+    }
     return res.ok;
-  } catch { return false; }
+  } catch (err) {
+    console.error(`Push ${path} exception:`, err);
+    return false;
+  }
 }
 
 async function setGitHubSecret(repoPath: string, secretName: string, secretValue: string, headers: Record<string, string>): Promise<void> {
