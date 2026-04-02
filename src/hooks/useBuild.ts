@@ -87,14 +87,35 @@ export const useBuild = (projectId: string) => {
       });
 
       if (fnError) {
-        // Extract real error from response body, fall back to generic message
-        const realError = data?.error ?? fnError.message;
+        // Supabase puts the response body in data even on error, or in fnError.context
+        let realError = "";
+        try {
+          // Try to get error from response data first
+          if (data?.error) {
+            realError = data.error;
+          } else if (fnError && "context" in fnError) {
+            const ctx = (fnError as { context?: { json?: () => Promise<{ error?: string }> } }).context;
+            if (ctx?.json) {
+              const body = await ctx.json();
+              realError = body?.error ?? fnError.message;
+            }
+          }
+        } catch {
+          realError = fnError.message;
+        }
+        if (!realError) realError = fnError.message;
+
+        // Map technical errors to friendly messages
         const friendlyError = realError.includes("app.json")
           ? "Your app needs to be converted to a mobile app first. Go back to your scan results and click 'Make it App Store ready'."
           : realError.includes("EAS token")
           ? "Please connect your Expo account in Settings first."
           : realError.includes("Unauthorized")
           ? "Please sign in again to continue."
+          : realError.includes("EAS Build failed")
+          ? "The build service returned an error. This usually means your app needs additional setup. Please check that your Expo account is connected in Settings."
+          : realError.includes("non-2xx")
+          ? "Something went wrong while building. Please try again or check your Settings."
           : realError;
         throw new Error(friendlyError);
       }
