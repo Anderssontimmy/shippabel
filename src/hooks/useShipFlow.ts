@@ -56,6 +56,7 @@ export const useShipFlow = (projectId?: string) => {
         fixed: true,
         loggedIn: true,
         hasListing: true,
+        hasScreenshots: true,
         hasEas: true,
         hasApple: true,
         hasGoogle: true,
@@ -95,12 +96,22 @@ export const useShipFlow = (projectId?: string) => {
 
     checks.loggedIn = !!user;
 
-    // Check listing
+    // Check listing — need at least one platform with app_name filled in
     const { data: listings } = await supabase
       .from("store_listings")
-      .select("id")
+      .select("id, platform, app_name")
       .eq("project_id", projectId);
-    checks.hasListing = (listings?.length ?? 0) > 0;
+
+    const completedListings = (listings ?? []).filter((l) => l.app_name && l.app_name.trim() !== "");
+    checks.hasListing = completedListings.length > 0;
+    checks.listingCount = completedListings.length;
+
+    // Check screenshots — stored in store_listings.screenshots JSONB
+    const listingsWithScreenshots = (listings ?? []).filter(
+      (l) => l.app_name && Array.isArray((l as Record<string, unknown>).screenshots) && ((l as Record<string, unknown>).screenshots as unknown[]).length > 0
+    );
+    // Screenshots are optional — mark as done if user has at least 1, or skip
+    checks.hasScreenshots = listingsWithScreenshots.length > 0;
 
     // Check credentials
     if (user) {
@@ -129,7 +140,7 @@ export const useShipFlow = (projectId?: string) => {
       checks.isSubmitted = ["waiting_for_review", "in_review", "approved"].includes(latest.review_status);
     }
 
-    // Determine current step — strictly sequential, never skip
+    // Determine current step — strictly sequential
     let currentStep: FlowStep = "scan";
     if (checks.scanned) {
       if ((checks.criticalIssues as number) > 0) {
@@ -139,14 +150,13 @@ export const useShipFlow = (projectId?: string) => {
       } else if (!checks.hasListing) {
         currentStep = "listing";
       } else if (!checks.hasEas) {
-        // After listing, screenshots are optional — next blocker is credentials
         currentStep = "connect";
       } else if (!checks.hasBuild) {
         currentStep = "build";
       } else if (!checks.isSubmitted) {
         currentStep = "submit";
       } else {
-        currentStep = "submit"; // all done, show final state
+        currentStep = "submit";
       }
     }
 
@@ -179,6 +189,7 @@ function buildSteps(checks: Record<string, unknown>) {
   const fixed = !!checks.fixed;
   const loggedIn = !!checks.loggedIn;
   const hasListing = !!checks.hasListing;
+  const hasScreenshots = !!checks.hasScreenshots;
   const hasEas = !!checks.hasEas;
   const hasBuild = !!checks.hasBuild;
   const isSubmitted = !!checks.isSubmitted;
@@ -216,22 +227,22 @@ function buildSteps(checks: Record<string, unknown>) {
       id: "screenshots" as FlowStep,
       label: "Screenshots",
       description: "Add screenshots of your app",
-      completed: hasListing, // optional step — mark done once listing exists so flow progresses
-      available: scanned && loggedIn,
+      completed: hasScreenshots,
+      available: scanned && loggedIn && hasListing,
     },
     {
       id: "connect" as FlowStep,
       label: "Connect",
       description: "Link your Apple and Google accounts",
       completed: hasEas,
-      available: loggedIn,
+      available: loggedIn && hasListing,
     },
     {
       id: "build" as FlowStep,
       label: "Build",
       description: "Prepare your app for the stores",
       completed: hasBuild,
-      available: hasEas,
+      available: hasEas && hasListing,
     },
     {
       id: "submit" as FlowStep,

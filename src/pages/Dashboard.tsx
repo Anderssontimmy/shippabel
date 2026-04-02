@@ -33,15 +33,16 @@ const getSteps = (project: Project): AppStep[] => {
   const hasCritical = (scan?.summary?.critical ?? 0) > 0;
   const fixed = scanned && !hasCritical;
   const status = project.status;
-  const hasListing = status === "building" || status === "submitted" || status === "live";
+  // Only mark listing done if we're past the listing stage (building/submitted/live)
+  const pastListing = status === "building" || status === "submitted" || status === "live";
   const isBuilt = status === "submitted" || status === "live";
   const isLive = status === "live";
 
   return [
     { key: "check", label: "Check", icon: Scan, done: scanned, active: !scanned, href: `/scan/${project.id}`, actionLabel: "See results" },
     { key: "fix", label: "Fix", icon: Wrench, done: fixed, active: scanned && !fixed, href: `/scan/${project.id}`, actionLabel: hasCritical ? `Fix ${scan?.summary?.critical} problems` : "All fixed" },
-    { key: "listing", label: "Store page", icon: FileText, done: hasListing, active: fixed && !hasListing, href: `/app/${project.id}/listing`, actionLabel: "Write store page" },
-    { key: "publish", label: "Publish", icon: Send, done: isLive, active: hasListing && !isLive, href: isBuilt ? `/app/${project.id}/status` : `/app/${project.id}/submit`, actionLabel: isBuilt ? "Track review" : "Publish app" },
+    { key: "listing", label: "Store page", icon: FileText, done: pastListing, active: fixed && !pastListing, href: `/app/${project.id}/listing`, actionLabel: "Write store page" },
+    { key: "publish", label: "Publish", icon: Send, done: isLive, active: pastListing && !isLive, href: isBuilt ? `/app/${project.id}/status` : `/app/${project.id}/submit`, actionLabel: isBuilt ? "Track review" : "Publish app" },
   ];
 };
 
