@@ -82,11 +82,11 @@ Deno.serve(async (req) => {
     const slug = (expo.slug ?? expo.name ?? project.name) as string;
 
     // Step 1: Get EAS account info
-    const accountName = await getEasAccountName(easToken);
-    if (!accountName) throw new Error("We couldn't connect to your Expo account. Please check your EAS token in Settings.");
+    const account = await getEasAccount(easToken);
+    if (!account) throw new Error("We couldn't connect to your Expo account. Please check your EAS token in Settings.");
 
     // Step 2: Find or create the EAS project
-    const easProjectId = await findOrCreateEasProject(easToken, accountName, slug);
+    const easProjectId = await findOrCreateEasProject(easToken, account, slug);
     if (!easProjectId.id) throw new Error(easProjectId.error ?? "We couldn't set up your app on Expo. Please try again.");
 
     // Step 3: Create submission record
@@ -171,7 +171,7 @@ async function fetchAppConfig(repoPath: string, token?: string): Promise<Record<
   return null;
 }
 
-async function getEasAccountName(token: string): Promise<string | null> {
+async function getEasAccount(token: string): Promise<{ id: string; username: string } | null> {
   try {
     const res = await fetch("https://api.expo.dev/graphql", {
       method: "POST",
@@ -180,18 +180,21 @@ async function getEasAccountName(token: string): Promise<string | null> {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        query: `query { meActor { ... on User { username } ... on Robot { firstName } } }`,
+        query: `query { meActor { ... on User { id username } ... on Robot { id firstName } } }`,
       }),
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return data?.data?.meActor?.username ?? data?.data?.meActor?.firstName ?? null;
+    const actor = data?.data?.meActor;
+    if (!actor?.id) return null;
+    return { id: actor.id, username: actor.username ?? actor.firstName };
   } catch {
     return null;
   }
 }
 
-async function findOrCreateEasProject(token: string, accountName: string, slug: string): Promise<{ id: string | null; error?: string }> {
+async function findOrCreateEasProject(token: string, account: { id: string; username: string }, slug: string): Promise<{ id: string | null; error?: string }> {
+  const accountName = account.username;
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
@@ -223,7 +226,7 @@ async function findOrCreateEasProject(token: string, accountName: string, slug: 
       method: "POST",
       headers,
       body: JSON.stringify({
-        query: `mutation { app { createApp(appInput: { accountName: "${accountName}", projectName: "${slug}" }) { id } } }`,
+        query: `mutation { app { createApp(appInput: { accountId: "${account.id}", projectName: "${slug}" }) { id } } }`,
       }),
     });
 
