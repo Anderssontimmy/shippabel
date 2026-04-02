@@ -159,7 +159,13 @@ export const Listing = () => {
             ) : (
               <UpgradePrompt
                 feature="AI Store Page Writer"
-                description="Let AI write your app's name, description, keywords, and more. Available on the Ship plan."
+                description="Let AI craft the perfect store page that gets people to download your app."
+                benefits={[
+                  "AI writes your app name, description, and keywords",
+                  "Pick from 3 different styles",
+                  "Optimized for App Store and Google Play search",
+                  "Privacy policy generated and hosted for you",
+                ]}
               />
             )
           )}

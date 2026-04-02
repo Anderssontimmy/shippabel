@@ -185,10 +185,16 @@ export const Screenshots = () => {
 
   if (!isPaid) {
     return (
-      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16 sm:py-24">
+      <div className="mx-auto max-w-xl px-4 sm:px-6 py-16 sm:py-24">
         <UpgradePrompt
-          feature="Screenshot Editor"
-          description="Frame your screenshots in professional device mockups for the App Store and Google Play. Available on the Ship plan."
+          feature="Professional Screenshots"
+          description="Make your app look amazing in the store with device-framed screenshots."
+          benefits={[
+            "Frame screenshots in iPhone & Android mockups",
+            "Add captions and gradient backgrounds",
+            "Export in store-required sizes",
+            "Drag and drop — no design skills needed",
+          ]}
         />
       </div>
     );
