@@ -192,53 +192,73 @@ async function getEasAccountName(token: string): Promise<string | null> {
 }
 
 async function findOrCreateEasProject(token: string, accountName: string, slug: string): Promise<string | null> {
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+
   try {
-    // First, try to find existing project
+    // 1. Try to find existing project via GraphQL
     const findRes = await fetch("https://api.expo.dev/graphql", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify({
-        query: `query($owner: String!, $slug: String!) {
-          app { byFullName(fullName: $owner, slug: $slug) { id } }
-        }`,
-        variables: { owner: accountName, slug },
+        query: `query { app { byFullName(fullName: "@${accountName}/${slug}") { id } } }`,
       }),
     });
 
     if (findRes.ok) {
       const findData = await findRes.json();
+      console.log("Find project response:", JSON.stringify(findData));
       const existingId = findData?.data?.app?.byFullName?.id;
       if (existingId) return existingId;
     }
 
-    // Project doesn't exist — create it
+    // 2. Not found — create via GraphQL mutation
     const createRes = await fetch("https://api.expo.dev/graphql", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify({
-        query: `mutation($appInput: AppInput!) {
+        query: `mutation CreateApp($appInput: CreateAppInput!) {
           app { createApp(appInput: $appInput) { id } }
         }`,
         variables: {
           appInput: {
             accountName,
             projectName: slug,
-            privacy: "hidden",
           },
         },
       }),
     });
 
-    if (!createRes.ok) return null;
-    const createData = await createRes.json();
-    return createData?.data?.app?.createApp?.id ?? null;
-  } catch {
+    if (createRes.ok) {
+      const createData = await createRes.json();
+      console.log("Create project response:", JSON.stringify(createData));
+      const newId = createData?.data?.app?.createApp?.id;
+      if (newId) return newId;
+
+      // If GraphQL errors, check if it's because project already exists
+      const errors = createData?.errors;
+      if (errors?.[0]?.message?.includes("already exists")) {
+        // Retry finding it
+        const retryRes = await fetch("https://api.expo.dev/graphql", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            query: `query { app { byFullName(fullName: "@${accountName}/${slug}") { id } } }`,
+          }),
+        });
+        if (retryRes.ok) {
+          const retryData = await retryRes.json();
+          return retryData?.data?.app?.byFullName?.id ?? null;
+        }
+      }
+    }
+
+    console.error("All EAS project creation attempts failed");
+    return null;
+  } catch (err) {
+    console.error("findOrCreateEasProject error:", err);
     return null;
   }
 }
