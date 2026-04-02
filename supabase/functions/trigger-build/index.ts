@@ -37,6 +37,8 @@ jobs:
         run: npm install
       - name: Initialize EAS project
         run: eas init --id \${{ vars.EAS_PROJECT_ID }} --non-interactive || eas init --non-interactive || true
+      - name: Generate native code
+        run: npx expo prebuild --platform \${{ inputs.platform }} --no-install
       - name: Build
         run: eas build --platform \${{ inputs.platform }} --non-interactive --profile production
       - name: Submit to Google Play
