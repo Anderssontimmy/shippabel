@@ -192,29 +192,28 @@ export const Screenshots = () => {
     if (!id || id === "demo") return;
     setSaving(true);
 
-    try {
-      const urls: string[] = [];
+    const urls: string[] = [];
 
-      for (let i = 0; i < PAGE_COUNT; i++) {
-        const pg = pages[i]!;
-        if (pg.phones.length === 0 && pg.texts.length === 0) continue;
+    for (let i = 0; i < PAGE_COUNT; i++) {
+      const pg = pages[i]!;
+      if (pg.phones.length === 0 && pg.texts.length === 0) continue;
 
-        const el = pageRefs.current[i];
-        if (!el) continue;
+      const el = pageRefs.current[i];
+      if (!el) continue;
 
+      try {
         const canvas = await html2canvas(el, { scale: EXPORT_SCALE, backgroundColor: null, useCORS: true });
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
         if (!blob) continue;
 
         const filePath = `screenshots/${id}/page_${i + 1}.png`;
 
-        // Upload to Supabase Storage (overwrite if exists)
         const { error: uploadError } = await supabase.storage
           .from("projects")
           .upload(filePath, blob, { upsert: true, contentType: "image/png" });
 
         if (uploadError) {
-          console.error("Upload error:", uploadError);
+          console.error(`Upload error page ${i + 1}:`, uploadError);
           continue;
         }
 
@@ -225,15 +224,20 @@ export const Screenshots = () => {
         if (urlData?.publicUrl) {
           urls.push(urlData.publicUrl);
         }
+      } catch (err) {
+        console.error(`Failed to render page ${i + 1}:`, err);
+        // Continue with other pages
       }
+    }
 
-      if (urls.length === 0) {
-        toast("error", "No screenshots to save. Add at least one device first.");
-        setSaving(false);
-        return;
-      }
+    if (urls.length === 0) {
+      toast("error", "Could not save any screenshots. Try again or use fewer pages.");
+      setSaving(false);
+      return;
+    }
 
-      // Save URLs to store_listings (update existing or create new)
+    // Save URLs to store_listings
+    try {
       const { data: existing } = await supabase
         .from("store_listings")
         .select("id")
@@ -242,20 +246,22 @@ export const Screenshots = () => {
         .maybeSingle();
 
       if (existing) {
-        await supabase
+        const { error: updateError } = await supabase
           .from("store_listings")
           .update({ screenshots: urls })
           .eq("id", existing.id);
+        if (updateError) throw updateError;
       } else {
-        await supabase
+        const { error: insertError } = await supabase
           .from("store_listings")
           .insert({ project_id: id, platform: "ios", screenshots: urls });
+        if (insertError) throw insertError;
       }
 
       toast("success", `${urls.length} screenshot${urls.length > 1 ? "s" : ""} saved!`);
     } catch (err) {
-      toast("error", "Failed to save screenshots. Please try again.");
-      console.error(err);
+      console.error("DB save error:", err);
+      toast("error", `Uploaded ${urls.length} images but failed to save to database.`);
     }
 
     setSaving(false);
