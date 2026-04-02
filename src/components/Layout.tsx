@@ -131,8 +131,9 @@ export const Layout = () => {
             <span>Shippabel</span>
           </div>
           <div className="flex gap-6">
-            <Link to="/privacy" className="hover:text-surface-600 transition-colors">Privacy</Link>
+            <Link to="/blog" className="hover:text-surface-600 transition-colors">Guides</Link>
             <Link to="/pricing" className="hover:text-surface-600 transition-colors">Pricing</Link>
+            <Link to="/privacy" className="hover:text-surface-600 transition-colors">Privacy</Link>
           </div>
         </div>
       </footer>

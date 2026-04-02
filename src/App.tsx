@@ -18,6 +18,8 @@ const Pricing = lazy(() => import("./pages/Pricing").then((m) => ({ default: m.P
 const Login = lazy(() => import("./pages/Login").then((m) => ({ default: m.Login })));
 const Privacy = lazy(() => import("./pages/Privacy").then((m) => ({ default: m.Privacy })));
 const Settings = lazy(() => import("./pages/Settings").then((m) => ({ default: m.Settings })));
+const BlogIndex = lazy(() => import("./pages/Blog").then((m) => ({ default: m.BlogIndex })));
+const BlogPostPage = lazy(() => import("./pages/Blog").then((m) => ({ default: m.BlogPost })));
 const NotFound = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFound })));
 
 const PageLoader = () => (
@@ -51,6 +53,8 @@ const App = () => {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/blog" element={<BlogIndex />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
