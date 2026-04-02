@@ -147,19 +147,36 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
       return;
     }
 
-    const { error: saveError } = await supabase
-      .from("store_listings")
-      .upsert({
-        project_id: projectId,
-        platform,
-        app_name: listing.app_name,
-        subtitle: listing.subtitle,
-        short_description: listing.short_description,
-        full_description: listing.full_description,
-        keywords: listing.keywords,
-        category: listing.category,
-        privacy_policy_url: listing.privacy_policy_url,
-      });
+    const payload = {
+      project_id: projectId,
+      platform,
+      app_name: listing.app_name,
+      subtitle: listing.subtitle,
+      short_description: listing.short_description,
+      full_description: listing.full_description,
+      keywords: listing.keywords,
+      category: listing.category,
+      privacy_policy_url: listing.privacy_policy_url,
+    };
+
+    let saveError;
+    if (listing.id && listing.id !== "") {
+      // Update existing
+      const res = await supabase
+        .from("store_listings")
+        .update(payload)
+        .eq("id", listing.id);
+      saveError = res.error;
+    } else {
+      // Insert new
+      const res = await supabase
+        .from("store_listings")
+        .insert(payload)
+        .select()
+        .single();
+      saveError = res.error;
+      if (res.data) setListing(res.data as StoreListing);
+    }
 
     if (saveError) setError(saveError.message);
     setSaving(false);
