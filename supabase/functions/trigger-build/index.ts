@@ -173,6 +173,7 @@ async function fetchAppConfig(repoPath: string, token?: string): Promise<Record<
 
 async function getEasAccount(token: string): Promise<{ id: string; username: string } | null> {
   try {
+    // Get user info AND their accounts (the account ID is what createApp needs)
     const res = await fetch("https://api.expo.dev/graphql", {
       method: "POST",
       headers: {
@@ -180,14 +181,17 @@ async function getEasAccount(token: string): Promise<{ id: string; username: str
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        query: `query { meActor { ... on User { id username } ... on Robot { id firstName } } }`,
+        query: `query { meActor { ... on User { id username accounts { id name } } ... on Robot { id firstName accounts { id name } } } }`,
       }),
     });
     if (!res.ok) return null;
     const data = await res.json();
     const actor = data?.data?.meActor;
-    if (!actor?.id) return null;
-    return { id: actor.id, username: actor.username ?? actor.firstName };
+    if (!actor) return null;
+    // Use the first account's ID (personal account), not the actor/user ID
+    const accountId = actor.accounts?.[0]?.id ?? actor.id;
+    const username = actor.username ?? actor.firstName;
+    return { id: accountId, username };
   } catch {
     return null;
   }
