@@ -353,7 +353,9 @@ Deno.serve(async (req) => {
       })
       .eq("id", project_id);
 
-    // Insert individual issues
+    // Clear old issues from previous scans, then insert fresh ones
+    await supabase.from("issues").delete().eq("project_id", project_id);
+
     if (issues.length > 0) {
       await supabase.from("issues").insert(
         issues.map((issue) => ({

@@ -127,6 +127,9 @@ export const Submit = () => {
   const scan = project?.scan_result as ScanResult | null;
   const { isPaid } = usePlan();
 
+  // Check if app needs conversion before it can be built
+  const needsConversion = scan?.needs_conversion === true;
+
   if (!isPaid) {
     return (
       <div className="mx-auto max-w-xl px-4 sm:px-6 py-16 sm:py-24">
@@ -140,6 +143,29 @@ export const Submit = () => {
             "Handle rejections with AI-powered guidance",
           ]}
         />
+      </div>
+    );
+  }
+
+  if (needsConversion) {
+    return (
+      <div className="mx-auto max-w-xl px-4 sm:px-6 py-16 sm:py-24">
+        <Card className="text-center py-10 px-6">
+          <div className="h-14 w-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-5">
+            <AlertCircle className="h-7 w-7 text-amber-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-surface-900 mb-2">One more step before building</h2>
+          <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
+            Your app needs to be converted to a mobile format before we can build it for the App Store and Google Play. This is quick and automatic — just click the button below.
+          </p>
+          <Link to={`/scan/${id}`}>
+            <Button className="gap-2">
+              <Rocket className="h-4 w-4" />
+              Go to scan results to convert
+            </Button>
+          </Link>
+          <p className="text-xs text-surface-400 mt-3">Look for the green "Make it App Store ready" button</p>
+        </Card>
       </div>
     );
   }
