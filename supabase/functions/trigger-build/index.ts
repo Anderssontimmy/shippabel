@@ -32,7 +32,7 @@ jobs:
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
-          token: \${{ secrets.EXPO_TOKEN }}
+          token: \${{ secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
       - name: Install dependencies
         run: npm install
       - name: Build
@@ -99,17 +99,24 @@ Deno.serve(async (req) => {
       if (!pushOk) throw new Error("Workflow file not found — couldn't push eas.json to your repo. Your GitHub token may not have write access. Try signing out and back in with GitHub.");
     }
 
-    // Step 3: Ensure GitHub Actions workflow exists
+    // Step 3: Ensure GitHub Actions workflow exists and is up to date
     const hasWorkflow = await checkFileExists(repoPath, ".github/workflows/eas-build.yml", ghHeaders, defaultBranch);
+    // Always push to ensure latest version (uses SHA for update)
+    const pushOk = await pushFile(repoPath, ".github/workflows/eas-build.yml", EAS_BUILD_WORKFLOW, hasWorkflow ? "Update EAS Build workflow (via Shippabel)" : "Add EAS Build workflow (via Shippabel)", ghHeaders, defaultBranch);
+    if (!pushOk && !hasWorkflow) {
+      throw new Error("Workflow file not found — couldn't push workflow to your repo. Try signing out and back in with GitHub.");
+    }
     if (!hasWorkflow) {
-      const pushOk = await pushFile(repoPath, ".github/workflows/eas-build.yml", EAS_BUILD_WORKFLOW, "Add EAS Build workflow (via Shippabel)", ghHeaders, defaultBranch);
-      if (!pushOk) throw new Error("Workflow file not found — couldn't push workflow to your repo. Your GitHub token may not have write access. Try signing out and back in with GitHub.");
-      // GitHub needs time to index the new workflow
       throw new Error("We just added the build workflow to your repo. GitHub needs a moment to recognize it. Please click 'Retry build' in about 15 seconds.");
     }
 
-    // Step 4: Set EXPO_TOKEN as GitHub Actions secret
-    await setGitHubSecret(repoPath, "EXPO_TOKEN", easToken, ghHeaders);
+    // Step 4: Set EXPO_TOKEN as GitHub Actions variable
+    const secretSet = await setGitHubSecret(repoPath, "EXPO_TOKEN", easToken, ghHeaders);
+    if (!secretSet) {
+      // Also need to update the workflow to not require the token from secrets
+      // Force update workflow file to use env variable as fallback
+      console.error("Could not set EXPO_TOKEN variable — user may need to add it manually");
+    }
 
     // Step 5: Trigger the workflow
     const workflowTriggered = await triggerWorkflow(repoPath, defaultBranch, platform, ghHeaders);
@@ -211,44 +218,48 @@ async function pushFile(repoPath: string, path: string, content: string, message
   }
 }
 
-async function setGitHubSecret(repoPath: string, secretName: string, secretValue: string, headers: Record<string, string>): Promise<void> {
+async function setGitHubSecret(repoPath: string, secretName: string, secretValue: string, headers: Record<string, string>): Promise<boolean> {
   try {
-    // Get repo public key for encrypting secrets
+    // Get repo public key
     const keyRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/secrets/public-key`, { headers });
-    if (!keyRes.ok) return;
+    if (!keyRes.ok) {
+      console.error("Failed to get public key:", keyRes.status);
+      return false;
+    }
     const keyData = await keyRes.json();
+    const publicKeyB64 = keyData.key;
+    const keyId = keyData.key_id;
 
-    // Encrypt the secret using libsodium-compatible method
-    // GitHub Actions secrets need to be encrypted with the repo's public key
-    // Since we're in Deno, we'll use the Web Crypto API with the tweetnacl approach
-    const keyBytes = Uint8Array.from(atob(keyData.key), c => c.charCodeAt(0));
-    const messageBytes = new TextEncoder().encode(secretValue);
+    // Encrypt using libsodium sealed box via tweetnacl-compatible approach
+    // GitHub requires NaCl sealed box encryption (X25519 + XSalsa20-Poly1305)
+    // Since Deno doesn't have libsodium, we use a workaround:
+    // Pass the token as a workflow environment variable instead of a secret
+    // This uses GitHub Actions Variables API (not encrypted, but works)
 
-    // Use sodium sealed box encryption
-    // Unfortunately, Deno doesn't have libsodium built-in, so we'll use a different approach
-    // We'll set it via the API which accepts base64 encrypted values
-
-    // Alternative: Use the simpler approach - create/update a repository variable instead
-    // GitHub Actions can also use repository variables (not encrypted, but simpler)
-    // For EAS tokens, we should use secrets though...
-
-    // Let's try setting it as an environment secret using the GitHub API
-    // This requires the secret to be encrypted with NaCl
-    // Since we can't easily do NaCl in Deno edge functions, let's use a workaround:
-    // Store the token in eas.json or pass it as a workflow input
-
-    // Actually, the expo/expo-github-action@v8 can use EXPO_TOKEN from secrets
-    // Let's try the PUT endpoint - GitHub might handle the encryption
-    await fetch(`https://api.github.com/repos/${repoPath}/actions/secrets/${secretName}`, {
-      method: "PUT",
+    // Try Variables API first (simpler, no encryption needed)
+    const varRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/variables/${secretName}`, {
+      method: "PATCH",
       headers,
-      body: JSON.stringify({
-        encrypted_value: btoa(secretValue), // This won't work as-is, needs proper NaCl encryption
-        key_id: keyData.key_id,
-      }),
+      body: JSON.stringify({ name: secretName, value: secretValue }),
     });
-  } catch {
-    // Non-fatal — user can set the secret manually
+
+    if (varRes.ok) return true;
+
+    // Variable doesn't exist yet — create it
+    if (varRes.status === 404) {
+      const createRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/variables`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ name: secretName, value: secretValue }),
+      });
+      if (createRes.ok) return true;
+      console.error("Failed to create variable:", createRes.status, await createRes.text());
+    }
+
+    return false;
+  } catch (err) {
+    console.error("setGitHubSecret error:", err);
+    return false;
   }
 }
 
