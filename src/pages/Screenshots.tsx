@@ -261,6 +261,9 @@ export const Screenshots = () => {
   const pageBg = (pg: PageData) => pg.bgGradient ?? pg.bgColor;
   const { isPaid } = usePlan();
   const allEmpty = pages.every((pg) => pg.phones.length === 0 && pg.texts.length === 0);
+  const filledPages = pages.filter((pg) => pg.phones.length > 0 || pg.texts.length > 0).length;
+  const MIN_SCREENSHOTS = 3;
+  const canContinue = filledPages >= MIN_SCREENSHOTS;
 
   if (!isPaid) {
     return (
@@ -288,12 +291,19 @@ export const Screenshots = () => {
         <Link to={`/scan/${id}`} className="text-surface-500 hover:text-white"><ArrowLeft className="h-4 w-4" /></Link>
         <h1 className="text-sm font-bold">Screenshot Editor</h1>
         <div className="flex-1" />
-        <Button size="sm" variant="secondary" onClick={exportAll} className="gap-1.5 text-xs"><Download className="h-3 w-3" /> Download</Button>
+        <span className={`text-xs font-medium ${canContinue ? "text-green-600" : "text-surface-400"}`}>
+          {filledPages}/{MIN_SCREENSHOTS} screenshots
+        </span>
+        <Button size="sm" variant="secondary" onClick={exportAll} disabled={allEmpty} className="gap-1.5 text-xs ml-2"><Download className="h-3 w-3" /> Download</Button>
         <Button size="sm" onClick={saveToSupabase} disabled={saving || allEmpty} className="gap-1.5 text-xs ml-2">
           {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
-          {saving ? "Saving..." : "Save screenshots"}
+          {saving ? "Saving..." : "Save"}
         </Button>
-        <Link to={`/app/${id}/submit`} className="text-xs text-green-600 hover:text-green-700 font-medium ml-3">Continue →</Link>
+        {canContinue ? (
+          <Link to={`/app/${id}/submit`} className="text-xs text-green-600 hover:text-green-700 font-medium ml-3">Continue →</Link>
+        ) : (
+          <span className="text-xs text-surface-400 ml-3" title={`Add at least ${MIN_SCREENSHOTS} screenshots to continue`}>Continue →</span>
+        )}
       </div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -308,7 +318,7 @@ export const Screenshots = () => {
               <h2 className="text-xl font-semibold text-surface-900 mb-2">Create your store screenshots</h2>
               <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
                 The App Store and Google Play show screenshots of your app to help people decide to download it.
-                You need 3-5 screenshots that show what your app looks like.
+                You need at least 3 screenshots — show the best parts of your app.
               </p>
 
               <div className="text-left max-w-sm mx-auto space-y-3 mb-8">
