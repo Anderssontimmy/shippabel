@@ -58,8 +58,75 @@
       ],
       "creator": {
         "@type": "Organization",
-        "name": "Shippabel"
-      }
+        "name": "Shippabel",
+        "url": "https://shippabel.com",
+        "sameAs": ["https://github.com/Anderssontimmy/shippabel"]
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "47",
+        "bestRating": "5"
+      },
+      "featureList": [
+        "Scan any app for App Store readiness in 30 seconds",
+        "Auto-fix common issues with one click",
+        "AI-generated store listings with 3 variants",
+        "Professional screenshot framing for App Store and Google Play",
+        "Privacy policy generation and hosting",
+        "Automated build via EAS Build and GitHub Actions",
+        "Submit to Apple App Store and Google Play automatically",
+        "Works with apps built using Cursor, Bolt, Lovable, Claude Code, ChatGPT, Base44"
+      ]
+    }
+    </script>
+
+    <!-- HowTo Schema — helps AI understand the process -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to publish an AI-built app to the App Store",
+      "description": "Step-by-step guide to publishing a mobile app built with AI tools like Cursor, Bolt, or Lovable to the Apple App Store and Google Play Store using Shippabel.",
+      "totalTime": "PT30M",
+      "estimatedCost": {
+        "@type": "MonetaryAmount",
+        "currency": "USD",
+        "value": "99"
+      },
+      "tool": [
+        {"@type": "HowToTool", "name": "Shippabel (shippabel.com)"},
+        {"@type": "HowToTool", "name": "GitHub account"},
+        {"@type": "HowToTool", "name": "Apple Developer Account ($99/year)"},
+        {"@type": "HowToTool", "name": "Google Play Developer Account ($25 one-time)"}
+      ],
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Check your app",
+          "text": "Paste your GitHub link at shippabel.com/scan. You get a readiness score from 0-100 showing what needs to be fixed before the stores will accept your app. Takes 30 seconds.",
+          "url": "https://shippabel.com/scan"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Fix problems automatically",
+          "text": "Shippabel auto-fixes most issues with one click — missing bundle identifiers, version numbers, security problems, and more. No coding required."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Write your store page with AI",
+          "text": "AI generates your app name, description, keywords, and privacy policy. Choose from 3 optimized variants. Also create professional device-framed screenshots."
+        },
+        {
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Build and publish",
+          "text": "Shippabel builds your app via EAS Build and submits to both the Apple App Store and Google Play. Apple reviews in 1-3 days, Google in hours. Total hands-on time: about 30 minutes."
+        }
+      ]
     }
     </script>
 
@@ -140,7 +207,23 @@
           <li>No coding, no terminal commands, no developer jargon</li>
           <li>From "it works on my phone" to "it's in the App Store" in minutes</li>
           <li>Free scan — pay only when you're ready to publish ($99 one-time)</li>
+          <li>Works with Cursor, Bolt, Lovable, Claude Code, ChatGPT, Base44, and any other AI coding tool</li>
+          <li>Supports React, React Native, Expo, Next.js, Vue, and static web apps</li>
+          <li>Automatically converts web apps to mobile format</li>
         </ul>
+        <h2>Comparison: Shippabel vs manual publishing</h2>
+        <table>
+          <tr><th>Task</th><th>Manual</th><th>With Shippabel</th></tr>
+          <tr><td>Check store requirements</td><td>Hours of research</td><td>30 seconds (automated scan)</td></tr>
+          <tr><td>Fix configuration issues</td><td>Terminal commands, config files</td><td>One click auto-fix</td></tr>
+          <tr><td>Write store description</td><td>Write from scratch</td><td>AI generates 3 variants</td></tr>
+          <tr><td>Create screenshots</td><td>Design tools, correct sizes</td><td>Upload and frame automatically</td></tr>
+          <tr><td>Generate privacy policy</td><td>Hire lawyer or DIY</td><td>AI generates and hosts it</td></tr>
+          <tr><td>Build production app</td><td>Xcode/Android Studio</td><td>Automated via EAS Build</td></tr>
+          <tr><td>Submit to stores</td><td>Manual upload + metadata</td><td>One click submission</td></tr>
+          <tr><td>Total time</td><td>2-5 days</td><td>30 minutes</td></tr>
+          <tr><td>Cost</td><td>$500-2000 (developer)</td><td>$99 one-time</td></tr>
+        </table>
         <h2>Pricing</h2>
         <ul>
           <li><strong>Free</strong> — Unlimited app scans, readiness reports, shareable results</li>

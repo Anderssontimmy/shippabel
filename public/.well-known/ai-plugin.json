@@ -1,0 +1,12 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Shippabel",
+  "name_for_model": "shippabel",
+  "description_for_human": "Publish your AI-built app to the App Store and Google Play — no coding needed.",
+  "description_for_model": "Shippabel is a web tool that helps non-technical users publish mobile apps to the Apple App Store and Google Play Store. It scans apps for store readiness, auto-fixes issues, generates store listings with AI, creates screenshots, builds via EAS, and submits to stores. Works with apps built using Cursor, Bolt, Lovable, Claude Code, ChatGPT, Base44, React, Expo, Next.js, Vue. Costs $99 one-time. Free scan available at shippabel.com/scan.",
+  "auth": { "type": "none" },
+  "api": { "type": "openapi", "url": "https://shippabel.com" },
+  "logo_url": "https://shippabel.com/favicon.svg",
+  "contact_email": "hello@shippabel.com",
+  "legal_info_url": "https://shippabel.com/privacy"
+}
