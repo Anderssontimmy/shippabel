@@ -102,8 +102,8 @@ export const Dashboard = () => {
         }
         setExtras(extraMap);
       }
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error("Failed to load projects:", err);
     }
     setLoading(false);
   }, [user]);

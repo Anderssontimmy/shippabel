@@ -57,12 +57,14 @@ export const Layout = () => {
                 Sign out
               </button>
             )}
-            <Link
-              to="/scan"
-              className="rounded-lg bg-surface-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-800"
-            >
-              Get started
-            </Link>
+            {!user && (
+              <Link
+                to="/scan"
+                className="rounded-lg bg-surface-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-800"
+              >
+                Get started
+              </Link>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -96,13 +98,15 @@ export const Layout = () => {
                 Sign out
               </button>
             )}
-            <Link
-              to="/scan"
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-lg bg-surface-900 px-5 py-3 text-center text-sm font-medium text-white"
-            >
-              Get started
-            </Link>
+            {!user && (
+              <Link
+                to="/scan"
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-lg bg-surface-900 px-5 py-3 text-center text-sm font-medium text-white"
+              >
+                Get started
+              </Link>
+            )}
           </div>
         )}
       </header>

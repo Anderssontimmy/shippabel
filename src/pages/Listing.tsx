@@ -212,7 +212,7 @@ export const Listing = () => {
           )}
 
           {/* Fields */}
-          {(listing?.app_name || generating) && !generating && (
+          {listing?.app_name && !generating && (
             <div className="space-y-5">
               {/* App name */}
               <div>
