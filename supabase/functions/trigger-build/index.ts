@@ -40,18 +40,8 @@ jobs:
       - name: Generate native code
         run: |
           mkdir -p assets
-          if [ ! -f ./assets/adaptive-icon.png ]; then
-            npx expo-cli generate-icon --output ./assets/adaptive-icon.png 2>/dev/null || \
-            convert -size 1024x1024 xc:'#16a34a' ./assets/adaptive-icon.png 2>/dev/null || \
-            npx sharp-cli -i /dev/null -o ./assets/adaptive-icon.png --width 1024 --height 1024 2>/dev/null || \
-            echo 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' | base64 -d > ./assets/adaptive-icon.png
-          fi
-          if [ ! -f ./assets/icon.png ]; then
-            cp ./assets/adaptive-icon.png ./assets/icon.png 2>/dev/null || echo 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' | base64 -d > ./assets/icon.png
-          fi
-          if [ ! -f ./assets/splash-icon.png ]; then
-            cp ./assets/icon.png ./assets/splash-icon.png 2>/dev/null || true
-          fi
+          PH='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+          for f in icon.png adaptive-icon.png splash.png splash-icon.png favicon.png; do [ ! -f "./assets/$f" ] && echo "$PH" | base64 -d > "./assets/$f"; done
           npx expo prebuild --platform \${{ inputs.platform }} --no-install
       - name: Build
         run: eas build --platform \${{ inputs.platform }} --non-interactive --profile production
