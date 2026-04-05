@@ -41,15 +41,18 @@ jobs:
         run: eas init --id \${{ vars.EAS_PROJECT_ID }} --non-interactive || eas init --non-interactive || true
       - name: Fix dependencies and assets
         run: |
+          rm -f package-lock.json yarn.lock pnpm-lock.yaml
           npx expo install --fix || true
           mkdir -p assets
           PH='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
           for f in icon.png adaptive-icon.png splash.png splash-icon.png favicon.png; do [ ! -f "./assets/$f" ] && echo "$PH" | base64 -d > "./assets/$f"; done
       - name: Build
+        env:
+          EAS_NO_VCS: "1"
         run: |
           npx expo prebuild --platform \${{ inputs.platform }} --no-install --clean
           cd android && chmod +x gradlew && cd ..
-          eas build --platform \${{ inputs.platform }} --non-interactive --profile production --local --output ./build.apk
+          EAS_NO_VCS=1 eas build --platform \${{ inputs.platform }} --non-interactive --profile production --local --output ./build.apk
       - name: Upload build artifact
         if: success()
         uses: actions/upload-artifact@v4
