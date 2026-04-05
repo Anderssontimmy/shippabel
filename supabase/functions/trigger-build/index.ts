@@ -35,6 +35,8 @@ jobs:
           token: \${{ secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
       - name: Install dependencies
         run: npm install
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
       - name: Initialize EAS project
         run: eas init --id \${{ vars.EAS_PROJECT_ID }} --non-interactive || eas init --non-interactive || true
       - name: Fix dependencies and assets
