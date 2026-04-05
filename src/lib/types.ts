@@ -6,6 +6,7 @@ export type IssueCategory = "config" | "security" | "assets" | "permissions" | "
 export type ProjectType =
   | "expo"
   | "react-native"
+  | "capacitor"
   | "react-web"
   | "nextjs"
   | "vue"

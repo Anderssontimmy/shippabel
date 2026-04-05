@@ -19,7 +19,7 @@ interface ScanRequest {
   github_token?: string;
 }
 
-type ProjectType = "expo" | "react-native" | "react-web" | "nextjs" | "vue" | "static" | "unknown";
+type ProjectType = "expo" | "react-native" | "capacitor" | "react-web" | "nextjs" | "vue" | "static" | "unknown";
 
 interface Issue {
   severity: "critical" | "warning" | "info";
@@ -103,8 +103,8 @@ Deno.serve(async (req) => {
     // Start AI potential analysis early (runs in parallel with scan checks)
     const analysisPromise = generatePotentialAnalysis(appConfig, packageJson, readmeContent, fileList);
 
-    // Determine if conversion is needed
-    const needsConversion = projectType !== "expo";
+    // Determine if conversion is needed (Capacitor and Expo apps are already mobile-ready)
+    const needsConversion = projectType !== "expo" && projectType !== "capacitor";
     const conversionMessages: Record<string, string> = {
       "react-web": "Your app is a web app built with React. We can wrap it as a mobile app and publish it to the App Store and Google Play.",
       "nextjs": "Your app is built with Next.js. We can convert it to a mobile app and publish it to both stores.",
@@ -717,6 +717,7 @@ function detectProjectType(
     : {};
 
   if ("expo" in deps) return "expo";
+  if ("@capacitor/core" in deps || "@capacitor/cli" in deps) return "capacitor";
   if ("react-native" in deps && !("expo" in deps)) return "react-native";
   if ("next" in deps) return "nextjs";
   if ("vue" in deps || "nuxt" in deps) return "vue";
