@@ -38,16 +38,28 @@ jobs:
         run: npm run build
       - name: Sync Capacitor
         run: npx cap sync android
-      - name: Build Android APK
+      - name: Build Android
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease bundleRelease
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: app-release-apk
           path: android/app/build/outputs/apk/release/*.apk
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+      - name: Notify Shippabel
+        if: always()
+        run: |
+          STATUS=\${{ job.status }}
+          curl -s -X POST "https://fpqjxkilatlcihunfxpb.supabase.co/functions/v1/build-complete" \\
+            -H "Content-Type: application/json" \\
+            -d "{\\\"project_id\\\": \\\"\${{ vars.SHIPPABEL_PROJECT_ID }}\\\", \\\"status\\\": \\\"$STATUS\\\"}" || true
 `;
 
 // EAS/Expo workflow — for React Native/Expo apps
@@ -99,6 +111,13 @@ jobs:
         with:
           name: app-\${{ inputs.platform }}
           path: ./build.apk
+      - name: Notify Shippabel
+        if: always()
+        run: |
+          STATUS=\${{ job.status }}
+          curl -s -X POST "https://fpqjxkilatlcihunfxpb.supabase.co/functions/v1/build-complete" \\
+            -H "Content-Type: application/json" \\
+            -d "{\\\"project_id\\\": \\\"\${{ vars.SHIPPABEL_PROJECT_ID }}\\\", \\\"status\\\": \\\"$STATUS\\\"}" || true
 `;
 
 Deno.serve(async (req) => {
@@ -136,6 +155,9 @@ Deno.serve(async (req) => {
       const hasWorkflow = await checkFileExists(repoPath, workflowFile, ghHeaders, defaultBranch);
       await pushFile(repoPath, workflowFile, CAPACITOR_WORKFLOW, hasWorkflow ? "Update Capacitor workflow" : "Add Capacitor workflow", ghHeaders, defaultBranch);
       if (!hasWorkflow) throw new Error("We just added the build workflow. Please click Retry in 15 seconds.");
+
+      // Set project ID for webhook callback
+      await setGitHubVariable(repoPath, "SHIPPABEL_PROJECT_ID", project_id, ghHeaders);
 
       // Trigger Capacitor workflow
       const wt = await triggerWorkflow(repoPath, defaultBranch, platform, ghHeaders, "capacitor-build.yml");
@@ -194,6 +216,9 @@ Deno.serve(async (req) => {
         const gKey = (googleCred.credentials as Record<string, string>).service_account_json;
         if (gKey) await setGitHubVariable(repoPath, "GOOGLE_SERVICE_ACCOUNT_KEY", gKey, ghHeaders);
       }
+
+      // Set project ID for webhook callback
+      await setGitHubVariable(repoPath, "SHIPPABEL_PROJECT_ID", project_id, ghHeaders);
 
       // Trigger EAS workflow
       const wt = await triggerWorkflow(repoPath, defaultBranch, platform, ghHeaders, "eas-build.yml");
