@@ -44,10 +44,8 @@ export const Submit = () => {
 
   const {
     building,
-    submitting,
     error,
     triggerBuild,
-    submitToStore,
     latestByPlatform,
   } = useBuild(id ?? "");
 
@@ -473,30 +471,80 @@ jobs:
               <ReviewStatusDisplay submission={submission} />
             </Card>
           ) : (
-            <Card className="text-center py-10">
-              <Send className="h-12 w-12 text-surface-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-surface-900 mb-2">Submit to {platform === "ios" ? "App Store" : "Google Play"}</h3>
-              <p className="text-sm text-surface-400 mb-6 max-w-md mx-auto">
-                Your build is ready. We'll upload it along with your store listing and screenshots,
-                then submit for review.
-              </p>
-              <Button
-                onClick={async () => { if (submission) { await submitToStore(submission.id); toast("success", "Submitted! We'll track your review status."); } }}
-                disabled={submitting}
-                className="gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4" />
-                    Submit for review
-                  </>
-                )}
-              </Button>
+            <Card className="py-8 px-6">
+              <div className="max-w-lg mx-auto">
+                <div className="h-12 w-12 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4">
+                  <Send className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-surface-900 mb-2 text-center">Your app is built! 🎉</h3>
+                <p className="text-sm text-surface-500 mb-6 text-center">
+                  Download your app file and upload it to {platform === "ios" ? "App Store Connect" : "Google Play Console"}.
+                </p>
+
+                <div className="space-y-4 text-sm">
+                  <div className="flex gap-3 items-start">
+                    <div className="h-6 w-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-semibold shrink-0">1</div>
+                    <div>
+                      <p className="font-medium text-surface-800">Download your app file</p>
+                      <p className="text-xs text-surface-500 mt-0.5">Go to your GitHub Actions page and download the build artifact (APK or AAB file).</p>
+                      {submission?.eas_build_id && (
+                        <a href={submission.eas_build_id} target="_blank" rel="noopener noreferrer" className="text-xs text-green-700 hover:text-green-800 underline mt-1 inline-block">
+                          Open GitHub Actions →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {platform === "android" ? (
+                    <>
+                      <div className="flex gap-3 items-start">
+                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">2</div>
+                        <div>
+                          <p className="font-medium text-surface-800">Go to Google Play Console</p>
+                          <p className="text-xs text-surface-500 mt-0.5">Create a new app if you haven't already, then go to Production → Create new release.</p>
+                          <a href="https://play.google.com/console" target="_blank" rel="noopener noreferrer" className="text-xs text-green-700 hover:text-green-800 underline mt-1 inline-block">
+                            Open Play Console →
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 items-start">
+                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">3</div>
+                        <div>
+                          <p className="font-medium text-surface-800">Upload the AAB file</p>
+                          <p className="text-xs text-surface-500 mt-0.5">Drag the .aab file into the upload area. Fill in release notes and click "Review release" → "Start rollout".</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 items-start">
+                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">4</div>
+                        <div>
+                          <p className="font-medium text-surface-800">Wait for review</p>
+                          <p className="text-xs text-surface-500 mt-0.5">Google typically reviews new apps in a few hours to a few days. You'll get an email when it's approved.</p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex gap-3 items-start">
+                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">2</div>
+                        <div>
+                          <p className="font-medium text-surface-800">Go to App Store Connect</p>
+                          <p className="text-xs text-surface-500 mt-0.5">Create a new app, then upload the .ipa file using Transporter or Xcode.</p>
+                          <a href="https://appstoreconnect.apple.com" target="_blank" rel="noopener noreferrer" className="text-xs text-green-700 hover:text-green-800 underline mt-1 inline-block">
+                            Open App Store Connect →
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 items-start">
+                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">3</div>
+                        <div>
+                          <p className="font-medium text-surface-800">Submit for review</p>
+                          <p className="text-xs text-surface-500 mt-0.5">Fill in your app details and submit. Apple reviews in 1-3 business days.</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </Card>
           )}
         </div>
