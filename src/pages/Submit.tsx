@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { PublishGuide } from "@/components/PublishGuide";
 import { useBuild } from "@/hooks/useBuild";
 import { supabase } from "@/lib/supabase";
 import type { Project, ScanResult } from "@/lib/types";
@@ -471,81 +472,12 @@ jobs:
               <ReviewStatusDisplay submission={submission} />
             </Card>
           ) : (
-            <Card className="py-8 px-6">
-              <div className="max-w-lg mx-auto">
-                <div className="h-12 w-12 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4">
-                  <Send className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-surface-900 mb-2 text-center">Your app is built! 🎉</h3>
-                <p className="text-sm text-surface-500 mb-6 text-center">
-                  Download your app file and upload it to {platform === "ios" ? "App Store Connect" : "Google Play Console"}.
-                </p>
-
-                <div className="space-y-4 text-sm">
-                  <div className="flex gap-3 items-start">
-                    <div className="h-6 w-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-semibold shrink-0">1</div>
-                    <div>
-                      <p className="font-medium text-surface-800">Download your app file</p>
-                      <p className="text-xs text-surface-500 mt-0.5">Go to your GitHub Actions page and download the build artifact (APK or AAB file).</p>
-                      {submission?.eas_build_id && (
-                        <a href={submission.eas_build_id} target="_blank" rel="noopener noreferrer" className="text-xs text-green-700 hover:text-green-800 underline mt-1 inline-block">
-                          Open GitHub Actions →
-                        </a>
-                      )}
-                    </div>
-                  </div>
-
-                  {platform === "android" ? (
-                    <>
-                      <div className="flex gap-3 items-start">
-                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">2</div>
-                        <div>
-                          <p className="font-medium text-surface-800">Go to Google Play Console</p>
-                          <p className="text-xs text-surface-500 mt-0.5">Create a new app if you haven't already, then go to Production → Create new release.</p>
-                          <a href="https://play.google.com/console" target="_blank" rel="noopener noreferrer" className="text-xs text-green-700 hover:text-green-800 underline mt-1 inline-block">
-                            Open Play Console →
-                          </a>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 items-start">
-                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">3</div>
-                        <div>
-                          <p className="font-medium text-surface-800">Upload the AAB file</p>
-                          <p className="text-xs text-surface-500 mt-0.5">Drag the .aab file into the upload area. Fill in release notes and click "Review release" → "Start rollout".</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 items-start">
-                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">4</div>
-                        <div>
-                          <p className="font-medium text-surface-800">Wait for review</p>
-                          <p className="text-xs text-surface-500 mt-0.5">Google typically reviews new apps in a few hours to a few days. You'll get an email when it's approved.</p>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex gap-3 items-start">
-                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">2</div>
-                        <div>
-                          <p className="font-medium text-surface-800">Go to App Store Connect</p>
-                          <p className="text-xs text-surface-500 mt-0.5">Create a new app, then upload the .ipa file using Transporter or Xcode.</p>
-                          <a href="https://appstoreconnect.apple.com" target="_blank" rel="noopener noreferrer" className="text-xs text-green-700 hover:text-green-800 underline mt-1 inline-block">
-                            Open App Store Connect →
-                          </a>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 items-start">
-                        <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-600 flex items-center justify-center text-xs font-semibold shrink-0">3</div>
-                        <div>
-                          <p className="font-medium text-surface-800">Submit for review</p>
-                          <p className="text-xs text-surface-500 mt-0.5">Fill in your app details and submit. Apple reviews in 1-3 business days.</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </Card>
+            <PublishGuide
+              platform={platform}
+              buildUrl={submission?.eas_build_id}
+              appName={project?.name}
+              packageName={scan?.issues?.find((i) => i.title?.toLowerCase().includes("bundle"))?.description?.match(/[a-z]+\.[a-z]+\.[a-z]+/i)?.[0]}
+            />
           )}
         </div>
       )}
