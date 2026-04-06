@@ -22,6 +22,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { PublishGuide } from "@/components/PublishGuide";
 import { useBuild } from "@/hooks/useBuild";
+import { useCredentials } from "@/hooks/useCredentials";
 import { supabase } from "@/lib/supabase";
 import type { Project, ScanResult } from "@/lib/types";
 
@@ -45,13 +46,22 @@ export const Submit = () => {
 
   const {
     building,
+    submitting,
     error,
     triggerBuild,
+    submitToStore,
     latestByPlatform,
   } = useBuild(id ?? "");
 
+  const { hasCredential } = useCredentials();
   const submission = latestByPlatform(platform);
   const { toast } = useToast();
+
+  const handleAutoSubmit = async () => {
+    if (!submission) return;
+    await submitToStore(submission.id);
+    toast("success", "Submitted! We'll track your review status.");
+  };
 
   useEffect(() => {
     loadProject();
@@ -477,6 +487,10 @@ jobs:
               buildUrl={submission?.eas_build_id}
               appName={project?.name}
               packageName={scan?.issues?.find((i) => i.title?.toLowerCase().includes("bundle"))?.description?.match(/[a-z]+\.[a-z]+\.[a-z]+/i)?.[0]}
+              hasCredentials={platform === "ios" ? hasCredential("apple") : hasCredential("google")}
+              onAutoSubmit={handleAutoSubmit}
+              autoSubmitting={submitting}
+              submissionStatus={submission?.review_status}
             />
           )}
         </div>

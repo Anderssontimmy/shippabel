@@ -250,12 +250,24 @@ async function checkGooglePlayReview(
   credentials: Record<string, string>,
   storeSubmissionId: string | null
 ): Promise<{ status: string; rejection_reason?: string } | null> {
-  if (!storeSubmissionId || !credentials.client_email || !credentials.private_key) {
-    return null;
+  if (!storeSubmissionId) return null;
+
+  // Credentials may be stored as { service_account_json: "..." } or directly as { client_email, private_key }
+  let clientEmail = credentials.client_email;
+  let privateKey = credentials.private_key;
+
+  if (!clientEmail && credentials.service_account_json) {
+    try {
+      const sa = JSON.parse(credentials.service_account_json);
+      clientEmail = sa.client_email;
+      privateKey = sa.private_key;
+    } catch { /* ignore parse errors */ }
   }
 
+  if (!clientEmail || !privateKey) return null;
+
   try {
-    const accessToken = await getGoogleAccessToken(credentials.client_email, credentials.private_key);
+    const accessToken = await getGoogleAccessToken(clientEmail, privateKey);
     const packageName = storeSubmissionId;
 
     // Check the latest track release status

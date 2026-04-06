@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Check,
   ExternalLink,
@@ -13,6 +14,9 @@ import {
   Users,
   FileText,
   Star,
+  Loader2,
+  Zap,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -27,6 +31,10 @@ interface PublishGuideProps {
   buildUrl?: string | null;
   appName?: string;
   packageName?: string;
+  hasCredentials?: boolean;
+  onAutoSubmit?: () => Promise<void>;
+  autoSubmitting?: boolean;
+  submissionStatus?: string | null;
 }
 
 type StepId =
@@ -67,10 +75,20 @@ const iosSteps: GuideStep[] = [
 // Main component
 // ---------------------------------------------------------------------------
 
-export const PublishGuide = ({ platform, buildUrl, appName, packageName }: PublishGuideProps) => {
+export const PublishGuide = ({
+  platform,
+  buildUrl,
+  appName,
+  packageName,
+  hasCredentials,
+  onAutoSubmit,
+  autoSubmitting,
+  submissionStatus,
+}: PublishGuideProps) => {
   const steps = platform === "android" ? androidSteps : iosSteps;
   const [completedSteps, setCompletedSteps] = useState<Set<StepId>>(new Set());
   const [expandedStep, setExpandedStep] = useState<StepId>(steps[0]!.id);
+  const [showManualGuide, setShowManualGuide] = useState(!hasCredentials);
   const { toast } = useToast();
 
   const markDone = (id: StepId) => {
@@ -92,13 +110,118 @@ export const PublishGuide = ({ platform, buildUrl, appName, packageName }: Publi
   const displayName = appName || "My App";
   const displayPackage = packageName || "com.yourname.yourapp";
 
+  // If auto-submit is in progress or completed, show status
+  if (submissionStatus && submissionStatus !== "not_submitted") {
+    return (
+      <Card className="text-center py-8 border-green-200 bg-green-50">
+        <div className="h-14 w-14 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-4">
+          {submissionStatus === "waiting_for_review" || submissionStatus === "in_review" ? (
+            <Loader2 className="h-7 w-7 text-green-600 animate-spin" />
+          ) : submissionStatus === "approved" ? (
+            <Check className="h-7 w-7 text-green-600" />
+          ) : (
+            <Zap className="h-7 w-7 text-green-600" />
+          )}
+        </div>
+        <h3 className="text-xl font-semibold text-surface-900 mb-2">
+          {submissionStatus === "approved"
+            ? "Your app is live!"
+            : submissionStatus === "waiting_for_review"
+            ? "Submitted for review"
+            : submissionStatus === "in_review"
+            ? "In review"
+            : "Submitted"}
+        </h3>
+        <p className="text-sm text-surface-500 max-w-md mx-auto">
+          {submissionStatus === "approved"
+            ? `Your app is live on the ${platform === "ios" ? "App Store" : "Google Play Store"}!`
+            : platform === "android"
+            ? "Google usually reviews new apps in a few hours to a few days. We'll update this page automatically."
+            : "Apple usually reviews apps in 1-3 business days. We'll update this page automatically."}
+        </p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {/* Auto-submit option */}
+      {hasCredentials && onAutoSubmit && (
+        <Card className="border-green-200 bg-green-50">
+          <div className="flex items-start gap-4">
+            <div className="h-10 w-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+              <Zap className="h-5 w-5 text-green-700" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-surface-900 mb-1">Automatic submission available</h3>
+              <p className="text-xs text-surface-500 mb-3">
+                Your {platform === "ios" ? "Apple" : "Google Play"} credentials are connected. We can upload your app and
+                store listing automatically — no manual steps needed.
+              </p>
+              <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  onClick={onAutoSubmit}
+                  disabled={autoSubmitting}
+                  className="gap-1.5"
+                >
+                  {autoSubmitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-3.5 w-3.5" />
+                      Submit automatically
+                    </>
+                  )}
+                </Button>
+                <button
+                  onClick={() => setShowManualGuide(!showManualGuide)}
+                  className="text-xs text-surface-500 hover:text-surface-700 cursor-pointer"
+                >
+                  {showManualGuide ? "Hide manual guide" : "I'd rather do it manually"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* No credentials — prompt to connect */}
+      {!hasCredentials && (
+        <Card className="border-amber-200 bg-amber-50">
+          <div className="flex items-start gap-3">
+            <Settings className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <h3 className="text-sm font-semibold text-surface-900 mb-1">
+                Want us to submit for you?
+              </h3>
+              <p className="text-xs text-surface-500 mb-2">
+                Connect your {platform === "ios" ? "Apple Developer" : "Google Play"} account in Settings and we'll
+                handle the upload and metadata automatically. Or follow the manual steps below.
+              </p>
+              <Link to="/settings">
+                <Button size="sm" variant="secondary" className="gap-1.5">
+                  <Settings className="h-3 w-3" />
+                  Go to Settings
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Manual guide (always shown if no credentials, toggleable if has credentials) */}
+      {showManualGuide && (
+        <>
+
       {/* Progress header */}
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="text-lg font-semibold text-surface-900">
-            Publish to {platform === "ios" ? "App Store" : "Google Play"}
+            {hasCredentials ? "Manual guide" : `Publish to ${platform === "ios" ? "App Store" : "Google Play"}`}
           </h3>
           <p className="text-xs text-surface-500 mt-0.5">
             Follow each step below. We'll walk you through everything.
@@ -201,6 +324,9 @@ export const PublishGuide = ({ platform, buildUrl, appName, packageName }: Publi
               : "Your app is submitted to Apple. Apple usually reviews apps in 1-3 business days. You'll get an email when it's approved."}
           </p>
         </Card>
+      )}
+
+      </>
       )}
     </div>
   );

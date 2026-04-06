@@ -77,18 +77,19 @@ Deno.serve(async (req) => {
       .eq("provider", "eas")
       .single();
 
-    let result: { status: string; details: string };
+    let result: { status: string; details: string; store_submission_id?: string };
 
     if (platform === "ios") {
       result = await submitToAppStore(submission, listing, userCred?.credentials as Record<string, string> | undefined, easCred?.credentials as Record<string, string> | undefined);
     } else {
-      result = await submitToGooglePlay(submission, listing, userCred?.credentials as Record<string, string> | undefined, easCred?.credentials as Record<string, string> | undefined);
+      result = await submitToGooglePlay(submission, listing, userCred?.credentials as Record<string, string> | undefined, easCred?.credentials as Record<string, string> | undefined, project as Record<string, unknown>);
     }
 
     await supabase
       .from("submissions")
       .update({
         review_status: result.status,
+        store_submission_id: result.store_submission_id ?? null,
         submitted_at: new Date().toISOString(),
       })
       .eq("id", submission.id);
@@ -121,7 +122,7 @@ async function submitToAppStore(
   listing: Record<string, unknown> | null,
   userCreds?: Record<string, string>,
   easCreds?: Record<string, string>
-): Promise<{ status: string; details: string }> {
+): Promise<{ status: string; details: string; store_submission_id?: string }> {
   const keyId = userCreds?.key_id ?? Deno.env.get("APPLE_API_KEY_ID");
   const issuerId = userCreds?.issuer_id ?? Deno.env.get("APPLE_ISSUER_ID");
   const privateKey = userCreds?.private_key ?? Deno.env.get("APPLE_API_PRIVATE_KEY");
@@ -173,6 +174,8 @@ async function submitToAppStore(
 
     // 2. Create a new app version
     const version = listing?.version ?? "1.0.0";
+    let versionId: string | undefined;
+
     const versionRes = await fetch(
       "https://api.appstoreconnect.apple.com/v1/appStoreVersions",
       {
@@ -193,60 +196,62 @@ async function submitToAppStore(
       }
     );
 
-    if (!versionRes.ok) {
+    if (versionRes.ok) {
+      const versionData = await versionRes.json();
+      versionId = versionData.data?.id;
+    } else {
       const errText = await versionRes.text();
-      // Version might already exist, which is ok
+      // Version might already exist — fetch the latest one
       if (!errText.includes("already exists")) {
-        return { status: "waiting_for_review", details: `Version created. Metadata update may have partially failed: ${errText}` };
+        return { status: "waiting_for_review", details: `Version creation issue: ${errText}` };
+      }
+    }
+
+    // Fetch latest version ID if we don't have it yet
+    if (!versionId) {
+      const verRes = await fetch(
+        `https://api.appstoreconnect.apple.com/v1/apps/${appId}/appStoreVersions?filter[platform]=IOS&limit=1`,
+        { headers }
+      );
+      if (verRes.ok) {
+        const verData = await verRes.json();
+        versionId = verData.data?.[0]?.id;
       }
     }
 
     // 3. Update localized metadata
-    if (listing) {
+    if (listing && versionId) {
       // Get the version's localizations
       const locRes = await fetch(
-        `https://api.appstoreconnect.apple.com/v1/apps/${appId}/appStoreVersions?filter[platform]=IOS&limit=1`,
+        `https://api.appstoreconnect.apple.com/v1/appStoreVersions/${versionId}/appStoreVersionLocalizations`,
         { headers }
       );
 
       if (locRes.ok) {
-        const locData = await locRes.json();
-        const versionId = locData.data?.[0]?.id;
+        const localizations = await locRes.json();
+        const enLocId = localizations.data?.[0]?.id;
 
-        if (versionId) {
-          // Get localization
-          const localizationsRes = await fetch(
-            `https://api.appstoreconnect.apple.com/v1/appStoreVersions/${versionId}/appStoreVersionLocalizations`,
-            { headers }
-          );
-
-          if (localizationsRes.ok) {
-            const localizations = await localizationsRes.json();
-            const enLocId = localizations.data?.[0]?.id;
-
-            if (enLocId) {
-              await fetch(
-                `https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/${enLocId}`,
-                {
-                  method: "PATCH",
-                  headers,
-                  body: JSON.stringify({
-                    data: {
-                      type: "appStoreVersionLocalizations",
-                      id: enLocId,
-                      attributes: {
-                        description: listing.full_description ?? "",
-                        keywords: listing.keywords ?? "",
-                        marketingUrl: listing.privacy_policy_url ?? "",
-                        supportUrl: listing.privacy_policy_url ?? "",
-                        whatsNew: "Initial release",
-                      },
-                    },
-                  }),
-                }
-              );
+        if (enLocId) {
+          await fetch(
+            `https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/${enLocId}`,
+            {
+              method: "PATCH",
+              headers,
+              body: JSON.stringify({
+                data: {
+                  type: "appStoreVersionLocalizations",
+                  id: enLocId,
+                  attributes: {
+                    description: listing.full_description ?? "",
+                    keywords: listing.keywords ?? "",
+                    marketingUrl: listing.privacy_policy_url ?? "",
+                    supportUrl: listing.privacy_policy_url ?? "",
+                    whatsNew: "Initial release",
+                  },
+                },
+              }),
             }
-          }
+          );
         }
       }
     }
@@ -274,6 +279,7 @@ async function submitToAppStore(
     return {
       status: "waiting_for_review",
       details: "App submitted to App Store Connect. Metadata updated. Binary upload triggered via EAS Submit.",
+      store_submission_id: versionId,
     };
   } catch (err) {
     return {
@@ -289,8 +295,9 @@ async function submitToGooglePlay(
   submission: Record<string, unknown>,
   listing: Record<string, unknown> | null,
   userCreds?: Record<string, string>,
-  easCreds?: Record<string, string>
-): Promise<{ status: string; details: string }> {
+  easCreds?: Record<string, string>,
+  project?: Record<string, unknown>
+): Promise<{ status: string; details: string; store_submission_id?: string }> {
   const serviceAccountJson = userCreds?.service_account_json ?? Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT");
 
   if (!serviceAccountJson) {
@@ -304,12 +311,14 @@ async function submitToGooglePlay(
     const serviceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getGoogleAccessToken(serviceAccount);
 
-    const packageName = listing
-      ? (listing.short_description as string) // We'd use the actual package name
-      : "com.app.unknown";
-
-    // The actual package name should come from the project's app.json
-    // For now, we trigger EAS Submit which handles the Google Play upload
+    // Derive package name from scan result or listing
+    const scanResult = project?.scan_result as Record<string, unknown> | undefined;
+    const issues = (scanResult?.issues ?? []) as Array<Record<string, string>>;
+    const bundleIssue = issues.find((i) => i.title?.toLowerCase().includes("bundle"));
+    const bundleMatch = bundleIssue?.description?.match(/[a-z]+\.[a-z]+\.[a-z0-9.]+/i);
+    const appName = (listing?.app_name as string) ?? (project?.name as string) ?? "app";
+    const fallbackPackage = `com.app.${appName.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+    const packageName = bundleMatch?.[0] ?? fallbackPackage;
 
     const easToken = easCreds?.access_token ?? Deno.env.get("EAS_ACCESS_TOKEN");
     if (easToken && submission.eas_build_id) {
@@ -389,6 +398,7 @@ async function submitToGooglePlay(
     return {
       status: "waiting_for_review",
       details: "App submitted to Google Play. AAB upload triggered via EAS Submit. Store listing metadata updated.",
+      store_submission_id: packageName,
     };
   } catch (err) {
     return {
