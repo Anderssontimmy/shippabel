@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Rocket,
   Scan,
@@ -11,6 +11,8 @@ import {
   FileText,
   Image,
   Send,
+  PartyPopper,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -60,12 +62,18 @@ const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
 const cleanAppName = (name: string) =>
   name.replace(/-[a-f0-9]{8,}$/i, "").replace(/-/g, " ");
 
+const planLabel = (plan: string) =>
+  plan === "unlimited" ? "Unlimited" : "Ship";
+
 export const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [extras, setExtras] = useState<Record<string, ProjectExtra>>({});
   const [loading, setLoading] = useState(true);
+  const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
 
   const loadProjects = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -114,6 +122,20 @@ export const Dashboard = () => {
     loadProjects();
   }, [user, authLoading, navigate, loadProjects]);
 
+  // Handle post-checkout redirect — refresh session so plan metadata is current
+  useEffect(() => {
+    const checkoutStatus = searchParams.get("checkout");
+    if (checkoutStatus !== "success") return;
+
+    setSearchParams({}, { replace: true });
+
+    supabase.auth.refreshSession().then(({ data }) => {
+      const plan = data?.user?.user_metadata?.plan as string | undefined;
+      setCheckoutPlan(plan ?? "ship");
+      setShowCheckoutSuccess(true);
+    });
+  }, [searchParams, setSearchParams]);
+
   if (authLoading || (loading && user)) {
     return <div className="flex items-center justify-center py-32"><Loader2 className="h-6 w-6 text-surface-400 animate-spin" /></div>;
   }
@@ -123,20 +145,62 @@ export const Dashboard = () => {
     ?? user?.email?.split("@")[0]
     ?? "there";
   const hasApps = projects.length > 0;
+  const currentPlan = user?.user_metadata?.plan as string | undefined;
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
 
+      {/* Checkout success banner */}
+      {showCheckoutSuccess && (
+        <div className="mb-8 relative rounded-2xl bg-green-50 border border-green-200 px-6 py-5">
+          <button
+            onClick={() => setShowCheckoutSuccess(false)}
+            className="absolute top-4 right-4 text-green-400 hover:text-green-600 cursor-pointer"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex items-start gap-4">
+            <div className="h-10 w-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+              <PartyPopper className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-green-900 text-base">
+                Payment confirmed — you're on the {planLabel(checkoutPlan ?? "ship")} plan!
+              </p>
+              <p className="text-sm text-green-700 mt-1">
+                You now have access to auto-fix, AI store page writing, screenshot framing, and one-click publishing.
+                A receipt has been sent to your email.
+              </p>
+              <p className="text-sm text-green-700 mt-2">
+                Need help getting started?{" "}
+                <a href="mailto:anderssontimmy@outlook.com" className="underline font-medium">
+                  Email us
+                </a>{" "}
+                — we reply fast.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Welcome */}
-      <div className="mb-10">
-        <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">
-          Hi, {firstName} 👋
-        </h1>
-        <p className="text-surface-500 text-sm mt-1">
-          {hasApps
-            ? "Here's where your apps are at."
-            : "Let's get your first app into the store."}
-        </p>
+      <div className="mb-10 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">
+            Hi, {firstName}
+          </h1>
+          <p className="text-surface-500 text-sm mt-1">
+            {hasApps
+              ? "Here's where your apps are at."
+              : "Let's get your first app into the store."}
+          </p>
+        </div>
+        {currentPlan && (
+          <span className="shrink-0 rounded-full bg-green-100 border border-green-200 px-3 py-1 text-xs font-semibold text-green-700 mt-1">
+            {planLabel(currentPlan)} plan
+          </span>
+        )}
       </div>
 
       {/* Empty state */}
