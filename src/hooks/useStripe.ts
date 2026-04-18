@@ -15,7 +15,7 @@ const getStripe = () => {
 export type PlanId = "ship" | "unlimited";
 
 const priceIds: Record<PlanId, string> = {
-  ship: import.meta.env.VITE_STRIPE_SHIP_PRICE_ID ?? "price_1TNe1nKTudcNlvgZR93uiyDs",
+  ship: import.meta.env.VITE_STRIPE_SHIP_PRICE_ID ?? "price_1TNelnKTudcNlvgZR93uiyDs",
   unlimited: import.meta.env.VITE_STRIPE_UNLIMITED_PRICE_ID ?? "",
 };
 
