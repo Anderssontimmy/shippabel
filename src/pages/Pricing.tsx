@@ -27,7 +27,8 @@ const plans = [
   {
     name: "Ship",
     planId: "ship" as PlanId,
-    price: "$99",
+    price: "$49",
+    originalPrice: "$99",
     period: "one-time",
     description: "Everything you need to get your app live in the store",
     icon: Rocket,
@@ -42,7 +43,7 @@ const plans = [
       "We build & submit your app",
       "Track your review status",
     ],
-    cta: "Get Ship — $99",
+    cta: "Get Ship — $49",
     ctaVariant: "primary" as const,
   },
   {
@@ -112,6 +113,12 @@ export const Pricing = () => {
             </div>
 
             <div className="mb-6">
+              {'originalPrice' in plan && plan.originalPrice && (
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm text-surface-500 line-through">{plan.originalPrice}</span>
+                  <span className="rounded-full bg-green-600 px-2 py-0.5 text-xs font-semibold text-white">50% off — limited time</span>
+                </div>
+              )}
               <span className="text-4xl font-bold">{plan.price}</span>
               <span className="text-surface-500 text-sm ml-1">{plan.period}</span>
             </div>
@@ -148,7 +155,7 @@ export const Pricing = () => {
 
       <div className="mt-16 text-center">
         <p className="text-surface-500 text-sm">
-          14-day money-back guarantee. No questions asked.
+          Special launch offer — price goes back to $99 soon.
         </p>
       </div>
     </div>

@@ -59,11 +59,11 @@ export const UpgradePrompt = ({ feature, description, benefits, compact = false 
           {/* CTA */}
           <Link to="/pricing">
             <Button size="lg" className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white">
-              Get Ship — $99 one-time
+              Get Ship — $49 one-time
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <p className="text-xs text-surface-400 mt-3">14-day money-back guarantee</p>
+          <p className="text-xs text-surface-400 mt-3">Special offer — 50% off, was $99</p>
         </div>
       </div>
     </div>

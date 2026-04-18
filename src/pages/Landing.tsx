@@ -80,7 +80,7 @@ const faqs = [
   { q: "How long does it take?", a: "The scan takes 30 seconds. Fixing takes a few minutes. After submitting, Apple reviews in 1-3 days, Google in hours." },
   { q: "What if my app gets rejected?", a: "We track your review status. If rejected, we explain why in plain language and help you fix it." },
   { q: "What kind of apps work?", a: "Any app built with Lovable, Cursor, Bolt, v0, or Claude Code. React, Next.js, Expo, and React Native." },
-  { q: "Can I get a refund?", a: "Yes — 14-day money-back guarantee, no questions asked." },
+  { q: "How long is the special offer?", a: "The $49 launch price is time-limited. Once the offer ends it goes back to $99." },
 ];
 
 const FaqItem = ({ q, a }: { q: string; a: string }) => {
@@ -169,9 +169,9 @@ export const Landing = () => {
               <div className="animate-fade-up-delay-3 mt-5 flex items-center gap-2 text-xs text-gray-400">
                 <span>Free to check</span>
                 <span className="text-gray-300">·</span>
-                <span>$99 to publish</span>
+                <span className="text-green-400 font-medium">$49 to publish</span>
                 <span className="text-gray-300">·</span>
-                <span>14-day money-back guarantee</span>
+                <span>50% off — limited time</span>
               </div>
             </div>
 
