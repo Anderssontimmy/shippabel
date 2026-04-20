@@ -29,23 +29,78 @@ function extractBlogPosts(raw) {
   const slugRe = /slug:\s*"([^"]+)"/g;
   const titleRe = /title:\s*"([^"]+)"/g;
   const excerptRe = /excerpt:\s*"([^"]+)"/g;
+  const dateRe = /date:\s*"([^"]+)"/g;
   const contentRe = /content:\s*`([\s\S]*?)`/g;
 
-  let slugMatch, titleMatch, excerptMatch, contentMatch;
+  let slugMatch, titleMatch, excerptMatch, dateMatch, contentMatch;
   while (
     (slugMatch = slugRe.exec(raw)) &&
     (titleMatch = titleRe.exec(raw)) &&
     (excerptMatch = excerptRe.exec(raw)) &&
+    (dateMatch = dateRe.exec(raw)) &&
     (contentMatch = contentRe.exec(raw))
   ) {
     posts.push({
       slug: slugMatch[1],
       title: titleMatch[1],
       excerpt: excerptMatch[1],
+      date: dateMatch[1],
       content: contentMatch[1].trim(),
     });
   }
   return posts;
+}
+
+function stripHtml(html) {
+  return html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function extractFaqs(content) {
+  const faqs = [];
+  const h2Re = /<h2>(.*?)<\/h2>\s*<p>(.*?)<\/p>/gs;
+  let match;
+  while ((match = h2Re.exec(content)) !== null && faqs.length < 5) {
+    const question = stripHtml(match[1]).trim();
+    const answer = stripHtml(match[2]).slice(0, 300).trim();
+    if (question && answer.length > 20) faqs.push({ question, answer });
+  }
+  return faqs;
+}
+
+function buildArticleSchema(post) {
+  const canonical = `https://shippabel.com/blog/${post.slug}`;
+  const faqs = extractFaqs(post.content);
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    url: canonical,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: { "@type": "Organization", name: "Shippabel", url: "https://shippabel.com" },
+    publisher: { "@type": "Organization", name: "Shippabel", url: "https://shippabel.com" },
+    inLanguage: "en",
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+  };
+
+  let scripts = `<script type="application/ld+json">${JSON.stringify(articleSchema)}</script>`;
+
+  if (faqs.length > 0) {
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.question,
+        acceptedAnswer: { "@type": "Answer", text: f.answer },
+      })),
+    };
+    scripts += `\n<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>`;
+  }
+
+  return scripts;
 }
 
 const blogPosts = extractBlogPosts(blogDataRaw);
@@ -112,6 +167,7 @@ const pages = [
     description: post.excerpt,
     canonical: `https://shippabel.com/blog/${post.slug}`,
     extraContent: `<article><h1>${post.title}</h1>${post.content}</article>`,
+    schemaLd: buildArticleSchema(post),
   })),
 ];
 
@@ -172,8 +228,12 @@ function generatePage(page) {
     `<meta name="twitter:description" content="${escapeHtml(page.description)}"`
   );
 
-  // Inject page content into noscript (for crawlers) + a hidden div
-  // This gives Google real content to index even without JS
+  // Inject schema.org JSON-LD for blog posts
+  if (page.schemaLd) {
+    html = html.replace("</head>", `${page.schemaLd}\n</head>`);
+  }
+
+  // Inject page content into a hidden div for crawlers
   if (page.extraContent) {
     html = html.replace(
       '<div id="root"></div>',
