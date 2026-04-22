@@ -20,6 +20,7 @@ const Privacy = lazy(() => import("./pages/Privacy").then((m) => ({ default: m.P
 const Settings = lazy(() => import("./pages/Settings").then((m) => ({ default: m.Settings })));
 const BlogIndex = lazy(() => import("./pages/Blog").then((m) => ({ default: m.BlogIndex })));
 const BlogPostPage = lazy(() => import("./pages/Blog").then((m) => ({ default: m.BlogPost })));
+const About = lazy(() => import("./pages/About").then((m) => ({ default: m.About })));
 const NotFound = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFound })));
 
 const PageLoader = () => (
@@ -52,6 +53,7 @@ const App = () => {
             <Route path="/settings" element={<ErrorBoundary fallbackTitle="Could not load settings"><Settings /></ErrorBoundary>} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/blog" element={<BlogIndex />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />

@@ -11,6 +11,7 @@ export const Layout = () => {
 
   const navLinks = [
     ...(user ? [{ to: "/dashboard", label: "My Apps" }] : []),
+    { to: "/about", label: "About" },
     { to: "/scan", label: "Check App" },
     { to: "/pricing", label: "Pricing" },
     ...(user ? [{ to: "/settings", label: "Settings" }] : []),
