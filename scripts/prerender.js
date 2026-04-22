@@ -125,6 +125,19 @@ const pages = [
     canonical: "https://shippabel.com/scan",
   },
   {
+    path: "/about",
+    title: "About — Shippabel",
+    description:
+      "Shippabel was built for the new generation of app creators — people who build with AI tools like Cursor, Bolt, and Lovable and need help getting their app into the App Store.",
+    canonical: "https://shippabel.com/about",
+    extraContent: `<h1>Get your app in the stores — without the headache</h1>
+<p>Shippabel is built for people who used AI to build their app. We handle everything from scan to submission.</p>
+<h2>Why we built this</h2>
+<p>Publishing an app sounds simple. It isn't. App Store and Google Play have hundreds of requirements. Shippabel handles the entire technical maze so you don't have to.</p>
+<h2>What Shippabel does</h2>
+<p>We scan your app, auto-fix issues, write your store listing with AI, frame your screenshots, and submit to both stores.</p>`,
+  },
+  {
     path: "/pricing",
     title: "Pricing — Shippabel",
     description:
