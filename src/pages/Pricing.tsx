@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Check, Rocket, Zap, Loader2, Infinity } from "lucide-react";
+import { Check, Rocket, Zap, Loader2, Infinity as InfinityIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useStripe, type PlanId } from "@/hooks/useStripe";
@@ -52,7 +52,7 @@ const plans = [
     price: "$179",
     period: "one-time",
     description: "For people with more than one app to publish",
-    icon: Infinity,
+    icon: InfinityIcon,
     color: "text-surface-500",
     features: [
       "Everything in Ship",
