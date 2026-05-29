@@ -22,8 +22,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// GitHub OAuth/PAT tokens have recognisable shapes; a Google session token is
+// "ya29.…". Supabase only exposes provider_token right after an OAuth redirect,
+// and app_metadata.provider reflects the *original* signup provider — so a later
+// Google/Apple sign-in would otherwise overwrite the GitHub credential with the
+// wrong token. Gate on the token shape instead.
+const isGitHubToken = (token: string): boolean =>
+  /^(gho_|ghu_|ghp_|github_pat_)/.test(token) || /^[a-f0-9]{40}$/.test(token);
+
 const saveGitHubToken = async (s: Session) => {
-  if (s.provider_token && s.user?.app_metadata?.provider === "github") {
+  if (s.user && s.provider_token && isGitHubToken(s.provider_token)) {
     await supabase.from("user_credentials").upsert(
       {
         user_id: s.user.id,
@@ -116,9 +124,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Extract GitHub token from session provider_token
-  const githubToken = session?.provider_token &&
-    user?.app_metadata?.provider === "github"
+  // Extract GitHub token from session provider_token (only if it's actually a GitHub token)
+  const githubToken = session?.provider_token && isGitHubToken(session.provider_token)
     ? session.provider_token
     : null;
 
