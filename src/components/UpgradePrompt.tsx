@@ -7,9 +7,11 @@ interface UpgradePromptProps {
   description?: string;
   benefits?: string[];
   compact?: boolean;
+  /** Heading level for the title. Use "h1" when this card is a page's main content. */
+  titleAs?: "h1" | "h2" | "h3";
 }
 
-export const UpgradePrompt = ({ feature, description, benefits, compact = false }: UpgradePromptProps) => {
+export const UpgradePrompt = ({ feature, description, benefits, compact = false, titleAs = "h3" }: UpgradePromptProps) => {
   if (compact) {
     return (
       <Link to="/pricing" className="inline-flex items-center gap-1.5 rounded-full bg-green-50 border border-green-200 px-3.5 py-2 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">
@@ -18,6 +20,8 @@ export const UpgradePrompt = ({ feature, description, benefits, compact = false 
       </Link>
     );
   }
+
+  const HeadingTag = titleAs;
 
   const defaultBenefits = [
     "Auto-fix all problems with one click",
@@ -41,7 +45,7 @@ export const UpgradePrompt = ({ feature, description, benefits, compact = false 
           </div>
 
           {/* Title */}
-          <h3 className="text-xl font-semibold text-surface-900 mb-2">{feature}</h3>
+          <HeadingTag className="text-xl font-semibold text-surface-900 mb-2">{feature}</HeadingTag>
           <p className="text-sm text-surface-500 mb-8">
             {description ?? "Get everything you need to publish your app. One-time payment — no subscription, no surprises."}
           </p>

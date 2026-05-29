@@ -277,17 +277,21 @@ export const Screenshots = () => {
 
   if (!isPaid) {
     return (
-      <div className="mx-auto max-w-xl px-4 sm:px-6 py-16 sm:py-24">
-        <UpgradePrompt
-          feature="Professional Screenshots"
-          description="Make your app look amazing in the store with device-framed screenshots."
-          benefits={[
-            "Frame screenshots in iPhone & Android mockups",
-            "Add captions and gradient backgrounds",
-            "Export in store-required sizes",
-            "Drag and drop — no design skills needed",
-          ]}
-        />
+      <div>
+        {id && <ShipFlowBar projectId={id} />}
+        <div className="mx-auto max-w-xl px-4 sm:px-6 py-16 sm:py-24">
+          <UpgradePrompt
+            titleAs="h1"
+            feature="Professional Screenshots"
+            description="Make your app look amazing in the store with device-framed screenshots."
+            benefits={[
+              "Frame screenshots in iPhone & Android mockups",
+              "Add captions and gradient backgrounds",
+              "Export in store-required sizes",
+              "Drag and drop — no design skills needed",
+            ]}
+          />
+        </div>
       </div>
     );
   }

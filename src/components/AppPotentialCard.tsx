@@ -30,7 +30,7 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
           Your App's Potential
         </span>
       </div>
-      <p className="text-sm italic text-surface-300 mb-6 leading-relaxed">
+      <p className="text-sm italic text-surface-600 mb-6 leading-relaxed">
         &ldquo;{analysis.excitement_hook}&rdquo;
       </p>
 
@@ -38,9 +38,9 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
       <div className="mb-5">
         <div className="flex items-center gap-2 mb-1.5">
           <Target className="h-4 w-4 text-blue-400" />
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-400">What We See</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-500">What We See</h4>
         </div>
-        <p className="text-sm text-surface-200 leading-relaxed">{analysis.app_description}</p>
+        <p className="text-sm text-surface-700 leading-relaxed">{analysis.app_description}</p>
       </div>
 
       {/* Market + Revenue in 2-col on desktop */}
@@ -49,14 +49,14 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <TrendingUp className="h-4 w-4 text-green-400" />
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-400">Market Opportunity</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-500">Market Opportunity</h4>
           </div>
-          <p className="text-sm text-surface-300 mb-2">{analysis.market_potential.market_size}</p>
+          <p className="text-sm text-surface-600 mb-2">{analysis.market_potential.market_size}</p>
           <div className="space-y-1">
             {analysis.market_potential.comparable_apps.map((app) => (
               <div key={app} className="flex items-start gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-green-400 mt-1.5 shrink-0" />
-                <span className="text-xs text-surface-400">{app}</span>
+                <span className="text-xs text-surface-600">{app}</span>
               </div>
             ))}
           </div>
@@ -66,9 +66,9 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <DollarSign className="h-4 w-4 text-amber-400" />
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-400">Revenue Potential</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-500">Revenue Potential</h4>
           </div>
-          <p className="text-sm text-surface-300 leading-relaxed">{analysis.revenue_potential}</p>
+          <p className="text-sm text-surface-600 leading-relaxed">{analysis.revenue_potential}</p>
         </div>
       </div>
 
@@ -78,13 +78,13 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-4 w-4 text-surface-500" />
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-400">Your Strengths</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-500">Your Strengths</h4>
           </div>
           <div className="space-y-1.5">
             {analysis.strengths.map((s) => (
               <div key={s} className="flex items-start gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-surface-400 mt-1.5 shrink-0" />
-                <span className="text-xs text-surface-300">{s}</span>
+                <span className="text-xs text-surface-600">{s}</span>
               </div>
             ))}
           </div>
@@ -94,13 +94,13 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Rocket className="h-4 w-4 text-cyan-400" />
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-400">Quick Wins</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-500">Quick Wins</h4>
           </div>
           <div className="space-y-1.5">
             {analysis.growth_suggestions.map((s) => (
               <div key={s} className="flex items-start gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
-                <span className="text-xs text-surface-300">{s}</span>
+                <span className="text-xs text-surface-600">{s}</span>
               </div>
             ))}
           </div>
@@ -109,7 +109,7 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
 
       {/* CTA */}
       <div className="rounded-xl bg-gradient-to-r from-primary-600/10 to-green-600/10 border border-primary-500/10 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <p className="text-sm font-medium text-surface-200">
+        <p className="text-sm font-medium text-surface-700">
           Ready to ship? Let us handle the App Store submission.
         </p>
         <Link to={projectId === "demo" ? "/pricing" : `/app/${projectId}/listing`}>

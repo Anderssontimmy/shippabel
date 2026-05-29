@@ -141,17 +141,21 @@ export const Submit = () => {
 
   if (!isPaid) {
     return (
-      <div className="mx-auto max-w-xl px-4 sm:px-6 py-16 sm:py-24">
-        <UpgradePrompt
-          feature="Publish Your App"
-          description="We handle the entire build and submission process for you."
-          benefits={[
-            "We build your app for iOS and Android",
-            "Submit directly to App Store and Google Play",
-            "Track your review status in real-time",
-            "Handle rejections with AI-powered guidance",
-          ]}
-        />
+      <div>
+        {id && <ShipFlowBar projectId={id} />}
+        <div className="mx-auto max-w-xl px-4 sm:px-6 py-16 sm:py-24">
+          <UpgradePrompt
+            titleAs="h1"
+            feature="Publish Your App"
+            description="We handle the entire build and submission process for you."
+            benefits={[
+              "We build your app for iOS and Android",
+              "Submit directly to App Store and Google Play",
+              "Track your review status in real-time",
+              "Handle rejections with AI-powered guidance",
+            ]}
+          />
+        </div>
       </div>
     );
   }
