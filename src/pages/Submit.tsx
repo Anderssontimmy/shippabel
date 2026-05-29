@@ -54,6 +54,7 @@ export const Submit = () => {
   } = useBuild(id ?? "");
 
   const { hasCredential } = useCredentials();
+  const { isPaid } = usePlan();
   const submission = latestByPlatform(platform);
   const { toast } = useToast();
 
@@ -134,7 +135,6 @@ export const Submit = () => {
   }
 
   const scan = project?.scan_result as ScanResult | null;
-  const { isPaid } = usePlan();
 
   // Check if app needs conversion before it can be built
   const needsConversion = scan?.needs_conversion === true;

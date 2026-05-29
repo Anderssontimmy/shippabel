@@ -12,19 +12,19 @@ describe("Button", () => {
   it("applies primary variant by default", () => {
     render(<Button>Test</Button>);
     const btn = screen.getByRole("button");
-    expect(btn.className).toContain("bg-primary-600");
+    expect(btn.className).toContain("bg-surface-900");
   });
 
   it("applies secondary variant", () => {
     render(<Button variant="secondary">Test</Button>);
     const btn = screen.getByRole("button");
-    expect(btn.className).toContain("bg-surface-800");
+    expect(btn.className).toContain("bg-white");
   });
 
   it("applies ghost variant", () => {
     render(<Button variant="ghost">Test</Button>);
     const btn = screen.getByRole("button");
-    expect(btn.className).toContain("text-surface-400");
+    expect(btn.className).toContain("text-surface-500");
   });
 
   it("applies size classes", () => {
@@ -32,7 +32,7 @@ describe("Button", () => {
     expect(screen.getByRole("button").className).toContain("px-3");
 
     rerender(<Button size="lg">L</Button>);
-    expect(screen.getByRole("button").className).toContain("px-6");
+    expect(screen.getByRole("button").className).toContain("px-7");
   });
 
   it("handles click events", async () => {
