@@ -38,11 +38,27 @@ jobs:
         run: npm run build
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Decode signing keystore
+        env:
+          KS_B64: \${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"; fi
       - name: Build Android
+        env:
+          KS_PW: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: \${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease bundleRelease
+          if [ -f "$RUNNER_TEMP/upload.jks" ]; then
+            ./gradlew assembleRelease bundleRelease \\
+              -Pandroid.injected.signing.store.file="$RUNNER_TEMP/upload.jks" \\
+              -Pandroid.injected.signing.store.password="$KS_PW" \\
+              -Pandroid.injected.signing.key.alias="$KS_ALIAS" \\
+              -Pandroid.injected.signing.key.password="$KS_PW"
+          else
+            ./gradlew assembleRelease bundleRelease
+          fi
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
