@@ -7,13 +7,20 @@ function getCorsHeaders(req: Request) {
   const origin = req.headers.get("origin") ?? "";
   const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
-  "Access-Control-Allow-Origin": allowed,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   };
 }
 
 interface SubmitRequest {
   submission_id: string;
+}
+
+interface SubmitResult {
+  status: string; // maps to submissions.review_status (see useBuild.ReviewStatus)
+  details: string;
+  store_submission_id?: string;
+  rejection_reason?: string;
 }
 
 Deno.serve(async (req) => {
@@ -29,10 +36,7 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Unauthorized");
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) throw new Error("Unauthorized");
 
     const { submission_id } = (await req.json()) as SubmitRequest;
@@ -42,7 +46,6 @@ Deno.serve(async (req) => {
       .select("*, projects(*)")
       .eq("id", submission_id)
       .single();
-
     if (subError || !submission) throw new Error("Submission not found");
 
     const project = submission.projects as Record<string, unknown>;
@@ -61,28 +64,29 @@ Deno.serve(async (req) => {
 
     const platform = submission.platform as string;
 
-    // Fetch user credentials for the target platform
-    const provider = platform === "ios" ? "apple" : "google";
-    const { data: userCred } = await supabase
-      .from("user_credentials")
-      .select("credentials")
-      .eq("user_id", user.id)
-      .eq("provider", provider)
-      .single();
-
-    const { data: easCred } = await supabase
-      .from("user_credentials")
-      .select("credentials")
-      .eq("user_id", user.id)
-      .eq("provider", "eas")
-      .single();
-
-    let result: { status: string; details: string; store_submission_id?: string };
+    let result: SubmitResult;
 
     if (platform === "ios") {
-      result = await submitToAppStore(submission, listing, userCred?.credentials as Record<string, string> | undefined, easCred?.credentials as Record<string, string> | undefined);
+      result = {
+        status: "pending_credentials",
+        details: "iOS submission isn't supported yet — only Android (Google Play) is wired up end-to-end.",
+        rejection_reason: "iOS submission is not available yet. Android publishing is supported today.",
+      };
     } else {
-      result = await submitToGooglePlay(submission, listing, userCred?.credentials as Record<string, string> | undefined, easCred?.credentials as Record<string, string> | undefined, project as Record<string, unknown>);
+      const { data: googleCred } = await supabase
+        .from("user_credentials").select("credentials")
+        .eq("user_id", user.id).eq("provider", "google").single();
+      const { data: githubCred } = await supabase
+        .from("user_credentials").select("credentials")
+        .eq("user_id", user.id).eq("provider", "github").single();
+
+      result = await submitToGooglePlay(
+        submission,
+        listing,
+        googleCred?.credentials as Record<string, string> | undefined,
+        githubCred?.credentials as Record<string, string> | undefined,
+        project,
+      );
     }
 
     await supabase
@@ -90,11 +94,12 @@ Deno.serve(async (req) => {
       .update({
         review_status: result.status,
         store_submission_id: result.store_submission_id ?? null,
+        rejection_reason: result.rejection_reason ?? null,
         submitted_at: new Date().toISOString(),
       })
       .eq("id", submission.id);
 
-    if (result.status !== "pending_credentials") {
+    if (result.status === "waiting_for_review") {
       await supabase
         .from("projects")
         .update({ status: "submitted", updated_at: new Date().toISOString() })
@@ -102,7 +107,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, status: result.status, details: result.details }),
+      JSON.stringify({ success: result.status === "waiting_for_review", status: result.status, details: result.details }),
       { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -115,405 +120,326 @@ Deno.serve(async (req) => {
   }
 });
 
-// --- Apple App Store Connect ---
-
-async function submitToAppStore(
-  submission: Record<string, unknown>,
-  listing: Record<string, unknown> | null,
-  userCreds?: Record<string, string>,
-  easCreds?: Record<string, string>
-): Promise<{ status: string; details: string; store_submission_id?: string }> {
-  const keyId = userCreds?.key_id ?? Deno.env.get("APPLE_API_KEY_ID");
-  const issuerId = userCreds?.issuer_id ?? Deno.env.get("APPLE_ISSUER_ID");
-  const privateKey = userCreds?.private_key ?? Deno.env.get("APPLE_API_PRIVATE_KEY");
-
-  if (!keyId || !issuerId || !privateKey) {
-    return {
-      status: "pending_credentials",
-      details: "Apple App Store Connect credentials not configured. Required: APPLE_API_KEY_ID, APPLE_ISSUER_ID, APPLE_API_PRIVATE_KEY (P8 content).",
-    };
-  }
-
-  try {
-    // Generate JWT for App Store Connect API
-    const jwt = await generateAppleJWT(keyId, issuerId, privateKey);
-
-    const headers = {
-      Authorization: `Bearer ${jwt}`,
-      "Content-Type": "application/json",
-    };
-
-    const bundleId = listing
-      ? (listing.app_name as string)?.toLowerCase().replace(/[^a-z0-9]/g, "")
-      : "app";
-
-    // 1. Look up the app by bundle ID
-    const appsRes = await fetch(
-      `https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=${bundleId}`,
-      { headers }
-    );
-
-    let appId: string;
-
-    if (appsRes.ok) {
-      const appsData = await appsRes.json();
-      if (appsData.data?.length > 0) {
-        appId = appsData.data[0].id;
-      } else {
-        return {
-          status: "pending_credentials",
-          details: `No app found with bundle ID "${bundleId}" in App Store Connect. Create the app manually in App Store Connect first, then retry.`,
-        };
-      }
-    } else {
-      return {
-        status: "pending_credentials",
-        details: "Failed to connect to App Store Connect API. Verify your credentials.",
-      };
-    }
-
-    // 2. Create a new app version
-    const version = listing?.version ?? "1.0.0";
-    let versionId: string | undefined;
-
-    const versionRes = await fetch(
-      "https://api.appstoreconnect.apple.com/v1/appStoreVersions",
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          data: {
-            type: "appStoreVersions",
-            attributes: {
-              platform: "IOS",
-              versionString: version,
-            },
-            relationships: {
-              app: { data: { type: "apps", id: appId } },
-            },
-          },
-        }),
-      }
-    );
-
-    if (versionRes.ok) {
-      const versionData = await versionRes.json();
-      versionId = versionData.data?.id;
-    } else {
-      const errText = await versionRes.text();
-      // Version might already exist — fetch the latest one
-      if (!errText.includes("already exists")) {
-        return { status: "waiting_for_review", details: `Version creation issue: ${errText}` };
-      }
-    }
-
-    // Fetch latest version ID if we don't have it yet
-    if (!versionId) {
-      const verRes = await fetch(
-        `https://api.appstoreconnect.apple.com/v1/apps/${appId}/appStoreVersions?filter[platform]=IOS&limit=1`,
-        { headers }
-      );
-      if (verRes.ok) {
-        const verData = await verRes.json();
-        versionId = verData.data?.[0]?.id;
-      }
-    }
-
-    // 3. Update localized metadata
-    if (listing && versionId) {
-      // Get the version's localizations
-      const locRes = await fetch(
-        `https://api.appstoreconnect.apple.com/v1/appStoreVersions/${versionId}/appStoreVersionLocalizations`,
-        { headers }
-      );
-
-      if (locRes.ok) {
-        const localizations = await locRes.json();
-        const enLocId = localizations.data?.[0]?.id;
-
-        if (enLocId) {
-          await fetch(
-            `https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/${enLocId}`,
-            {
-              method: "PATCH",
-              headers,
-              body: JSON.stringify({
-                data: {
-                  type: "appStoreVersionLocalizations",
-                  id: enLocId,
-                  attributes: {
-                    description: listing.full_description ?? "",
-                    keywords: listing.keywords ?? "",
-                    marketingUrl: listing.privacy_policy_url ?? "",
-                    supportUrl: listing.privacy_policy_url ?? "",
-                    whatsNew: "Initial release",
-                  },
-                },
-              }),
-            }
-          );
-        }
-      }
-    }
-
-    // 4. The IPA binary should be uploaded via Transporter/altool
-    // EAS handles this if using eas submit --platform ios
-    // We trigger eas submit as a follow-up step
-
-    const easToken = easCreds?.access_token ?? Deno.env.get("EAS_ACCESS_TOKEN");
-    if (easToken && submission.eas_build_id) {
-      // Trigger EAS Submit
-      await fetch("https://api.expo.dev/v2/submissions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${easToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          buildId: submission.eas_build_id,
-          platform: "IOS",
-        }),
-      });
-    }
-
-    return {
-      status: "waiting_for_review",
-      details: "App submitted to App Store Connect. Metadata updated. Binary upload triggered via EAS Submit.",
-      store_submission_id: versionId,
-    };
-  } catch (err) {
-    return {
-      status: "waiting_for_review",
-      details: `Submission initiated with errors: ${err instanceof Error ? err.message : "unknown"}`,
-    };
-  }
-}
-
-// --- Google Play ---
+// ===== Google Play =====
 
 async function submitToGooglePlay(
   submission: Record<string, unknown>,
   listing: Record<string, unknown> | null,
-  userCreds?: Record<string, string>,
-  easCreds?: Record<string, string>,
-  project?: Record<string, unknown>
-): Promise<{ status: string; details: string; store_submission_id?: string }> {
-  const serviceAccountJson = userCreds?.service_account_json ?? Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT");
-
+  googleCreds: Record<string, string> | undefined,
+  githubCreds: Record<string, string> | undefined,
+  project: Record<string, unknown>,
+): Promise<SubmitResult> {
+  const serviceAccountJson = googleCreds?.service_account_json ?? Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT");
   if (!serviceAccountJson) {
     return {
       status: "pending_credentials",
-      details: "Google Play service account not configured. Required: GOOGLE_PLAY_SERVICE_ACCOUNT (JSON key content).",
+      details: "Google Play service account not configured.",
+      rejection_reason: "Connect your Google Play service account in Settings before submitting.",
     };
   }
 
-  try {
-    const serviceAccount = JSON.parse(serviceAccountJson);
-    const accessToken = await getGoogleAccessToken(serviceAccount);
-
-    // Derive package name from scan result or listing
-    const scanResult = project?.scan_result as Record<string, unknown> | undefined;
-    const issues = (scanResult?.issues ?? []) as Array<Record<string, string>>;
-    const bundleIssue = issues.find((i) => i.title?.toLowerCase().includes("bundle"));
-    const bundleMatch = bundleIssue?.description?.match(/[a-z]+\.[a-z]+\.[a-z0-9.]+/i);
-    const appName = (listing?.app_name as string) ?? (project?.name as string) ?? "app";
-    const fallbackPackage = `com.app.${appName.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
-    const packageName = bundleMatch?.[0] ?? fallbackPackage;
-
-    const easToken = easCreds?.access_token ?? Deno.env.get("EAS_ACCESS_TOKEN");
-    if (easToken && submission.eas_build_id) {
-      const submitRes = await fetch("https://api.expo.dev/v2/submissions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${easToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          buildId: submission.eas_build_id,
-          platform: "ANDROID",
-        }),
-      });
-
-      if (!submitRes.ok) {
-        const errText = await submitRes.text();
-        return {
-          status: "waiting_for_review",
-          details: `EAS Submit triggered but returned: ${errText}`,
-        };
-      }
-    }
-
-    // Update store listing via Google Play Developer API
-    if (listing && accessToken) {
-      try {
-        // Create an edit
-        const editRes = await fetch(
-          `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/edits`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: "{}",
-          }
-        );
-
-        if (editRes.ok) {
-          const edit = await editRes.json();
-          const editId = edit.id;
-
-          // Update listing
-          await fetch(
-            `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/edits/${editId}/listings/en-US`,
-            {
-              method: "PUT",
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                language: "en-US",
-                title: listing.app_name ?? "",
-                shortDescription: listing.short_description ?? "",
-                fullDescription: listing.full_description ?? "",
-              }),
-            }
-          );
-
-          // Commit the edit
-          await fetch(
-            `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/edits/${editId}:commit`,
-            {
-              method: "POST",
-              headers: { Authorization: `Bearer ${accessToken}` },
-            }
-          );
-        }
-      } catch {
-        // Non-fatal — listing update failed but submission continues
-      }
-    }
-
+  const ghToken = githubCreds?.access_token;
+  const repoUrl = project.repo_url as string | undefined;
+  const repoPath = repoUrl ? extractGitHubPath(repoUrl) : null;
+  if (!repoPath || !ghToken) {
     return {
-      status: "waiting_for_review",
-      details: "App submitted to Google Play. AAB upload triggered via EAS Submit. Store listing metadata updated.",
-      store_submission_id: packageName,
+      status: "pending_credentials",
+      details: "Missing GitHub connection or repository.",
+      rejection_reason: "Connect your GitHub account in Settings — we fetch the built app file from your repo.",
     };
+  }
+
+  // 1. Real package name, read straight from the repo (no guessing).
+  const packageName = await detectPackageName(repoPath, ghToken);
+  if (!packageName) {
+    return {
+      status: "pending_credentials",
+      details: "Could not determine the app's package name.",
+      rejection_reason: "We couldn't find your app's package name (e.g. in capacitor.config or app.json).",
+    };
+  }
+
+  // 2. Fetch the built artifact (AAB preferred, APK fallback) from the latest successful build.
+  let artifact: { bytes: Uint8Array; kind: "aab" | "apk" } | null;
+  try {
+    artifact = await fetchLatestAndroidArtifact(repoPath, ghToken);
   } catch (err) {
     return {
       status: "pending_credentials",
-      details: `Google Play submission failed: ${err instanceof Error ? err.message : "unknown"}`,
+      details: `Failed to fetch build artifact: ${err instanceof Error ? err.message : "unknown"}`,
+      rejection_reason: "We couldn't download your built app file from the last build. Try rebuilding.",
     };
   }
-}
+  if (!artifact) {
+    return {
+      status: "pending_credentials",
+      details: "No build artifact found.",
+      rejection_reason: "No finished build was found. Build the app first, then submit.",
+    };
+  }
 
-// --- JWT / Auth Helpers ---
+  // 3. Google auth.
+  let accessToken: string;
+  try {
+    accessToken = await getGoogleAccessToken(JSON.parse(serviceAccountJson));
+  } catch (err) {
+    return {
+      status: "pending_credentials",
+      details: `Google auth failed: ${err instanceof Error ? err.message : "unknown"}`,
+      rejection_reason: "Your Google Play service account key looks invalid. Re-upload it in Settings.",
+    };
+  }
 
-async function generateAppleJWT(
-  keyId: string,
-  issuerId: string,
-  privateKey: string
-): Promise<string> {
-  const header = { alg: "ES256", kid: keyId, typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    iss: issuerId,
-    iat: now,
-    exp: now + 1200, // 20 minutes
-    aud: "appstoreconnect-v1",
+  const api = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}`;
+  const upload = `https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/${packageName}`;
+  const authH = { Authorization: `Bearer ${accessToken}` };
+
+  // 4. Open an edit.
+  const editRes = await fetch(`${api}/edits`, { method: "POST", headers: { ...authH, "Content-Type": "application/json" }, body: "{}" });
+  if (editRes.status === 404) {
+    return {
+      status: "pending_credentials",
+      details: `Package ${packageName} not found in Play Console.`,
+      rejection_reason: `The app "${packageName}" doesn't exist in Google Play Console yet. Create it there once (the first version can't be created via API), then submit again.`,
+    };
+  }
+  if (editRes.status === 403) {
+    const t = await editRes.text();
+    return {
+      status: "pending_credentials",
+      details: `Play API access denied: ${t.slice(0, 200)}`,
+      rejection_reason: "The service account doesn't have access to this app. Invite it in Play Console → Users & permissions and enable the Play Developer API.",
+    };
+  }
+  if (!editRes.ok) {
+    const t = await editRes.text();
+    return { status: "pending_credentials", details: `Could not open edit: ${t.slice(0, 200)}`, rejection_reason: "Couldn't start a Play release. Check your service account permissions." };
+  }
+  const editId = (await editRes.json()).id as string;
+
+  // 5. Upload the binary.
+  let versionCode: number;
+  try {
+    if (artifact.kind === "aab") {
+      const r = await fetch(`${upload}/edits/${editId}/bundles?uploadType=media`, {
+        method: "POST", headers: { ...authH, "Content-Type": "application/octet-stream" }, body: artifact.bytes,
+      });
+      if (!r.ok) throw new Error((await r.text()).slice(0, 300));
+      versionCode = (await r.json()).versionCode as number;
+    } else {
+      const r = await fetch(`${upload}/edits/${editId}/apks?uploadType=media`, {
+        method: "POST", headers: { ...authH, "Content-Type": "application/vnd.android.package-archive" }, body: artifact.bytes,
+      });
+      if (!r.ok) throw new Error((await r.text()).slice(0, 300));
+      versionCode = (await r.json()).versionCode as number;
+    }
+  } catch (err) {
+    await deleteEdit(api, editId, authH);
+    const msg = err instanceof Error ? err.message : "upload failed";
+    return { status: "pending_credentials", details: `Upload failed: ${msg}`, rejection_reason: `Play rejected the upload: ${msg}` };
+  }
+
+  // 6. Best-effort listing metadata update (non-fatal).
+  if (listing) {
+    try {
+      await fetch(`${api}/edits/${editId}/listings/en-US`, {
+        method: "PUT", headers: { ...authH, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: "en-US",
+          title: (listing.app_name as string) ?? "",
+          shortDescription: (listing.short_description as string) ?? "",
+          fullDescription: (listing.full_description as string) ?? "",
+        }),
+      });
+    } catch { /* non-fatal */ }
+  }
+
+  // 7. Assign the new version to the internal testing track.
+  const trackRes = await fetch(`${api}/edits/${editId}/tracks/internal`, {
+    method: "PUT", headers: { ...authH, "Content-Type": "application/json" },
+    body: JSON.stringify({ track: "internal", releases: [{ status: "completed", versionCodes: [String(versionCode)] }] }),
+  });
+  if (!trackRes.ok) {
+    const t = await trackRes.text();
+    await deleteEdit(api, editId, authH);
+    return { status: "pending_credentials", details: `Track assignment failed: ${t.slice(0, 200)}`, rejection_reason: `Couldn't assign the build to the internal track: ${t.slice(0, 200)}` };
+  }
+
+  // 8. Commit the edit (publishes to internal testers; no Google review needed for internal track).
+  const commitRes = await fetch(`${api}/edits/${editId}:commit`, { method: "POST", headers: authH });
+  if (!commitRes.ok) {
+    const t = await commitRes.text();
+    return { status: "pending_credentials", details: `Commit failed: ${t.slice(0, 200)}`, rejection_reason: `Couldn't finalize the release: ${t.slice(0, 200)}` };
+  }
+
+  return {
+    status: "waiting_for_review",
+    details: `Uploaded version code ${versionCode} to the internal testing track for ${packageName}.`,
+    store_submission_id: packageName,
   };
-
-  const encoder = new TextEncoder();
-  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const signingInput = `${headerB64}.${payloadB64}`;
-
-  // Import the P8 private key
-  const pemContent = privateKey
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .replace(/\s/g, "");
-  const keyData = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
-
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    keyData,
-    { name: "ECDSA", namedCurve: "P-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign(
-    { name: "ECDSA", hash: "SHA-256" },
-    cryptoKey,
-    encoder.encode(signingInput)
-  );
-
-  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-
-  return `${signingInput}.${sigB64}`;
 }
 
-async function getGoogleAccessToken(
-  serviceAccount: { client_email: string; private_key: string }
-): Promise<string> {
+async function deleteEdit(api: string, editId: string, authH: Record<string, string>) {
+  try { await fetch(`${api}/edits/${editId}`, { method: "DELETE", headers: authH }); } catch { /* ignore */ }
+}
+
+// ===== Repo helpers (GitHub) =====
+
+function extractGitHubPath(url: string): string | null {
+  try {
+    const p = new URL(url).pathname.split("/").filter(Boolean);
+    return p.length < 2 ? null : `${p[0]}/${p[1]!.replace(/\.git$/, "")}`;
+  } catch { return null; }
+}
+
+async function ghRaw(repoPath: string, branch: string, file: string, token: string): Promise<string | null> {
+  const r = await fetch(`https://raw.githubusercontent.com/${repoPath}/${branch}/${file}`, { headers: { Authorization: `token ${token}` } });
+  return r.ok ? await r.text() : null;
+}
+
+async function detectPackageName(repoPath: string, token: string): Promise<string | null> {
+  const ghH = { Authorization: `token ${token}`, Accept: "application/vnd.github+json", "User-Agent": "shippabel" };
+  let branch = "main";
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repoPath}`, { headers: ghH });
+    if (r.ok) branch = (await r.json()).default_branch ?? "main";
+  } catch { /* default main */ }
+
+  // Capacitor: appId: 'com.x.y'
+  for (const f of ["capacitor.config.ts", "capacitor.config.json"]) {
+    const c = await ghRaw(repoPath, branch, f, token);
+    const m = c?.match(/appId\s*[:=]\s*['"]([^'"]+)['"]/);
+    if (m) return m[1];
+  }
+  // Expo: app.json -> expo.android.package | android.package
+  const appJson = await ghRaw(repoPath, branch, "app.json", token);
+  if (appJson) {
+    try {
+      const j = JSON.parse(appJson);
+      const pkg = j?.expo?.android?.package ?? j?.android?.package;
+      if (pkg) return pkg as string;
+    } catch { /* ignore */ }
+  }
+  // Android gradle: applicationId "com.x.y"
+  const gradle = await ghRaw(repoPath, branch, "android/app/build.gradle", token);
+  const gm = gradle?.match(/applicationId\s+['"]([^'"]+)['"]/);
+  if (gm) return gm[1];
+
+  return null;
+}
+
+async function fetchLatestAndroidArtifact(repoPath: string, token: string): Promise<{ bytes: Uint8Array; kind: "aab" | "apk" } | null> {
+  const ghH = { Authorization: `token ${token}`, Accept: "application/vnd.github+json", "User-Agent": "shippabel" };
+
+  const runsRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/runs?status=success&per_page=20`, { headers: ghH });
+  if (!runsRes.ok) throw new Error(`runs list ${runsRes.status}`);
+  const runs = (await runsRes.json()).workflow_runs as Array<{ id: number }>;
+
+  for (const run of runs) {
+    const artsRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/runs/${run.id}/artifacts`, { headers: ghH });
+    if (!artsRes.ok) continue;
+    const arts = (await artsRes.json()).artifacts as Array<{ id: number; name: string; expired: boolean }>;
+    const usable = arts.filter((a) => !a.expired);
+    // Prefer an artifact that looks like an AAB, then anything.
+    const ordered = [
+      ...usable.filter((a) => /aab/i.test(a.name)),
+      ...usable.filter((a) => !/aab/i.test(a.name)),
+    ];
+    for (const art of ordered) {
+      const found = await extractAndroidBinaryFromArtifact(repoPath, art.id, token);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+async function extractAndroidBinaryFromArtifact(repoPath: string, artifactId: number, token: string): Promise<{ bytes: Uint8Array; kind: "aab" | "apk" } | null> {
+  const zipRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/artifacts/${artifactId}/zip`, {
+    headers: { Authorization: `token ${token}`, "User-Agent": "shippabel" },
+  });
+  if (!zipRes.ok) return null;
+  const data = new Uint8Array(await zipRes.arrayBuffer());
+
+  // Minimal ZIP reader (dependency-free): walk the central directory, inflate with DecompressionStream.
+  const u16 = (o: number) => data[o] | (data[o + 1] << 8);
+  const u32 = (o: number) => (data[o] | (data[o + 1] << 8) | (data[o + 2] << 16) | data[o + 3] * 0x1000000) >>> 0;
+
+  let eocd = -1;
+  for (let i = data.length - 22; i >= 0 && i >= data.length - 22 - 0x10000; i--) {
+    if (u32(i) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) return null;
+  const count = u16(eocd + 10);
+  let p = u32(eocd + 16);
+
+  type Entry = { name: string; method: number; compSize: number; lho: number };
+  const entries: Entry[] = [];
+  for (let n = 0; n < count; n++) {
+    if (u32(p) !== 0x02014b50) break;
+    const method = u16(p + 10);
+    const compSize = u32(p + 20);
+    const nameLen = u16(p + 28);
+    const extraLen = u16(p + 30);
+    const commentLen = u16(p + 32);
+    const lho = u32(p + 42);
+    const name = new TextDecoder().decode(data.subarray(p + 46, p + 46 + nameLen));
+    entries.push({ name, method, compSize, lho });
+    p += 46 + nameLen + extraLen + commentLen;
+  }
+
+  const aab = entries.find((e) => e.name.toLowerCase().endsWith(".aab"));
+  const apk = entries.find((e) => e.name.toLowerCase().endsWith(".apk"));
+  const target = aab ?? apk;
+  if (!target) return null;
+
+  if (u32(target.lho) !== 0x04034b50) return null;
+  const lNameLen = u16(target.lho + 26);
+  const lExtraLen = u16(target.lho + 28);
+  const start = target.lho + 30 + lNameLen + lExtraLen;
+  const comp = data.subarray(start, start + target.compSize);
+
+  let bytes: Uint8Array;
+  if (target.method === 0) {
+    bytes = comp;
+  } else if (target.method === 8) {
+    const stream = new Blob([comp]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  } else {
+    return null;
+  }
+  return { bytes, kind: aab ? "aab" : "apk" };
+}
+
+// ===== Google auth =====
+
+async function getGoogleAccessToken(serviceAccount: { client_email: string; private_key: string }): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const header = { alg: "RS256", typ: "JWT" };
-  const payload = {
+  const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = b64url(JSON.stringify({
     iss: serviceAccount.client_email,
     scope: "https://www.googleapis.com/auth/androidpublisher",
     aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600,
-  };
+    iat: now, exp: now + 3600,
+  }));
+  const signingInput = `${header}.${payload}`;
 
-  const encoder = new TextEncoder();
-  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const signingInput = `${headerB64}.${payloadB64}`;
+  const pem = serviceAccount.private_key.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "").replace(/\s/g, "");
+  const keyData = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
+  const cryptoKey = await crypto.subtle.importKey("pkcs8", keyData, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, new TextEncoder().encode(signingInput));
+  const jwt = `${signingInput}.${b64url(new Uint8Array(sig))}`;
 
-  // Import RSA private key
-  const pemContent = serviceAccount.private_key
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .replace(/\s/g, "");
-  const keyData = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
-
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    keyData,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    encoder.encode(signingInput)
-  );
-
-  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-
-  const jwt = `${signingInput}.${sigB64}`;
-
-  // Exchange JWT for access token
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }),
   });
-
   const tokenData = await tokenRes.json();
-  return tokenData.access_token;
+  if (!tokenData.access_token) throw new Error(tokenData.error_description ?? "no access token");
+  return tokenData.access_token as string;
+}
+
+function b64url(input: string | Uint8Array): string {
+  const str = typeof input === "string" ? btoa(input) : btoa(String.fromCharCode(...input));
+  return str.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
