@@ -403,7 +403,7 @@ export const ScanResults = () => {
                 ) : (
                   <>
                     <Rocket className="h-4 w-4" />
-                    Make it App Store ready
+                    Make it Google Play ready
                   </>
                 )}
               </Button>

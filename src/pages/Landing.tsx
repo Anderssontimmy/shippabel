@@ -54,9 +54,9 @@ const StaggerItem = ({ children, className = "" }: { children: ReactNode; classN
 );
 
 const steps = [
-  { num: "01", title: "Check your app", desc: "Paste a link to your app or upload it as a zip file. We check everything the App Store and Google Play require." },
+  { num: "01", title: "Check your app", desc: "Paste a link to your app or upload it as a zip file. We check everything Google Play requires." },
   { num: "02", title: "Fix & polish", desc: "We show you what needs fixing and can auto-fix most things with one click. Then AI writes your store page." },
-  { num: "03", title: "Go live", desc: "We build your app, send it to the stores, and let you know when it's approved. That's it — you're live." },
+  { num: "03", title: "Go live", desc: "We build your app, send it to Google Play, and let you know when it's approved. That's it — you're live." },
 ];
 
 const features = [
@@ -76,11 +76,10 @@ const whyCards = [
 
 const faqs = [
   { q: "Do I need to know how to code?", a: "Not at all. Shippabel is built for people who used AI tools to create their app. We handle all the technical stuff." },
-  { q: "Do I need an Apple Developer account?", a: "Yes, Apple requires a $99/year developer account. Google Play requires a one-time $25 fee. We'll walk you through it." },
-  { q: "How long does it take?", a: "The scan takes 30 seconds. Fixing takes a few minutes. After submitting, Apple reviews in 1-3 days, Google in hours." },
+  { q: "Do I need a Google Play account?", a: "Yes — Google Play requires a one-time $25 developer fee. We'll walk you through it." },
+  { q: "How long does it take?", a: "The scan takes 30 seconds. Fixing takes a few minutes. After submitting, Google usually reviews new apps in a few hours to a few days." },
   { q: "What if my app gets rejected?", a: "We track your review status. If rejected, we explain why in plain language and help you fix it." },
   { q: "What kind of apps work?", a: "Any app built with Lovable, Cursor, Bolt, v0, or Claude Code. React, Next.js, Expo, and React Native." },
-  { q: "How long is the special offer?", a: "The $49 launch price is time-limited. Once the offer ends it goes back to $99." },
 ];
 
 const FaqItem = ({ q, a }: { q: string; a: string }) => {
@@ -160,8 +159,8 @@ export const Landing = () => {
               </h1>
 
               <p className="animate-fade-up-delay-2 mt-6 text-sm text-gray-500 leading-relaxed max-w-md">
-                You built an app with AI. Now let us put it on the
-                App Store and Google Play — no tech skills needed.
+                You built an app with AI. Now let us put it on
+                Google Play — no tech skills needed.
               </p>
 
               <HeroScanField />
@@ -169,9 +168,7 @@ export const Landing = () => {
               <div className="animate-fade-up-delay-3 mt-5 flex items-center gap-2 text-xs text-gray-400">
                 <span>Free to check</span>
                 <span className="text-gray-300">·</span>
-                <span className="text-green-400 font-medium">$49 to publish</span>
-                <span className="text-gray-300">·</span>
-                <span>50% off — limited time</span>
+                <span className="text-green-400 font-medium">$99 to publish</span>
               </div>
             </div>
 
@@ -319,8 +316,6 @@ export const Landing = () => {
             <span>Free to check</span>
             <span className="text-gray-300">·</span>
             <span>$99 to publish</span>
-            <span className="text-gray-300">·</span>
-            <span>14-day money-back guarantee</span>
           </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <Link

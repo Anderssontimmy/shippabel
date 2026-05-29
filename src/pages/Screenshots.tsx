@@ -255,7 +255,7 @@ export const Screenshots = () => {
       } else {
         const { error: insertError } = await supabase
           .from("store_listings")
-          .insert({ project_id: id, platform: "ios", screenshots: urls });
+          .insert({ project_id: id, platform: "android", screenshots: urls });
         if (insertError) throw insertError;
       }
 
@@ -331,7 +331,7 @@ export const Screenshots = () => {
               </div>
               <h2 className="text-xl font-semibold text-surface-900 mb-2">Create your store screenshots</h2>
               <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
-                The App Store and Google Play show screenshots of your app to help people decide to download it.
+                Google Play shows screenshots of your app to help people decide to download it.
                 You need at least 3 screenshots — show the best parts of your app.
               </p>
 

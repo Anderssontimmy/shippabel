@@ -237,7 +237,7 @@ export const Settings = () => {
 
       {/* Provider cards */}
       <div className="space-y-4">
-        {providers.map((provider) => {
+        {providers.filter((provider) => provider.id !== "apple").map((provider) => {
           const connected = hasCredential(provider.id);
           const isEditing = editingProvider === provider.id;
 

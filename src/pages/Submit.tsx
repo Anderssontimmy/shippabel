@@ -8,8 +8,6 @@ import {
   Check,
   Loader2,
   Rocket,
-  Apple,
-  Smartphone,
   AlertCircle,
   FileText,
   Wrench,
@@ -38,7 +36,7 @@ const steps: { id: WizardStep; label: string; icon: typeof FileText }[] = [
 export const Submit = () => {
   const { id } = useParams();
   const [currentStep, setCurrentStep] = useState<WizardStep>("review");
-  const [platform, setPlatform] = useState<"ios" | "android">("ios");
+  const [platform] = useState<"ios" | "android">("android");
   const [project, setProject] = useState<Project | null>(null);
   const [hasListing, setHasListing] = useState(false);
   const [hasScreenshots, setHasScreenshots] = useState(false);
@@ -198,28 +196,6 @@ export const Submit = () => {
             We'll prepare your app and send it to the stores for you
           </p>
         </div>
-      </div>
-
-      {/* Platform selector */}
-      <div className="flex rounded-xl bg-surface-50 border border-surface-200 p-1 mb-8 max-w-xs">
-        <button
-          onClick={() => setPlatform("ios")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all cursor-pointer ${
-            platform === "ios" ? "bg-white text-surface-900 shadow-sm" : "text-surface-500"
-          }`}
-        >
-          <Apple className="h-4 w-4" />
-          iOS
-        </button>
-        <button
-          onClick={() => setPlatform("android")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all cursor-pointer ${
-            platform === "android" ? "bg-white text-surface-900 shadow-sm" : "text-surface-500"
-          }`}
-        >
-          <Smartphone className="h-4 w-4" />
-          Android
-        </button>
       </div>
 
       {/* Step indicator */}

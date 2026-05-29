@@ -10,11 +10,11 @@ export const About = () => {
           <span className="text-sm font-medium text-surface-500 uppercase tracking-wide">About Shippabel</span>
         </div>
         <h1 className="text-4xl font-bold text-surface-900 mb-4 leading-tight">
-          Get your app in the stores — without the headache
+          Get your app on Google Play — without the headache
         </h1>
         <p className="text-lg text-surface-500 leading-relaxed">
           Shippabel is built for people who used AI to build their app. You wrote the code (or had Claude do it).
-          We handle everything it takes to get from "it works on my machine" to "live on the App Store and Google Play."
+          We handle everything it takes to get from "it works on my machine" to "live on Google Play."
         </p>
       </div>
 
@@ -22,7 +22,7 @@ export const About = () => {
         <h2 className="text-2xl font-bold text-surface-900 mb-3">Why we built this</h2>
         <div className="space-y-4 text-surface-500 leading-relaxed">
           <p>
-            Publishing an app sounds simple. It isn't. App Store and Google Play have hundreds of requirements —
+            Publishing an app sounds simple. It isn't. Google Play has hundreds of requirements —
             icons in 12 sizes, privacy manifests, permission strings, metadata limits, screenshot dimensions,
             and a review process that rejects apps for reasons most developers have never heard of.
           </p>
@@ -37,12 +37,12 @@ export const About = () => {
         <h2 className="text-2xl font-bold text-surface-900 mb-8">What Shippabel does</h2>
         <div className="grid sm:grid-cols-2 gap-6">
           {[
-            { icon: Scan, title: "Readiness check", desc: "We scan your app against App Store and Google Play requirements and show you exactly what needs fixing." },
+            { icon: Scan, title: "Readiness check", desc: "We scan your app against Google Play requirements and show you exactly what needs fixing." },
             { icon: Wrench, title: "Auto-fix issues", desc: "Most problems are one click away from being solved. We push fixes automatically." },
             { icon: Shield, title: "Security scan", desc: "We catch exposed API keys, passwords, and secrets in your code before the stores do." },
             { icon: Globe, title: "AI-written store page", desc: "We generate your app name, description, and keywords in three styles. Pick your favourite." },
             { icon: Layers, title: "Professional screenshots", desc: "Upload screenshots from your device. We frame them in store-ready device mockups." },
-            { icon: Rocket, title: "Submission & tracking", desc: "We submit to the stores and keep you updated in plain language until you're approved." },
+            { icon: Rocket, title: "Submission & tracking", desc: "We submit to Google Play and keep you updated in plain language until you're approved." },
           ].map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex gap-4">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-50 border border-surface-100 flex items-center justify-center">
@@ -65,7 +65,7 @@ export const About = () => {
           mobile developer just to get through the stores.
         </p>
         <p className="text-surface-500 leading-relaxed">
-          If you've ever stared at an App Store rejection email wondering what "ITMS-90683" means,
+          If you've ever stared at a Google Play rejection wondering what you did wrong,
           Shippabel is for you.
         </p>
       </div>

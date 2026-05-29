@@ -5,8 +5,6 @@ import {
   Sparkles,
   Save,
   Loader2,
-  Apple,
-  Smartphone,
   FileText,
   Shield,
   ArrowLeft,
@@ -36,7 +34,7 @@ const CharCount = ({ current, max }: { current: number; max: number }) => {
 
 export const Listing = () => {
   const { id } = useParams();
-  const [platform, setPlatform] = useState<"ios" | "android">("ios");
+  const [platform] = useState<"ios" | "android">("android");
   const [appContext, setAppContext] = useState("");
   const [privacyModal, setPrivacyModal] = useState(false);
   const [devName, setDevName] = useState("");
@@ -109,28 +107,6 @@ export const Listing = () => {
         </div>
       </div>
 
-      {/* Platform switcher */}
-      <div className="flex rounded-xl bg-surface-50 border border-surface-200 p-1 mb-8 max-w-xs">
-        <button
-          onClick={() => setPlatform("ios")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all cursor-pointer ${
-            platform === "ios" ? "bg-white text-surface-900 shadow-sm" : "text-surface-500"
-          }`}
-        >
-          <Apple className="h-4 w-4" />
-          iOS
-        </button>
-        <button
-          onClick={() => setPlatform("android")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all cursor-pointer ${
-            platform === "android" ? "bg-white text-surface-900 shadow-sm" : "text-surface-500"
-          }`}
-        >
-          <Smartphone className="h-4 w-4" />
-          Android
-        </button>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Editor */}
         <div className="lg:col-span-2 space-y-6">
@@ -164,7 +140,7 @@ export const Listing = () => {
                 benefits={[
                   "AI writes your app name, description, and keywords",
                   "Pick from 3 different styles",
-                  "Optimized for App Store and Google Play search",
+                  "Optimized for Google Play search",
                   "Privacy policy generated and hosted for you",
                 ]}
               />
