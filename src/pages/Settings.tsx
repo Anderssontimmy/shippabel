@@ -140,8 +140,10 @@ const providers: ProviderConfig[] = [
       "Click the ⋮ menu next to your new account → 'Manage Keys'",
       "Click 'Add Key' → 'Create new key' → choose JSON → 'Create'",
       "A JSON file downloads — open it and copy everything inside",
+      "Still in Google Cloud: search the top bar for 'Google Play Android Developer API', open it, and click the blue 'Enable' button (this lets us upload your app)",
       "Back in Play Console, click 'Grant Access' next to the service account",
       "Enable 'Admin' permissions and click 'Invite User'",
+      "Last thing — in Play Console, click 'Create app' and give it the same name and package name as your app. (Google can't let us create it for you the first time.)",
     ],
     setupLink: { label: "Open Google Play Console", url: "https://play.google.com/console/developers" },
     fields: [

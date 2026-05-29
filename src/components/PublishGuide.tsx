@@ -153,11 +153,42 @@ export const PublishGuide = ({
               <Zap className="h-5 w-5 text-green-700" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-surface-900 mb-1">Automatic submission available</h3>
-              <p className="text-xs text-surface-500 mb-3">
-                Your {platform === "ios" ? "Apple" : "Google Play"} credentials are connected. We can upload your app and
-                store listing automatically — no manual steps needed.
+              <h3 className="font-semibold text-surface-900 mb-1">We'll submit it for you</h3>
+              <p className="text-xs text-surface-600 mb-3">
+                Your {platform === "ios" ? "Apple" : "Google Play"} account is connected. The first time, there's a
+                quick one-time setup (about 5 minutes). After that, submitting is just one click.
               </p>
+
+              {platform === "android" && (
+                <div className="rounded-lg bg-white border border-green-200 p-3.5 mb-3">
+                  <p className="text-xs font-semibold text-surface-800 mb-3">Do this once, before your first submit:</p>
+                  <ol className="space-y-3">
+                    <li className="flex gap-2.5">
+                      <span className="h-5 w-5 rounded-full bg-surface-900 text-white flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
+                      <div className="text-xs text-surface-700 leading-relaxed">
+                        <span className="font-semibold text-surface-900">Create your app in Google Play.</span> Click the
+                        blue "Create app" button. Use the name <CodeChip>{displayName}</CodeChip>. If it asks for a
+                        package name, type <CodeChip>{displayPackage}</CodeChip> exactly — it has to match.
+                        <ExternalButton href="https://play.google.com/console" label="Open Google Play Console" />
+                      </div>
+                    </li>
+                    <li className="flex gap-2.5">
+                      <span className="h-5 w-5 rounded-full bg-surface-900 text-white flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
+                      <div className="text-xs text-surface-700 leading-relaxed">
+                        <span className="font-semibold text-surface-900">Let us upload for you.</span> Open this page, make
+                        sure your project is selected at the top, and click the blue <span className="font-semibold">Enable</span> button.
+                        It just gives us permission to send your app to Google.
+                        <ExternalButton href="https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com" label="Turn on uploads" />
+                      </div>
+                    </li>
+                    <li className="flex gap-2.5">
+                      <span className="h-5 w-5 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0"><Check className="h-3 w-3" /></span>
+                      <div className="text-xs text-surface-600 leading-relaxed pt-0.5">Your Google account is already connected — nothing to do here.</div>
+                    </li>
+                  </ol>
+                </div>
+              )}
+
               <div className="flex items-center gap-3">
                 <Button
                   size="sm"
@@ -181,9 +212,12 @@ export const PublishGuide = ({
                   onClick={() => setShowManualGuide(!showManualGuide)}
                   className="text-xs text-surface-500 hover:text-surface-700 cursor-pointer"
                 >
-                  {showManualGuide ? "Hide manual guide" : "I'd rather do it manually"}
+                  {showManualGuide ? "Hide manual steps" : "I'd rather do every step myself"}
                 </button>
               </div>
+              {platform === "android" && (
+                <p className="text-[11px] text-surface-400 mt-2">Already did the two steps above? Just click Submit — it's one click from now on.</p>
+              )}
             </div>
           </div>
         </Card>
@@ -746,6 +780,10 @@ const Instruction = ({ step, children }: { step: number; children: React.ReactNo
 
 const Strong = ({ children }: { children: React.ReactNode }) => (
   <span className="font-semibold text-surface-900">{children}</span>
+);
+
+const CodeChip = ({ children }: { children: React.ReactNode }) => (
+  <span className="font-mono text-[11px] bg-surface-100 text-surface-900 rounded px-1.5 py-0.5 break-all">{children}</span>
 );
 
 const HelpBox = ({ children }: { children: React.ReactNode }) => (
