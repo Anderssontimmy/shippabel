@@ -112,30 +112,30 @@ const blogPosts = extractBlogPosts(blogDataRaw);
 const pages = [
   {
     path: "/",
-    title: "Shippabel — Publish Your AI-Built App to the App Store",
+    title: "Shippabel — Publish Your AI-Built App to Google Play",
     description:
-      "Built an app with AI? Shippabel gets it on the App Store and Google Play — no coding needed. Scan, auto-fix, generate store listings, and submit in one click.",
+      "Built an app with AI? Shippabel gets it on Google Play — no coding, no computer needed. Scan, auto-fix, generate your store listing, and submit in one flow.",
     canonical: "https://shippabel.com/",
   },
   {
     path: "/scan",
-    title: "Free App Store Readiness Scanner — Shippabel",
+    title: "Free Google Play Readiness Scanner — Shippabel",
     description:
-      "Check if your app is ready for the App Store in 30 seconds. Paste your GitHub link and get a detailed report with issues, fixes, and a readiness score.",
+      "Check if your app is ready for Google Play in 30 seconds. Paste your GitHub link and get a detailed report with issues, fixes, and a readiness score.",
     canonical: "https://shippabel.com/scan",
   },
   {
     path: "/about",
     title: "About — Shippabel",
     description:
-      "Shippabel was built for the new generation of app creators — people who build with AI tools like Cursor, Bolt, and Lovable and need help getting their app into the App Store.",
+      "Shippabel was built for the new generation of app creators — people who build with AI tools like Cursor, Bolt, and Lovable and need help getting their app onto Google Play.",
     canonical: "https://shippabel.com/about",
-    extraContent: `<h1>Get your app in the stores — without the headache</h1>
+    extraContent: `<h1>Get your app on Google Play — without the headache</h1>
 <p>Shippabel is built for people who used AI to build their app. We handle everything from scan to submission.</p>
 <h2>Why we built this</h2>
-<p>Publishing an app sounds simple. It isn't. App Store and Google Play have hundreds of requirements. Shippabel handles the entire technical maze so you don't have to.</p>
+<p>Publishing an app sounds simple. It isn't. Google Play has hundreds of requirements. Shippabel handles the entire technical maze so you don't have to.</p>
 <h2>What Shippabel does</h2>
-<p>We scan your app, auto-fix issues, write your store listing with AI, frame your screenshots, and submit to both stores.</p>`,
+<p>We scan your app, auto-fix issues, write your store listing with AI, frame your screenshots, build it in the cloud, and submit it to Google Play.</p>`,
   },
   {
     path: "/pricing",
@@ -170,7 +170,7 @@ const pages = [
     path: "/scan/demo",
     title: "Demo Scan Results — Shippabel",
     description:
-      "See an example scan report showing how Shippabel checks your app for App Store readiness.",
+      "See an example scan report showing how Shippabel checks your app for Google Play readiness.",
     canonical: "https://shippabel.com/scan/demo",
   },
   // Blog posts
