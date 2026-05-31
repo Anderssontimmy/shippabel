@@ -160,10 +160,10 @@ const pages = [
     path: "/blog",
     title: "Blog — Learn how to publish your AI-built app | Shippabel",
     description:
-      "Step-by-step guides for getting your AI-built app on the App Store and Google Play. No technical knowledge required.",
+      "Step-by-step guides for getting your AI-built app on Google Play. No technical knowledge required.",
     canonical: "https://shippabel.com/blog",
     extraContent: `<h1>Learn how to publish your app</h1>
-<p>Step-by-step guides for getting your AI-built app on the App Store and Google Play. No technical knowledge required.</p>
+<p>Step-by-step guides for getting your AI-built app on Google Play. No technical knowledge required.</p>
 <ul>${blogPosts.map((p) => `<li><a href="/blog/${p.slug}">${p.title}</a> — ${p.excerpt}</li>`).join("\n")}</ul>`,
   },
   {

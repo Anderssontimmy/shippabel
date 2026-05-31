@@ -3,6 +3,12 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "redirects": [
+    { "source": "/blog/publish-cursor-app-to-app-store", "destination": "/blog/publish-cursor-app-to-google-play", "permanent": true },
+    { "source": "/blog/bolt-app-to-app-store", "destination": "/blog/publish-bolt-app-to-google-play", "permanent": true },
+    { "source": "/blog/app-store-screenshots-guide", "destination": "/blog/google-play-screenshots-guide", "permanent": true },
+    { "source": "/blog/apple-review-what-they-check", "destination": "/blog/google-play-review-what-they-check", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
