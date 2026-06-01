@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { supabase } from "@/lib/supabase";
+import { trackEvent } from "@/lib/analytics";
 
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "";
 
@@ -26,6 +27,7 @@ export const useStripe = () => {
   const checkout = async (plan: PlanId) => {
     setLoading(true);
     setError(null);
+    trackEvent("Checkout Started", { plan });
 
     try {
       // Call Supabase Edge Function to create checkout session

@@ -10,7 +10,7 @@ export const BlogIndex = () => {
           Learn how to publish your app
         </h1>
         <p className="text-lg text-surface-500 max-w-2xl mx-auto">
-          Step-by-step guides for getting your AI-built app on the App Store and Google Play.
+          Step-by-step guides for getting your AI-built app on Google Play.
           No technical knowledge required.
         </p>
       </div>
@@ -39,7 +39,7 @@ export const BlogIndex = () => {
       {/* CTA */}
       <div className="mt-16 text-center rounded-2xl bg-surface-50 border border-surface-200 p-10">
         <h2 className="text-xl font-semibold text-surface-900 mb-2">Ready to publish your app?</h2>
-        <p className="text-surface-500 text-sm mb-6">Check if your app is ready for the stores — it's free and takes 30 seconds.</p>
+        <p className="text-surface-500 text-sm mb-6">Check if your app is ready for Google Play - it's free and takes 30 seconds.</p>
         <Link to="/scan">
           <button className="inline-flex items-center gap-2 rounded-xl bg-surface-900 text-white px-7 py-3.5 text-sm font-medium hover:bg-surface-800 transition-colors">
             Check my app for free <ArrowRight className="h-4 w-4" />

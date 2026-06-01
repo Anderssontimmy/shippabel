@@ -2,7 +2,7 @@
   "name": "shippabel-web",
   "private": true,
   "version": "0.1.0",
-  "description": "From vibe code to App Store in one click",
+  "description": "From vibe code to Google Play in one click",
   "type": "module",
   "scripts": {
     "dev": "vite",

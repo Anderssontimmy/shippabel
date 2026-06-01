@@ -25,7 +25,7 @@ export const useDocumentHead = ({ title, description }: DocumentHeadOptions) => 
     }
 
     return () => {
-      document.title = "Shippabel — From Vibe Code to App Store in One Click";
+      document.title = "Shippabel - Publish Your AI-Built App to Google Play";
     };
   }, [title, description]);
 };

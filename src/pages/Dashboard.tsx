@@ -211,7 +211,7 @@ export const Dashboard = () => {
           </div>
           <h2 className="text-lg font-semibold text-surface-900 mb-2">No apps yet</h2>
           <p className="text-sm text-surface-500 mb-8 max-w-sm mx-auto">
-            Paste a link to your app and we'll check if it's ready for the App Store and Google Play. Takes 30 seconds.
+            Paste a link to your app and we'll check if it's ready for Google Play. Takes 30 seconds.
           </p>
           <Link to="/scan">
             <Button size="lg" className="gap-2">

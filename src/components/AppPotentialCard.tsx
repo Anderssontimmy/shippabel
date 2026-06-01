@@ -110,7 +110,7 @@ export const AppPotentialCard = ({ analysis, projectId }: AppPotentialCardProps)
       {/* CTA */}
       <div className="rounded-xl bg-gradient-to-r from-primary-600/10 to-green-600/10 border border-primary-500/10 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p className="text-sm font-medium text-surface-700">
-          Ready to ship? Let us handle the App Store submission.
+          Ready to ship? Let us handle the Google Play submission.
         </p>
         <Link to={projectId === "demo" ? "/pricing" : `/app/${projectId}/listing`}>
           <Button size="sm" className="gap-1.5 shrink-0">

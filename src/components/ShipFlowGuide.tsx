@@ -53,7 +53,7 @@ const stepRoutes: Record<FlowStep, (id: string) => string> = {
 const stepGuides: Record<FlowStep, { title: string; body: string; cta: string; helpLinks?: { label: string; url: string }[] }> = {
   scan: {
     title: "Scan your app",
-    body: "Paste your GitHub URL or upload a zip file. We'll check your Expo project against every App Store and Google Play requirement in about 30 seconds.",
+    body: "Paste your GitHub URL or upload a zip file. We'll check your app against Google Play requirements in about 30 seconds.",
     cta: "Go to scanner",
   },
   fix: {
@@ -73,27 +73,26 @@ const stepGuides: Record<FlowStep, { title: string; body: string; cta: string; h
   },
   screenshots: {
     title: "Create store screenshots",
-    body: "Upload screenshots from your phone, pick a device frame (iPhone 16 Pro, Pixel 9, iPad), add captions, and download properly sized images for both stores.",
+    body: "Upload screenshots from your phone, pick a device frame, add captions, and download properly sized images for Google Play.",
     cta: "Create screenshots",
   },
   connect: {
     title: "Connect your developer accounts",
-    body: "To build and submit, we need access to your Expo, Apple, and Google developer accounts. Follow the guides below to get your credentials.",
+    body: "To build and submit, we need access to your build and Google Play credentials. Follow the guides below to connect them.",
     cta: "Go to settings",
     helpLinks: [
       { label: "How to get an EAS access token", url: "https://docs.expo.dev/accounts/programmatic-access/" },
-      { label: "How to create an Apple API key", url: "https://developer.apple.com/documentation/appstoreconnectapi/creating_api_keys_for_app_store_connect_api" },
       { label: "How to set up Google Play service account", url: "https://developers.google.com/android-publisher/getting_started" },
     ],
   },
   build: {
     title: "Build your app",
-    body: "We'll trigger a production build via Expo EAS. This creates a signed IPA (iOS) or AAB (Android) ready for store submission. Builds take 10-20 minutes.",
+    body: "We'll trigger a production build that creates a signed Android App Bundle (AAB) ready for Google Play submission. Builds take 10-20 minutes.",
     cta: "Start build",
   },
   submit: {
-    title: "Submit to the stores",
-    body: "Your build is ready. We'll upload the binary, set your store listing metadata, and submit for review. Apple reviews take 1-3 days, Google Play takes hours to days.",
+    title: "Submit to Google Play",
+    body: "Your build is ready. We'll upload the AAB, set your store listing metadata, and submit for Google Play review.",
     cta: "Submit for review",
   },
 };
