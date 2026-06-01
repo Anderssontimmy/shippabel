@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useStripe, type PlanId } from "@/hooks/useStripe";
 import { useAuth } from "@/hooks/useAuth";
+import { trackEvent } from "@/lib/analytics";
 
 const plans = [
   {
@@ -69,6 +70,7 @@ export const Pricing = () => {
 
   const handleCheckout = async (planId: PlanId | null) => {
     if (!planId) return;
+    trackEvent("CTA Clicked", { location: "pricing", action: "checkout", plan: planId });
     if (!user) {
       window.location.href = "/login";
       return;
@@ -136,7 +138,10 @@ export const Pricing = () => {
                 {plan.cta}
               </Button>
             ) : (
-              <Link to={plan.ctaTo!}>
+              <Link
+                to={plan.ctaTo!}
+                onClick={() => trackEvent("CTA Clicked", { location: "pricing", action: "free_scan" })}
+              >
                 <Button variant={plan.ctaVariant} className="w-full">
                   {plan.cta}
                 </Button>

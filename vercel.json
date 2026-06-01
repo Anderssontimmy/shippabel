@@ -4,12 +4,6 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "redirects": [
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.shippabel.com" }],
-      "destination": "https://shippabel.com/:path*",
-      "permanent": true
-    },
     { "source": "/blog/publish-cursor-app-to-app-store", "destination": "/blog/publish-cursor-app-to-google-play", "permanent": true },
     { "source": "/blog/bolt-app-to-app-store", "destination": "/blog/publish-bolt-app-to-google-play", "permanent": true },
     { "source": "/blog/app-store-screenshots-guide", "destination": "/blog/google-play-screenshots-guide", "permanent": true },
@@ -27,19 +21,49 @@
       ]
     },
     {
-      "source": "/(favicon.svg|og-image.svg|iphone-frame.png|mockups/(.*))",
+      "source": "/favicon.svg",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
-      "source": "/(sitemap.xml|robots.txt|llms.txt)",
+      "source": "/og-image.svg",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/iphone-frame.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/mockups/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" }
       ]
     },
     {
-      "source": "/(.*)",
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/llms.txt",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/:path*",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },

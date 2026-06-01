@@ -8,6 +8,7 @@ declare global {
 }
 
 type EventName =
+  | "CTA Clicked"
   | "Scan Started"
   | "Scan Completed"
   | "Fix Applied"

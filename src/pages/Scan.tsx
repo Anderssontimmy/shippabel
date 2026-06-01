@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { useScan } from "@/hooks/useScan";
 import { useAuth } from "@/hooks/useAuth";
 import { useCredentials } from "@/hooks/useCredentials";
+import { trackEvent } from "@/lib/analytics";
 
 export const Scan = () => {
   const { githubToken } = useAuth();
@@ -237,7 +238,10 @@ export const Scan = () => {
             </>
           )}
         </Button>
-        <Link to="/scan/demo">
+        <Link
+          to="/scan/demo"
+          onClick={() => trackEvent("CTA Clicked", { location: "scan", action: "try_demo" })}
+        >
           <Button size="lg" variant="secondary" className="gap-2 whitespace-nowrap">
             Try demo
           </Button>

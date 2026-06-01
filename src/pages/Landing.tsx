@@ -3,6 +3,7 @@ import { ArrowRight, Shield, Layers, Wand2, Scan, Wrench, ChevronDown, Globe } f
 import { useState, useRef, type ReactNode } from "react";
 import { motion, useInView } from "framer-motion";
 import PhoneMockup from "@/components/PhoneMockup";
+import { trackEvent } from "@/lib/analytics";
 
 const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) => {
   const ref = useRef(null);
@@ -101,6 +102,10 @@ const HeroScanField = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    trackEvent("CTA Clicked", {
+      location: "landing_hero",
+      action: url.trim() ? "scan_with_url" : "scan_empty",
+    });
     if (url.trim()) {
       navigate(`/scan?url=${encodeURIComponent(url.trim())}`);
     } else {
@@ -128,7 +133,13 @@ const HeroScanField = () => {
       </div>
       <div className="mt-2.5 flex items-center gap-3 text-xs text-gray-400 px-1">
         <span>or</span>
-        <Link to="/scan" className="text-green-600 hover:text-green-500 font-medium">upload a zip file</Link>
+        <Link
+          to="/scan"
+          onClick={() => trackEvent("CTA Clicked", { location: "landing_hero", action: "upload_zip" })}
+          className="text-green-600 hover:text-green-500 font-medium"
+        >
+          upload a zip file
+        </Link>
         <span className="text-gray-300">·</span>
         <a href="#how-it-works" className="hover:text-gray-600">How does it work?</a>
       </div>
