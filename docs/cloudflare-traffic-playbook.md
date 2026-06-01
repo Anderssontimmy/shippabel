@@ -2,6 +2,18 @@
 
 Use this when reviewing shippabel.com in Cloudflare. The goal is to separate real buyer traffic from crawler noise, keep edge behavior canonical, and find funnel leaks.
 
+## Current Status
+
+Applied on Cloudflare:
+
+- `shippabel_redirect_www_to_apex`: redirects `www.shippabel.com` to `shippabel.com`.
+- `shippabel_cache_static_assets`: caches immutable public assets.
+- `shippabel_cache_crawler_files`: caches crawler discovery files.
+
+Pending:
+
+- WAF/rate-limit protection for expensive product paths. The current token can manage redirect and cache rules, but does not have WAF edit access.
+
 ## Edge Rules To Set
 
 ### Redirect www to apex
