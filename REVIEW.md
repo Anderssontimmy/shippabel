@@ -105,8 +105,17 @@ fix-issues, generate-copy, generate-privacy, scan-project query `projects` by id
 > - ✅ Route-based code splitting in place (all routes lazy except homepage).
 > - 🟡 P4-M1 (optional): initial landing ~180KB gzipped — mostly vendor-supabase (auth, app-wide) + framer-motion. Trimming framer-motion on marketing pages is the main (diminishing-returns) lever.
 
-## Phases 5–7 — pending
-- P4 Performance — done above
+## Phase 5 — Testing (reviewed + partial fix 2026-06-17)
+
+> Was: 3 trivial tests (Badge/Button/ErrorBoundary). Now 21 passing.
+> **Added:** `src/hooks/usePlan.test.ts` — covers free/ship/unlimited tiers + a **security regression test** asserting `user_metadata.plan` does NOT grant access (locks in the C2 fix).
+> **Recommended next (documented, not yet done):**
+> - Unit-test `_shared/crypto.ts` round-trip + legacy passthrough (note: vitest `include` is `src/**`; either widen include or add a thin src wrapper — was verified manually during H2).
+> - Hook tests for useScan/useBuild/useShipFlow (loading/error/race states).
+> - Edge-function tests (entitlement guard returns 403; ownership filter) — needs a Deno test setup or integration harness.
+> - Set a coverage floor in CI once Phase 7 adds CI.
+
+## Phases 6–7 — pending
 - P5 Testing (payment/access/webhook tests, coverage floor)
 - P6 UX / SEO / a11y / content
 - P7 DevEx / infra (env validation, CI/CD, monitoring, deps)
