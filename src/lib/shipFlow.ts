@@ -51,6 +51,14 @@ export function deriveSteps(f: ShipFacts): FlowStepState[] {
   ];
 }
 
+// Honest progress: weighted by the full 8-step model, so "Publish" (which rolls up
+// connect + build + submit on the dashboard) counts as the 3 steps of real work it is,
+// not 1/5 of the bar. Same value the in-app guide shows.
+export function progressPercent(f: ShipFacts): number {
+  const steps = deriveSteps(f);
+  return Math.round((steps.filter((s) => s.completed).length / steps.length) * 100);
+}
+
 // First incomplete step in sequence — the user's current focus.
 export function getCurrentStep(f: ShipFacts): FlowStep {
   if (!f.scanned) return "scan";

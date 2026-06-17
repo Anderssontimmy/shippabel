@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
-import { type ShipFacts, type DashStepKey, deriveDashboardSteps } from "@/lib/shipFlow";
+import { type ShipFacts, type DashStepKey, deriveDashboardSteps, progressPercent } from "@/lib/shipFlow";
 import type { Project, ScanResult } from "@/lib/types";
 
 interface AppStep {
@@ -39,23 +39,27 @@ interface ProjectExtra {
   isSubmitted: boolean;
 }
 
-const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
+// Same facts + rules as the in-app flow (see src/lib/shipFlow.ts).
+const dashFacts = (project: Project, extra: ProjectExtra): ShipFacts => {
   const scan = project.scan_result as ScanResult | null;
-  const isLive = project.status === "live";
-  const critical = scan?.summary?.critical ?? 0;
-
-  // Same facts + rules as the in-app flow (see src/lib/shipFlow.ts).
-  const facts: ShipFacts = {
+  return {
     scanned: !!scan,
-    criticalIssues: critical,
+    criticalIssues: scan?.summary?.critical ?? 0,
     loggedIn: true, // the dashboard is only reachable when signed in
     hasListing: extra.hasListing,
     hasScreenshots: extra.hasScreenshots,
     hasEas: extra.hasEas,
     hasBuild: extra.hasBuild,
     isSubmitted: extra.isSubmitted,
-    isLive,
+    isLive: project.status === "live",
   };
+};
+
+const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
+  const scan = project.scan_result as ScanResult | null;
+  const isLive = project.status === "live";
+  const critical = scan?.summary?.critical ?? 0;
+  const facts = dashFacts(project, extra);
   const isBuilt = extra.isSubmitted || isLive;
   const id = project.id;
 
@@ -276,7 +280,7 @@ export const Dashboard = () => {
             const score = project.scan_result?.score;
             const activeStep = steps.find((s) => s.active);
             const completedCount = steps.filter((s) => s.done).length;
-            const progress = (completedCount / steps.length) * 100;
+            const progress = progressPercent(dashFacts(project, extra));
             const displayName = cleanAppName(project.name);
 
             return (

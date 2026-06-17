@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveSteps, getCurrentStep, deriveDashboardSteps, type ShipFacts } from "./shipFlow";
+import { deriveSteps, getCurrentStep, deriveDashboardSteps, progressPercent, type ShipFacts } from "./shipFlow";
 
 const base: ShipFacts = {
   scanned: false,
@@ -35,6 +35,16 @@ describe("shipFlow", () => {
     expect(byKey.check!.done && byKey.fix!.done && byKey.listing!.done && byKey.screenshots!.done).toBe(true);
     expect(byKey.publish!.done).toBe(false); // not done until live
     expect(byKey.publish!.active).toBe(true);
+  });
+
+  it("weights progress by the full flow so Publish isn't under-counted", () => {
+    // scan + fix + listing + screenshots done; still at connect/build/submit.
+    // The 5-step card would read 4/5 = 80%, but real progress is 5/8 (incl. signup).
+    const f = facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true });
+    expect(progressPercent(f)).toBe(63); // 5 of 8 steps
+    expect(progressPercent(f)).toBeLessThan(80);
+    expect(progressPercent(base)).toBe(0);
+    expect(progressPercent(facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasEas: true, hasBuild: true, isSubmitted: true }))).toBe(100);
   });
 
   // The whole point of the shared module: the card and the in-app flow can never
