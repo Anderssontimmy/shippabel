@@ -79,6 +79,20 @@ const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
   }));
 };
 
+// "Publish" on the dashboard rolls up connect -> build -> submit. When the user
+// reaches it, show the real sub-steps so the build wait + credentials aren't a surprise.
+const getPublishSubSteps = (project: Project, extra: ProjectExtra) => {
+  const id = project.id;
+  const submitted = extra.isSubmitted || project.status === "live";
+  const subs = [
+    { key: "connect", label: "Connect your store accounts", done: extra.hasEas, href: "/settings" },
+    { key: "build", label: "Build a signed app (about 10-20 min)", done: extra.hasBuild, href: `/app/${id}/submit` },
+    { key: "review", label: submitted ? "In review by Google" : "Submit for review", done: submitted, href: `/app/${id}/submit` },
+  ];
+  const firstPending = subs.find((s) => !s.done);
+  return subs.map((s) => ({ ...s, active: firstPending ? s.key === firstPending.key : false }));
+};
+
 const cleanAppName = (name: string) =>
   name.replace(/-[a-f0-9]{8,}$/i, "").replace(/-/g, " ");
 
@@ -280,16 +294,21 @@ export const Dashboard = () => {
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-3 min-w-0">
                       {score != null && (
-                        <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-base font-bold shrink-0 ${
+                        <div
+                          title={`Store-readiness score: ${score} out of 100`}
+                          className={`h-12 w-12 rounded-2xl flex flex-col items-center justify-center shrink-0 leading-none ${
                           score >= 80 ? "bg-green-50 text-green-700"
                           : score >= 50 ? "bg-amber-50 text-amber-700"
                           : "bg-red-50 text-red-700"
-                        }`}>{score}</div>
+                        }`}>
+                          <span className="text-base font-bold">{score}</span>
+                          <span className="text-[9px] font-medium opacity-70 mt-0.5">/ 100</span>
+                        </div>
                       )}
                       <div className="min-w-0">
                         <h3 className="font-semibold text-surface-900 truncate text-lg capitalize">{displayName}</h3>
                         <p className="text-xs text-surface-400 mt-0.5">
-                          {completedCount} of {steps.length} steps done
+                          {score != null ? `${score}/100 ready · ` : ""}{completedCount} of {steps.length} steps
                         </p>
                       </div>
                     </div>
@@ -307,7 +326,7 @@ export const Dashboard = () => {
                       const StepIcon = step.icon;
                       return (
                         <div key={step.key} className="flex items-center flex-1">
-                          <Link to={step.href} className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                          <Link to={step.href} aria-label={`${step.label}${step.done ? " (done)" : step.active ? " (current step)" : ""}`} className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                             <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                               step.done ? "bg-green-100 text-green-600"
                               : step.active ? "bg-surface-900 text-white ring-2 ring-surface-900/20"
@@ -327,15 +346,45 @@ export const Dashboard = () => {
                     })}
                   </div>
 
-                  {/* Next action */}
-                  {activeStep && project.status !== "live" && (
+                  {/* Next action — publish expands into its real sub-steps */}
+                  {activeStep && project.status !== "live" && activeStep.key === "publish" ? (
+                    <div className="rounded-xl bg-surface-50 border border-surface-200 px-4 py-4">
+                      <p className="text-xs text-surface-500 mb-3 leading-relaxed">
+                        Almost there. Publishing takes a few steps: connect your store accounts, we build a signed app (about 10-20 minutes), then submit it for Google's review.
+                      </p>
+                      <div className="space-y-1.5">
+                        {getPublishSubSteps(project, extra).map((sub) => (
+                          <Link
+                            key={sub.key}
+                            to={sub.href}
+                            aria-label={`${sub.label}${sub.done ? " (done)" : sub.active ? " (next)" : ""}`}
+                            className={`flex items-center justify-between rounded-lg px-3 py-2.5 transition-all ${
+                              sub.active ? "bg-white border border-surface-300 shadow-sm" : "border border-transparent hover:bg-white/60"
+                            }`}
+                          >
+                            <span className="flex items-center gap-2.5 text-sm">
+                              {sub.done ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                              ) : (
+                                <span className={`h-4 w-4 rounded-full border-2 shrink-0 ${sub.active ? "border-surface-900" : "border-surface-300"}`} />
+                              )}
+                              <span className={sub.done ? "text-surface-400" : sub.active ? "font-medium text-surface-900" : "text-surface-500"}>
+                                {sub.label}
+                              </span>
+                            </span>
+                            {sub.active && <ArrowRight className="h-4 w-4 text-surface-400 shrink-0" />}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : activeStep && project.status !== "live" ? (
                     <Link to={activeStep.href}>
                       <div className="flex items-center justify-between rounded-xl bg-surface-50 border border-surface-200 px-4 py-3.5 hover:bg-white hover:border-surface-300 hover:shadow-sm transition-all group">
                         <span className="text-sm font-medium text-surface-700">{activeStep.actionLabel}</span>
                         <ArrowRight className="h-4 w-4 text-surface-400 group-hover:text-surface-600 group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </Link>
-                  )}
+                  ) : null}
 
                   {project.status === "live" && (
                     <Link to={`/app/${project.id}/status`}>
