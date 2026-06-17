@@ -34,7 +34,7 @@ const demoScanResult: ScanResult = {
   score: 73,
   project_type: "react-web",
   needs_conversion: true,
-  conversion_message: "Your app is a web app built with React. We can wrap it as a mobile app and publish it to the App Store and Google Play.",
+  conversion_message: "Your app is a web app built with React. We can wrap it as a mobile app and publish it to Google Play.",
   issues: [
     {
       id: "1", project_id: "demo", severity: "critical", category: "assets",
@@ -444,8 +444,8 @@ export const ScanResults = () => {
         );
       })}
 
-      {/* Success banner — when app is ready */}
-      {scan.summary.critical === 0 && scan.score >= 80 && id && (
+      {/* Success banner — when app is ready (and not still needing conversion) */}
+      {scan.summary.critical === 0 && scan.score >= 80 && !scan.needs_conversion && id && (
         <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
           <h3 className="text-lg font-semibold text-surface-900 mb-1">Your app looks great!</h3>
           <p className="text-sm text-surface-500 mb-5">No critical issues. You're ready for the next step.</p>

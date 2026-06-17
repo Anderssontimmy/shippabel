@@ -167,7 +167,7 @@ export const Submit = () => {
           </div>
           <h2 className="text-xl font-semibold text-surface-900 mb-2">One more step before building</h2>
           <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
-            Your app needs to be converted to a mobile format before we can build it for the App Store and Google Play. This is quick and automatic — just click the button below.
+            Your app needs to be converted to a mobile format before we can build it for Google Play. This is quick and automatic, just click the button below.
           </p>
           <Link to={`/scan/${id}`}>
             <Button className="gap-2">
@@ -175,7 +175,7 @@ export const Submit = () => {
               Go to scan results to convert
             </Button>
           </Link>
-          <p className="text-xs text-surface-400 mt-3">Look for the green "Make it App Store ready" button</p>
+          <p className="text-xs text-surface-400 mt-3">Look for the green "Make it Google Play ready" button</p>
         </Card>
       </div>
     );

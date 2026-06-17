@@ -9,8 +9,6 @@ import {
   Link2,
   Package,
   Send,
-  Check,
-  Lock,
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -169,44 +167,6 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
         </div>
       </div>
 
-      {/* Mini step overview */}
-      <div className="mt-6 pt-4 border-t border-surface-200">
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-          {steps.map((step) => {
-            const StepIcon = stepIcons[step.id];
-            return (
-              <div
-                key={step.id}
-                className="flex flex-col items-center gap-1"
-                title={step.label}
-              >
-                <div
-                  className={`h-7 w-7 rounded-full flex items-center justify-center ${
-                    step.completed
-                      ? "bg-green-500/20 text-green-400"
-                      : step.id === currentStep
-                      ? "bg-surface-900 text-white"
-                      : step.available
-                      ? "bg-surface-100 text-surface-500"
-                      : "bg-surface-50 text-surface-400"
-                  }`}
-                >
-                  {step.completed ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : !step.available ? (
-                    <Lock className="h-3 w-3" />
-                  ) : (
-                    <StepIcon className="h-3.5 w-3.5" />
-                  )}
-                </div>
-                <span className="text-[9px] text-surface-600 text-center leading-tight">
-                  {step.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </Card>
   );
 };

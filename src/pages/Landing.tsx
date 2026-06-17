@@ -1,19 +1,21 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Shield, Layers, Wand2, Scan, Wrench, ChevronDown, Globe } from "lucide-react";
 import { useState, useRef, type ReactNode } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import PhoneMockup from "@/components/PhoneMockup";
 import { trackEvent } from "@/lib/analytics";
 
 const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) => {
   const ref = useRef(null);
+  const reduce = useReducedMotion();
   const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const show = reduce || isInView;
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      initial={reduce ? false : { opacity: 0, y: 30 }}
+      animate={show ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, ease: "easeOut", delay }}
       className={className}
     >
@@ -24,13 +26,14 @@ const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; 
 
 const StaggerChildren = ({ children, className = "" }: { children: ReactNode; className?: string }) => {
   const ref = useRef(null);
+  const reduce = useReducedMotion();
   const isInView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
     <motion.div
       ref={ref}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      initial={reduce ? "visible" : "hidden"}
+      animate={reduce || isInView ? "visible" : "hidden"}
       variants={{
         visible: { transition: { staggerChildren: 0.1 } },
         hidden: {},

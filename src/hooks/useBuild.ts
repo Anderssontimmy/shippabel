@@ -107,7 +107,7 @@ export const useBuild = (projectId: string) => {
 
         // Map technical errors to friendly messages
         const friendlyError = realError.includes("app.json")
-          ? "Your app needs to be converted to a mobile app first. Go back to your scan results and click 'Make it App Store ready'."
+          ? "Your app needs to be converted to a mobile app first. Go back to your scan results and click 'Make it Google Play ready'."
           : realError.includes("EAS token")
           ? "Please connect your Expo account in Settings first."
           : realError.includes("Unauthorized")

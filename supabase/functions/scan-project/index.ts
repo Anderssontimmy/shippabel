@@ -135,12 +135,12 @@ Deno.serve(async (req) => {
     // Determine if conversion is needed (Capacitor and Expo apps are already mobile-ready)
     const needsConversion = projectType !== "expo" && projectType !== "capacitor";
     const conversionMessages: Record<string, string> = {
-      "react-web": "Your app is a web app built with React. We can wrap it as a mobile app and publish it to the App Store and Google Play.",
+      "react-web": "Your app is a web app built with React. We can wrap it as a mobile app and publish it to Google Play.",
       "nextjs": "Your app is built with Next.js. We can convert it to a mobile app and publish it to both stores.",
-      "vue": "Your app is built with Vue. We can convert it to a mobile app and publish it to the App Store and Google Play.",
+      "vue": "Your app is built with Vue. We can convert it to a mobile app and publish it to Google Play.",
       "react-native": "Your app uses React Native but isn't set up with Expo. We can add Expo to make it ready for the stores.",
       "static": "Your app is a static website. We can wrap it as a mobile app and publish it to both stores.",
-      "unknown": "We detected a project but couldn't identify the framework. We can still try to convert it for the App Store.",
+      "unknown": "We detected a project but couldn't identify the framework. We can still try to convert it for Google Play.",
     };
     const conversionMessage = needsConversion ? (conversionMessages[projectType] ?? conversionMessages["unknown"]!) : null;
 
@@ -198,7 +198,7 @@ Deno.serve(async (req) => {
           category: "assets",
           title: "Missing app icon",
           description:
-            "No app icon is configured. The App Store requires a 1024x1024 PNG icon without transparency. Google Play also requires a 512x512 icon.",
+            "No app icon is configured. Google Play requires a 512x512 PNG icon (a 1024x1024 version is also recommended).",
           auto_fixable: false,
           fix_description: "Add a 1024x1024 PNG icon and set expo.icon in app.json.",
         });
@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
           category: "config",
           title: "No app category set",
           description:
-            "No App Store category is specified. Setting a category helps with store placement and discoverability.",
+            "No app category is set. Setting a category helps with store placement and discoverability.",
           auto_fixable: true,
           fix_description: "Add ios.appStoreCategory to your app.json.",
         });
