@@ -98,8 +98,15 @@ fix-issues, generate-copy, generate-privacy, scan-project query `projects` by id
 > - P3-M1 — `getCorsHeaders` duplicated in 11 functions, payment guard in 6, rate-limit in 4. Extract to `_shared/` (cors.ts, auth.ts). Needs redeploy of all 12 functions — do incrementally as functions are touched.
 > - P3-M3 — Large components (PublishGuide 847, ScreenshotEditor 664, Submit 629, Screenshots 570). Long but moderate complexity; decompose for navigability when convenient.
 
-## Phases 4–7 — pending
-- P4 Performance (bundle weight, three.js)
+## Phase 4 — Performance (reviewed 2026-06-17)
+
+> Well-architected; no urgent fixes.
+> - ✅ three.js loads only on /screenshots (lazy via ScreenshotEditor), NOT on landing; landing PhoneMockup is 2D/CSS.
+> - ✅ Route-based code splitting in place (all routes lazy except homepage).
+> - 🟡 P4-M1 (optional): initial landing ~180KB gzipped — mostly vendor-supabase (auth, app-wide) + framer-motion. Trimming framer-motion on marketing pages is the main (diminishing-returns) lever.
+
+## Phases 5–7 — pending
+- P4 Performance — done above
 - P5 Testing (payment/access/webhook tests, coverage floor)
 - P6 UX / SEO / a11y / content
 - P7 DevEx / infra (env validation, CI/CD, monitoring, deps)
