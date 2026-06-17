@@ -90,8 +90,15 @@ fix-issues, generate-copy, generate-privacy, scan-project query `projects` by id
 
 > Note: a deeper P2 pass (every hook for races, all AI parsers, ret/timeout handling) is still worth doing; above are the findings from a focused pass on the highest-risk pipeline paths.
 
-## Phases 3–7 — pending
-- P3 Code quality (large files, dead code, config validation)
+## Phase 3 — Code quality & maintainability (reviewed 2026-06-17)
+
+> Codebase is tidy: 0 `any`, no TODO/FIXME/HACK, minimal console, lint near-clean.
+> **Fixed & deployed:** P3-M2 — central `src/lib/config.ts` validates required env at load (fails loudly); supabase.ts + useStripe use it; client no longer sends a vestigial price_id (server allowlist authoritative).
+> **Deferred (documented):**
+> - P3-M1 — `getCorsHeaders` duplicated in 11 functions, payment guard in 6, rate-limit in 4. Extract to `_shared/` (cors.ts, auth.ts). Needs redeploy of all 12 functions — do incrementally as functions are touched.
+> - P3-M3 — Large components (PublishGuide 847, ScreenshotEditor 664, Submit 629, Screenshots 570). Long but moderate complexity; decompose for navigability when convenient.
+
+## Phases 4–7 — pending
 - P4 Performance (bundle weight, three.js)
 - P5 Testing (payment/access/webhook tests, coverage floor)
 - P6 UX / SEO / a11y / content

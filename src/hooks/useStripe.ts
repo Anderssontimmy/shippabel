@@ -1,24 +1,23 @@
 import { useState } from "react";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { supabase } from "@/lib/supabase";
+import { config } from "@/lib/config";
 import { trackEvent } from "@/lib/analytics";
-
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "";
 
 let stripePromise: Promise<Stripe | null> | null = null;
 const getStripe = () => {
-  if (!stripePromise && stripeKey) {
-    stripePromise = loadStripe(stripeKey);
+  if (!stripePromise) {
+    if (!config.stripePublishableKey) {
+      throw new Error("Payments aren't configured right now. Please contact support.");
+    }
+    stripePromise = loadStripe(config.stripePublishableKey);
   }
   return stripePromise;
 };
 
 export type PlanId = "ship" | "unlimited";
-
-const priceIds: Record<PlanId, string> = {
-  ship: import.meta.env.VITE_STRIPE_SHIP_PRICE_ID ?? "price_1TcYGCKTudcNlvgZb7WCkScH",
-  unlimited: import.meta.env.VITE_STRIPE_UNLIMITED_PRICE_ID ?? "",
-};
+// The server (create-checkout) maps plan -> Stripe price via an allowlist; the client
+// only sends `plan`, never a price ID.
 
 export const useStripe = () => {
   const [loading, setLoading] = useState(false);
@@ -33,7 +32,6 @@ export const useStripe = () => {
       // Call Supabase Edge Function to create checkout session
       const { data, error: fnError } = await supabase.functions.invoke("create-checkout", {
         body: {
-          price_id: priceIds[plan],
           plan,
           success_url: `${window.location.origin}/dashboard?checkout=success`,
           cancel_url: `${window.location.origin}/pricing?checkout=cancelled`,
