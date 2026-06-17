@@ -18,10 +18,11 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { type ShipFacts, type DashStepKey, deriveDashboardSteps } from "@/lib/shipFlow";
 import type { Project, ScanResult } from "@/lib/types";
 
 interface AppStep {
-  key: string;
+  key: DashStepKey;
   label: string;
   icon: typeof CheckCircle2;
   done: boolean;
@@ -34,29 +35,48 @@ interface ProjectExtra {
   hasListing: boolean;
   hasScreenshots: boolean;
   hasEas: boolean;
+  hasBuild: boolean;
+  isSubmitted: boolean;
 }
 
 const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
   const scan = project.scan_result as ScanResult | null;
-  const scanned = !!scan;
-  const hasCritical = (scan?.summary?.critical ?? 0) > 0;
-  const fixed = scanned && !hasCritical;
-  const status = project.status;
-  const isBuilt = status === "submitted" || status === "live";
-  const isLive = status === "live";
+  const isLive = project.status === "live";
+  const critical = scan?.summary?.critical ?? 0;
 
-  return [
-    { key: "check", label: "Check", icon: Scan, done: scanned, active: !scanned,
-      href: `/scan/${project.id}`, actionLabel: "See results" },
-    { key: "fix", label: "Fix", icon: Wrench, done: fixed, active: scanned && !fixed,
-      href: `/scan/${project.id}`, actionLabel: hasCritical ? `Fix ${scan?.summary?.critical} problems` : "All fixed" },
-    { key: "listing", label: "Store page", icon: FileText, done: extra.hasListing, active: fixed && !extra.hasListing,
-      href: `/app/${project.id}/listing`, actionLabel: "Write store page" },
-    { key: "screenshots", label: "Screenshots", icon: Image, done: extra.hasScreenshots, active: extra.hasListing && !extra.hasScreenshots,
-      href: `/app/${project.id}/screenshots`, actionLabel: "Add screenshots" },
-    { key: "publish", label: "Publish", icon: Send, done: isLive, active: extra.hasScreenshots && !isLive,
-      href: extra.hasEas ? `/app/${project.id}/submit` : "/settings", actionLabel: extra.hasEas ? (isBuilt ? "Track review" : "Publish app") : "Connect accounts" },
-  ];
+  // Same facts + rules as the in-app flow (see src/lib/shipFlow.ts).
+  const facts: ShipFacts = {
+    scanned: !!scan,
+    criticalIssues: critical,
+    loggedIn: true, // the dashboard is only reachable when signed in
+    hasListing: extra.hasListing,
+    hasScreenshots: extra.hasScreenshots,
+    hasEas: extra.hasEas,
+    hasBuild: extra.hasBuild,
+    isSubmitted: extra.isSubmitted,
+    isLive,
+  };
+  const isBuilt = extra.isSubmitted || isLive;
+  const id = project.id;
+
+  const present: Record<DashStepKey, Pick<AppStep, "label" | "icon" | "href" | "actionLabel">> = {
+    check: { label: "Check", icon: Scan, href: `/scan/${id}`, actionLabel: "See results" },
+    fix: { label: "Fix", icon: Wrench, href: `/scan/${id}`, actionLabel: critical > 0 ? `Fix ${critical} problems` : "All fixed" },
+    listing: { label: "Store page", icon: FileText, href: `/app/${id}/listing`, actionLabel: "Write store page" },
+    screenshots: { label: "Screenshots", icon: Image, href: `/app/${id}/screenshots`, actionLabel: "Add screenshots" },
+    publish: {
+      label: "Publish", icon: Send,
+      href: extra.hasEas ? `/app/${id}/submit` : "/settings",
+      actionLabel: extra.hasEas ? (isBuilt ? "Track review" : "Publish app") : "Connect accounts",
+    },
+  };
+
+  return deriveDashboardSteps(facts).map((s) => ({
+    key: s.key,
+    done: s.done,
+    active: s.active,
+    ...present[s.key],
+  }));
 };
 
 const cleanAppName = (name: string) =>
@@ -88,11 +108,19 @@ export const Dashboard = () => {
       setProjects(projs);
 
       if (projs.length > 0) {
+        const ids = projs.map((p) => p.id);
         // Fetch listings with screenshots info
         const { data: listings } = await supabase
           .from("store_listings")
           .select("project_id, app_name, screenshots")
-          .in("project_id", projs.map((p) => p.id));
+          .in("project_id", ids);
+
+        // Fetch submissions (latest per project = first match in this desc order)
+        const { data: subs } = await supabase
+          .from("submissions")
+          .select("project_id, build_status, review_status, created_at")
+          .in("project_id", ids)
+          .order("created_at", { ascending: false });
 
         // Fetch credentials
         const { data: creds } = await supabase
@@ -106,7 +134,10 @@ export const Dashboard = () => {
           const projListings = (listings ?? []).filter((l) => l.project_id === p.id);
           const hasListing = projListings.some((l) => l.app_name && l.app_name.trim() !== "");
           const hasScreenshots = projListings.some((l) => Array.isArray(l.screenshots) && l.screenshots.length > 0);
-          extraMap[p.id] = { hasListing, hasScreenshots, hasEas };
+          const latestSub = (subs ?? []).find((s) => s.project_id === p.id);
+          const hasBuild = latestSub?.build_status === "completed";
+          const isSubmitted = !!latestSub && ["waiting_for_review", "in_review", "approved"].includes(latestSub.review_status);
+          extraMap[p.id] = { hasListing, hasScreenshots, hasEas, hasBuild, isSubmitted };
         }
         setExtras(extraMap);
       }
@@ -226,7 +257,7 @@ export const Dashboard = () => {
       {hasApps && (
         <div className="space-y-4">
           {projects.map((project) => {
-            const extra = extras[project.id] ?? { hasListing: false, hasScreenshots: false, hasEas: false };
+            const extra = extras[project.id] ?? { hasListing: false, hasScreenshots: false, hasEas: false, hasBuild: false, isSubmitted: false };
             const steps = getSteps(project, extra);
             const score = project.scan_result?.score;
             const activeStep = steps.find((s) => s.active);
