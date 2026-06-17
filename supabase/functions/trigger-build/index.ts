@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { decryptCreds } from "../_shared/crypto.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 function getCorsHeaders(req: Request) {
@@ -146,9 +147,18 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) throw new Error("Please sign in.");
 
+    const plan = (user.app_metadata as Record<string, unknown> | undefined)?.plan;
+    if (plan !== "ship" && plan !== "unlimited") {
+      return new Response(
+        JSON.stringify({ error: "This feature requires the Ship plan." }),
+        { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
     // Get GitHub token
     const { data: ghCred } = await supabase.from("user_credentials").select("credentials").eq("user_id", user.id).eq("provider", "github").single();
-    const ghToken = (ghCred?.credentials as Record<string, string> | undefined)?.access_token;
+    const ghCreds = await decryptCreds(ghCred?.credentials as Record<string, unknown> | undefined, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "");
+    const ghToken = ghCreds.access_token;
     if (!ghToken) throw new Error("Connect your GitHub account first.");
 
     const { project_id, platform } = (await req.json()) as BuildRequest;
@@ -194,7 +204,10 @@ Deno.serve(async (req) => {
       // Get EAS token
       let easToken = Deno.env.get("EAS_ACCESS_TOKEN") ?? "";
       const { data: easCred } = await supabase.from("user_credentials").select("credentials").eq("user_id", user.id).eq("provider", "eas").single();
-      if (easCred?.credentials) easToken = (easCred.credentials as Record<string, string>).access_token ?? easToken;
+      if (easCred?.credentials) {
+        const easCreds = await decryptCreds(easCred.credentials as Record<string, unknown>, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "");
+        easToken = easCreds.access_token ?? easToken;
+      }
       if (!easToken) throw new Error("Connect your Expo account in Settings.");
 
       if (!await checkFileExists(repoPath, "app.json", ghHeaders, defaultBranch))
@@ -229,7 +242,8 @@ Deno.serve(async (req) => {
       // Google credentials
       const { data: googleCred } = await supabase.from("user_credentials").select("credentials").eq("user_id", user.id).eq("provider", "google").single();
       if (googleCred?.credentials) {
-        const gKey = (googleCred.credentials as Record<string, string>).service_account_json;
+        const googleCreds = await decryptCreds(googleCred.credentials as Record<string, unknown>, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "");
+        const gKey = googleCreds.service_account_json;
         if (gKey) await setGitHubVariable(repoPath, "GOOGLE_SERVICE_ACCOUNT_KEY", gKey, ghHeaders);
       }
 

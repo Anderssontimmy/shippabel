@@ -130,7 +130,7 @@ export const Dashboard = () => {
     setSearchParams({}, { replace: true });
 
     supabase.auth.refreshSession().then(({ data }) => {
-      const plan = data?.user?.user_metadata?.plan as string | undefined;
+      const plan = data?.user?.app_metadata?.plan as string | undefined;
       setCheckoutPlan(plan ?? "ship");
       setShowCheckoutSuccess(true);
     });
@@ -145,7 +145,7 @@ export const Dashboard = () => {
     ?? user?.email?.split("@")[0]
     ?? "there";
   const hasApps = projects.length > 0;
-  const currentPlan = user?.user_metadata?.plan as string | undefined;
+  const currentPlan = user?.app_metadata?.plan as string | undefined;
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12 sm:py-16">

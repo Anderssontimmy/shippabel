@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { decryptCreds } from "../_shared/crypto.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 
@@ -38,6 +39,14 @@ Deno.serve(async (req) => {
     if (!authHeader) throw new Error("Unauthorized");
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) throw new Error("Unauthorized");
+
+    const plan = (user.app_metadata as Record<string, unknown> | undefined)?.plan;
+    if (plan !== "ship" && plan !== "unlimited") {
+      return new Response(
+        JSON.stringify({ error: "This feature requires the Ship plan." }),
+        { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
 
     const { submission_id } = (await req.json()) as SubmitRequest;
 
@@ -80,11 +89,14 @@ Deno.serve(async (req) => {
         .from("user_credentials").select("credentials")
         .eq("user_id", user.id).eq("provider", "github").single();
 
+      const encKey = Deno.env.get("CREDENTIALS_ENC_KEY") ?? "";
+      const googleCreds = await decryptCreds(googleCred?.credentials as Record<string, unknown> | undefined, encKey);
+      const githubCreds = await decryptCreds(githubCred?.credentials as Record<string, unknown> | undefined, encKey);
       result = await submitToGooglePlay(
         submission,
         listing,
-        googleCred?.credentials as Record<string, string> | undefined,
-        githubCred?.credentials as Record<string, string> | undefined,
+        googleCreds,
+        githubCreds,
         project,
       );
     }

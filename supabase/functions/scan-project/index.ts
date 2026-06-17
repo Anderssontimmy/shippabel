@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { decryptCreds } from "../_shared/crypto.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 
@@ -75,6 +76,34 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Ownership guard — a scan may only (re)write your own project or an anonymous one.
+    let requesterId: string | null = null;
+    if (isAuthenticated && authHeader) {
+      const { data: { user } } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+      requesterId = user?.id ?? null;
+    }
+    const { data: ownerRow } = await supabase
+      .from("projects").select("user_id").eq("id", project_id).single();
+    if (ownerRow?.user_id && ownerRow.user_id !== requesterId) {
+      return new Response(
+        JSON.stringify({ error: "Project not found" }),
+        { status: 404, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
+    // GitHub token: prefer the stored (encrypted) credential for authenticated users;
+    // the client no longer sends it. Falls back to any client-supplied token (legacy).
+    let effectiveGithubToken = github_token;
+    if (!effectiveGithubToken && requesterId) {
+      const { data: ghCred } = await supabase
+        .from("user_credentials").select("credentials")
+        .eq("user_id", requesterId).eq("provider", "github").single();
+      if (ghCred?.credentials) {
+        const ghCreds = await decryptCreds(ghCred.credentials as Record<string, unknown>, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "");
+        effectiveGithubToken = ghCreds.access_token;
+      }
+    }
+
     // Fetch project files for analysis
     let appConfig: Record<string, unknown> | null = null;
     let fileList: string[] = [];
@@ -84,7 +113,7 @@ Deno.serve(async (req) => {
     if (repo_url) {
       const repoPath = extractGitHubPath(repo_url);
       if (repoPath) {
-        const result = await fetchGitHubProject(repoPath, github_token);
+        const result = await fetchGitHubProject(repoPath, effectiveGithubToken);
         appConfig = result.appConfig;
         fileList = result.fileList;
         packageJson = result.packageJson;

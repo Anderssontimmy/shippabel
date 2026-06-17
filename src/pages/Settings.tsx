@@ -162,7 +162,7 @@ const providers: ProviderConfig[] = [
 export const Settings = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { credentials, loading, saving, error, hasCredential, saveCredential, removeCredential } = useCredentials();
+  const { loading, saving, error, hasCredential, saveCredential, removeCredential } = useCredentials();
   const { toast } = useToast();
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -204,12 +204,9 @@ export const Settings = () => {
   };
 
   const startEditing = (provider: ProviderConfig) => {
-    const existing = credentials.find((c) => c.provider === provider.id);
-    if (existing) {
-      setFormData(existing.credentials as Record<string, string>);
-    } else {
-      setFormData({});
-    }
+    // Stored credentials are encrypted and never returned to the client in plaintext,
+    // so start with empty fields — re-enter values to update.
+    setFormData({});
     setEditingProvider(provider.id);
   };
 

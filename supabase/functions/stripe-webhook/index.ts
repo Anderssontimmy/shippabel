@@ -120,12 +120,16 @@ async function handleCheckoutCompleted(
   const customerId = session.customer as string;
   const subscriptionId = session.subscription as string | null;
 
+  // Entitlement lives in app_metadata (service-role only — users cannot self-grant).
+  // stripe_customer_id stays in user_metadata where create-checkout reads it.
   await supabase.auth.admin.updateUserById(userId, {
-    user_metadata: {
-      stripe_customer_id: customerId,
+    app_metadata: {
       plan,
       subscription_id: subscriptionId,
       plan_activated_at: new Date().toISOString(),
+    },
+    user_metadata: {
+      stripe_customer_id: customerId,
     },
   });
 }
@@ -141,12 +145,12 @@ async function handleSubscriptionUpdated(
   if (!user) return;
 
   const isActive = status === "active" || status === "trialing";
+  const currentPlan = (user.app_metadata as Record<string, unknown> | undefined)?.plan as string | null ?? null;
 
   await supabase.auth.admin.updateUserById(user.id, {
-    user_metadata: {
-      ...user.user_metadata,
+    app_metadata: {
       subscription_status: status,
-      plan: isActive ? (user.user_metadata?.plan ?? "pro") : null,
+      plan: isActive ? currentPlan : null,
     },
   });
 }
@@ -160,8 +164,7 @@ async function handleSubscriptionDeleted(
   if (!user) return;
 
   await supabase.auth.admin.updateUserById(user.id, {
-    user_metadata: {
-      ...user.user_metadata,
+    app_metadata: {
       plan: null,
       subscription_id: null,
       subscription_status: "canceled",
@@ -178,8 +181,7 @@ async function handlePaymentFailed(
   if (!user) return;
 
   await supabase.auth.admin.updateUserById(user.id, {
-    user_metadata: {
-      ...user.user_metadata,
+    app_metadata: {
       subscription_status: "past_due",
     },
   });

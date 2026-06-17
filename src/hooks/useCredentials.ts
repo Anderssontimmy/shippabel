@@ -123,21 +123,12 @@ export const useCredentials = () => {
         throw new Error(validation.error ?? "Invalid credentials");
       }
 
-      const { error: upsertError } = await supabase
-        .from("user_credentials")
-        .upsert(
-          {
-            user_id: user.id,
-            provider,
-            credentials: creds,
-            label: label ?? provider,
-            is_valid: true,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id,provider" }
-        );
+      // Credentials are encrypted server-side; the client never writes them directly.
+      const { error: fnError } = await supabase.functions.invoke("save-credential", {
+        body: { provider, credentials: creds, label: label ?? provider },
+      });
 
-      if (upsertError) throw new Error(upsertError.message);
+      if (fnError) throw new Error(fnError.message);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");

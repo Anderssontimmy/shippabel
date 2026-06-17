@@ -32,17 +32,14 @@ const isGitHubToken = (token: string): boolean =>
 
 const saveGitHubToken = async (s: Session) => {
   if (s.user && s.provider_token && isGitHubToken(s.provider_token)) {
-    await supabase.from("user_credentials").upsert(
-      {
-        user_id: s.user.id,
+    // Store via the edge function so the token is encrypted at rest.
+    await supabase.functions.invoke("save-credential", {
+      body: {
         provider: "github",
         credentials: { access_token: s.provider_token },
         label: "GitHub (auto)",
-        is_valid: true,
-        updated_at: new Date().toISOString(),
       },
-      { onConflict: "user_id,provider" }
-    );
+    });
   }
 };
 

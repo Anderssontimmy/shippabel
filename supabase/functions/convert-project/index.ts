@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { decryptCreds } from "../_shared/crypto.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 
@@ -38,13 +39,37 @@ Deno.serve(async (req) => {
     );
     if (authError || !user) throw new Error("Please sign in first");
 
+    const plan = (user.app_metadata as Record<string, unknown> | undefined)?.plan;
+    if (plan !== "ship" && plan !== "unlimited") {
+      return new Response(
+        JSON.stringify({ error: "This feature requires the Ship plan." }),
+        { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
+    // Per-user hourly rate limit (defense-in-depth against cost/abuse)
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from("usage_events")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", since);
+    if ((recentCount ?? 0) >= 60) {
+      return new Response(
+        JSON.stringify({ error: "You've hit the hourly limit. Please try again in a bit." }),
+        { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+    await supabase.from("usage_events").insert({ user_id: user.id, action: "convert-project" });
+
     const { project_id } = (await req.json()) as ConvertRequest;
 
-    // Fetch project
+    // Fetch project — must belong to the requesting user
     const { data: project, error: projectError } = await supabase
       .from("projects")
       .select("*")
       .eq("id", project_id)
+      .eq("user_id", user.id)
       .single();
 
     if (projectError || !project) throw new Error("Project not found");
@@ -61,7 +86,8 @@ Deno.serve(async (req) => {
       .eq("provider", "github")
       .single();
 
-    const githubToken = (githubCred?.credentials as Record<string, string>)?.access_token;
+    const githubCreds = await decryptCreds(githubCred?.credentials as Record<string, unknown> | undefined, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "");
+    const githubToken = githubCreds.access_token;
 
     // Fetch current project files
     const ghHeaders: Record<string, string> = { Accept: "application/vnd.github.v3+json" };

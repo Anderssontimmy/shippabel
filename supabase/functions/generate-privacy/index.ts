@@ -35,6 +35,29 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) throw new Error("Sign in to use this feature");
 
+    const plan = (user.app_metadata as Record<string, unknown> | undefined)?.plan;
+    if (plan !== "ship" && plan !== "unlimited") {
+      return new Response(
+        JSON.stringify({ error: "This feature requires the Ship plan." }),
+        { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
+    // Per-user hourly rate limit (defense-in-depth against cost/abuse)
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from("usage_events")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", since);
+    if ((recentCount ?? 0) >= 60) {
+      return new Response(
+        JSON.stringify({ error: "You've hit the hourly limit. Please try again in a bit." }),
+        { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+    await supabase.from("usage_events").insert({ user_id: user.id, action: "generate-privacy" });
+
     const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!anthropicKey) {
       throw new Error("ANTHROPIC_API_KEY not configured");
@@ -43,11 +66,12 @@ Deno.serve(async (req) => {
     const { project_id, app_name, developer_name, developer_email } =
       (await req.json()) as GeneratePrivacyRequest;
 
-    // Fetch project to analyze permissions and services
+    // Fetch project to analyze permissions and services — must belong to the user
     const { data: project } = await supabase
       .from("projects")
       .select("*")
       .eq("id", project_id)
+      .eq("user_id", user.id)
       .single();
 
     // Detect permissions and services from scan

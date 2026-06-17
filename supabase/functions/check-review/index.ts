@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { decryptCreds } from "../_shared/crypto.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 
@@ -101,7 +102,9 @@ Deno.serve(async (req) => {
         .eq("provider", provider)
         .single();
 
-      const credentials = cred?.credentials as Record<string, string> | undefined;
+      const credentials = cred?.credentials
+        ? await decryptCreds(cred.credentials as Record<string, unknown>, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "")
+        : undefined;
 
       if (credentials) {
         const reviewStatus = platform === "ios"

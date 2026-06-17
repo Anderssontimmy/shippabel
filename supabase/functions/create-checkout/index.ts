@@ -13,11 +13,16 @@ function getCorsHeaders(req: Request) {
 }
 
 interface CheckoutRequest {
-  price_id: string;
   plan: string;
   success_url: string;
   cancel_url: string;
 }
+
+// Server-side price allowlist — the client sends only `plan`; never trust a client-supplied price_id.
+const PRICE_BY_PLAN: Record<string, string> = {
+  ship: Deno.env.get("STRIPE_PRICE_SHIP") ?? "price_1TcYGCKTudcNlvgZb7WCkScH",
+  unlimited: Deno.env.get("STRIPE_PRICE_UNLIMITED") ?? "price_1Tj4GTKTudcNlvgZAJkYOo04",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -42,9 +47,10 @@ Deno.serve(async (req) => {
     );
     if (authError || !user) throw new Error("Unauthorized");
 
-    const { price_id, plan, success_url, cancel_url } = (await req.json()) as CheckoutRequest;
+    const { plan, success_url, cancel_url } = (await req.json()) as CheckoutRequest;
 
-    if (!price_id) throw new Error("price_id is required");
+    const price_id = PRICE_BY_PLAN[plan];
+    if (!price_id) throw new Error("Unknown plan");
 
     // Check if user already has a Stripe customer ID (stored in user metadata)
     let customerId = user.user_metadata?.stripe_customer_id as string | undefined;
