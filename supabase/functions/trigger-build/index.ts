@@ -76,6 +76,7 @@ jobs:
           STATUS=\${{ job.status }}
           curl -s -X POST "https://fpqjxkilatlcihunfxpb.supabase.co/functions/v1/build-complete" \\
             -H "Content-Type: application/json" \\
+            -H "x-callback-secret: \${{ vars.SHIPPABEL_CALLBACK_SECRET }}" \\
             -d "{\\\"project_id\\\": \\\"\${{ vars.SHIPPABEL_PROJECT_ID }}\\\", \\\"status\\\": \\\"$STATUS\\\"}" || true
 `;
 
@@ -134,6 +135,7 @@ jobs:
           STATUS=\${{ job.status }}
           curl -s -X POST "https://fpqjxkilatlcihunfxpb.supabase.co/functions/v1/build-complete" \\
             -H "Content-Type: application/json" \\
+            -H "x-callback-secret: \${{ vars.SHIPPABEL_CALLBACK_SECRET }}" \\
             -d "{\\\"project_id\\\": \\\"\${{ vars.SHIPPABEL_PROJECT_ID }}\\\", \\\"status\\\": \\\"$STATUS\\\"}" || true
 `;
 
@@ -182,8 +184,9 @@ Deno.serve(async (req) => {
       await pushFile(repoPath, workflowFile, CAPACITOR_WORKFLOW, hasWorkflow ? "Update Capacitor workflow" : "Add Capacitor workflow", ghHeaders, defaultBranch);
       if (!hasWorkflow) throw new Error("We just added the build workflow. Please click Retry in 15 seconds.");
 
-      // Set project ID for webhook callback
+      // Set project ID + callback secret for the build-complete callback
       await setGitHubVariable(repoPath, "SHIPPABEL_PROJECT_ID", project_id, ghHeaders);
+      await setGitHubVariable(repoPath, "SHIPPABEL_CALLBACK_SECRET", Deno.env.get("BUILD_CALLBACK_SECRET") ?? "", ghHeaders);
 
       // Trigger Capacitor workflow
       const wt = await triggerWorkflow(repoPath, defaultBranch, platform, ghHeaders, "capacitor-build.yml");
@@ -247,8 +250,9 @@ Deno.serve(async (req) => {
         if (gKey) await setGitHubVariable(repoPath, "GOOGLE_SERVICE_ACCOUNT_KEY", gKey, ghHeaders);
       }
 
-      // Set project ID for webhook callback
+      // Set project ID + callback secret for the build-complete callback
       await setGitHubVariable(repoPath, "SHIPPABEL_PROJECT_ID", project_id, ghHeaders);
+      await setGitHubVariable(repoPath, "SHIPPABEL_CALLBACK_SECRET", Deno.env.get("BUILD_CALLBACK_SECRET") ?? "", ghHeaders);
 
       // Trigger EAS workflow
       const wt = await triggerWorkflow(repoPath, defaultBranch, platform, ghHeaders, "eas-build.yml");

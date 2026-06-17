@@ -16,6 +16,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Authenticate the callback — the build workflow includes a shared secret.
+    const expectedSecret = Deno.env.get("BUILD_CALLBACK_SECRET");
+    const providedSecret = req.headers.get("x-callback-secret");
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    }
+
     const { project_id, status } = await req.json();
     if (!project_id) {
       return new Response(JSON.stringify({ error: "project_id required" }), { status: 400, headers: corsHeaders });
@@ -24,12 +31,22 @@ Deno.serve(async (req) => {
     const buildStatus = status === "success" ? "completed" : "failed";
     const projectStatus = status === "success" ? "submitted" : "issues_found";
 
-    // Update latest submission for this project
-    await supabase
+    // Update only the most recent in-progress submission for this project
+    const { data: latest } = await supabase
       .from("submissions")
-      .update({ build_status: buildStatus })
+      .select("id")
       .eq("project_id", project_id)
-      .eq("build_status", "in_progress");
+      .eq("build_status", "in_progress")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latest) {
+      await supabase
+        .from("submissions")
+        .update({ build_status: buildStatus })
+        .eq("id", latest.id);
+    }
 
     // Update project status
     await supabase

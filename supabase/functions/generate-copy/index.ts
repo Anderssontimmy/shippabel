@@ -126,6 +126,9 @@ Deno.serve(async (req) => {
 
     // Parse the 3 variants from Claude's response
     const variants = parseCopyVariants(content);
+    if (variants.length === 0) {
+      throw new Error("Couldn't parse the AI response. Please try again.");
+    }
 
     // Store the first variant as the default listing
     if (variants.length > 0) {

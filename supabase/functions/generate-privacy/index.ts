@@ -124,6 +124,9 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
 
     const result = await response.json();
     const privacyPolicy = result.content?.[0]?.text ?? "";
+    if (!privacyPolicy.trim()) {
+      throw new Error("The AI returned an empty privacy policy. Please try again.");
+    }
 
     // Store the privacy policy and generate a hosted URL
     const policyId = crypto.randomUUID();

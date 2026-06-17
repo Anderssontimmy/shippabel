@@ -72,8 +72,25 @@ fix-issues, generate-copy, generate-privacy, scan-project query `projects` by id
 
 ---
 
-## Phases 2–7 — pending
-- P2 Correctness & reliability (build/submit pipeline, AI funcs, hooks/state)
+## Phase 2 — Correctness & reliability (reviewed 2026-06-17)
+
+> **Fixed & deployed 2026-06-17:** P2-H1 (build-complete now requires `BUILD_CALLBACK_SECRET` header — set as secret + injected into workflows via trigger-build; targets the latest in-progress submission), P2-M1 (generate-copy/generate-privacy now error on empty/unparseable AI output instead of silent success). Open: P2-M3 (idempotency), convert-project output validation. Caveat: repos on the old workflow get 401 callbacks until the next build re-pushes the workflow.
+
+### 🟠 High
+**P2-H1 — `build-complete` is unauthenticated (status spoofing).** CORS `*`, no shared secret/signature; accepts `{project_id, status}` from anyone and flips that project's `submissions.build_status` + `projects.status`. Anyone can mark any project "submitted"/"completed" or sabotage a build with "failed". → Require a shared secret: trigger-build injects `BUILD_CALLBACK_SECRET` (GitHub Actions secret) into the workflow; build-complete verifies it. Also pass/scope to the specific submission id.
+
+### 🟡 Medium
+- **P2-M1 — AI output not validated.** generate-copy `parseCopyVariants` returns `[]` on malformed Claude output → API responds `success:true` with 0 variants (silent failure). generate-privacy/convert-project similar. → Validate parsed output; surface a real error if empty/malformed.
+- **P2-M2 — `build-complete` updates ALL in-progress submissions** for a project (no submission id), ambiguous with concurrent builds. → Target the specific submission.
+- **P2-M3 — No pipeline idempotency.** Retried build callbacks / webhook events re-apply. Low impact today; revisit with volume.
+
+### 🟢 Low / positive
+- submit-store reports status honestly now (no false "success") ✓ (historical bug fixed).
+- Hooks use consistent try/catch + error/loading state ✓.
+
+> Note: a deeper P2 pass (every hook for races, all AI parsers, ret/timeout handling) is still worth doing; above are the findings from a focused pass on the highest-risk pipeline paths.
+
+## Phases 3–7 — pending
 - P3 Code quality (large files, dead code, config validation)
 - P4 Performance (bundle weight, three.js)
 - P5 Testing (payment/access/webhook tests, coverage floor)
