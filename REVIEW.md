@@ -115,7 +115,20 @@ fix-issues, generate-copy, generate-privacy, scan-project query `projects` by id
 > - Edge-function tests (entitlement guard returns 403; ownership filter) — needs a Deno test setup or integration harness.
 > - Set a coverage floor in CI once Phase 7 adds CI.
 
-## Phases 6–7 — pending
+## Phase 6 — UX / SEO / a11y / content (reviewed 2026-06-17)
+
+> 🟢 SEO strong: html lang, title/description, robots.txt, sitemap.xml, llms.txt, og-image, favicon, prerender + per-page useDocumentHead + JSON-LD schema; no img missing alt.
+> 🟡 P6-M1 (low): only 3 aria-labels across ~18 interactive components — icon-only (lucide) buttons likely lack screen-reader labels. Recommend a focused a11y pass (aria-labels, focus-visible, contrast). Not urgent; deferred.
+
+## Phase 7 — DevEx / infra (reviewed + fixed 2026-06-17)
+
+> **Fixed:** added `.github/workflows/ci.yml` (typecheck + lint + test on push/PR), `.github/dependabot.yml` (weekly npm + actions updates), and completed `.env.example` (new CREDENTIALS_ENC_KEY / BUILD_CALLBACK_SECRET / STRIPE_PRICE_* secrets; client now only needs the publishable key).
+> **Deferred:** P7-M2 error monitoring (Sentry — needs an account/setup); P3-M1 shared-code dedup across edge functions.
+
+---
+
+## ✅ Genomgranskning complete — all 8 phases (0–7) reviewed
+Fixed & shipped: every Critical + High (Phase 1), the key reliability + correctness items (Phase 2), config validation (Phase 3), entitlement tests (Phase 5), CI/Dependabot/env docs (Phase 7). Phase 4 (perf) and Phase 6 (SEO) were found healthy. Documented & deferred (low-risk, non-urgent): edge-function shared-code dedup (P3-M1), large-component decomposition (P3-M3), broader test coverage (P5), a11y pass (P6-M1), error monitoring (P7-M2).
 - P5 Testing (payment/access/webhook tests, coverage floor)
 - P6 UX / SEO / a11y / content
 - P7 DevEx / infra (env validation, CI/CD, monitoring, deps)
