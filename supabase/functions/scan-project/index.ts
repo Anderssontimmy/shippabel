@@ -53,7 +53,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Rate limiting: max 10 scans per IP per hour for unauthenticated users
+    // Rate limiting for unauthenticated scans: 10/hour per IP, plus a global
+    // backstop of 200/hour across all anonymous traffic. Counted in scan_events
+    // so re-scanning the same project_id is limited too (each scan costs GitHub
+    // fetches + an AI call).
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
       ?? req.headers.get("cf-connecting-ip")
       ?? "unknown";
@@ -62,18 +65,21 @@ Deno.serve(async (req) => {
 
     if (!isAuthenticated) {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const { count } = await supabase
-        .from("projects")
-        .select("*", { count: "exact", head: true })
-        .is("user_id", null)
-        .gte("created_at", oneHourAgo);
+      const [{ count: ipCount }, { count: globalCount }] = await Promise.all([
+        supabase.from("scan_events").select("*", { count: "exact", head: true })
+          .eq("ip", clientIp).gte("created_at", oneHourAgo),
+        supabase.from("scan_events").select("*", { count: "exact", head: true })
+          .gte("created_at", oneHourAgo),
+      ]);
 
-      if (count !== null && count >= 20) {
+      if ((ipCount !== null && ipCount >= 10) || (globalCount !== null && globalCount >= 200)) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please sign in for unlimited scans." }),
           { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
         );
       }
+
+      await supabase.from("scan_events").insert({ ip: clientIp, project_id });
     }
 
     // Ownership guard — a scan may only (re)write your own project or an anonymous one.
@@ -737,16 +743,24 @@ function detectProjectType(
   packageJson: Record<string, unknown> | null,
   fileList: string[]
 ): ProjectType {
-  if (appConfig && (appConfig.expo || appConfig.name)) {
-    return "expo";
-  }
-
   const deps = packageJson
     ? { ...(packageJson.dependencies as Record<string, string> ?? {}), ...(packageJson.devDependencies as Record<string, string> ?? {}) }
     : {};
 
-  if ("expo" in deps) return "expo";
-  if ("@capacitor/core" in deps || "@capacitor/cli" in deps) return "capacitor";
+  // Capacitor first: a Capacitor app often has an app.json with a bare `name`,
+  // which must not be mistaken for an Expo config.
+  if (
+    "@capacitor/core" in deps || "@capacitor/cli" in deps ||
+    fileList.includes("capacitor.config.ts") || fileList.includes("capacitor.config.json")
+  ) {
+    return "capacitor";
+  }
+
+  // Only treat app.json as an Expo signal when it actually has an `expo` key
+  // (or expo is a dependency).
+  if (appConfig?.expo || "expo" in deps) {
+    return "expo";
+  }
   if ("react-native" in deps && !("expo" in deps)) return "react-native";
   if ("next" in deps) return "nextjs";
   if ("vue" in deps || "nuxt" in deps) return "vue";

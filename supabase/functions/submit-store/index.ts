@@ -343,9 +343,20 @@ async function detectPackageName(repoPath: string, token: string): Promise<strin
 async function fetchLatestAndroidArtifact(repoPath: string, token: string): Promise<{ bytes: Uint8Array; kind: "aab" | "apk" } | null> {
   const ghH = { Authorization: `token ${token}`, Accept: "application/vnd.github+json", "User-Agent": "shippabel" };
 
-  const runsRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/runs?status=success&per_page=20`, { headers: ghH });
-  if (!runsRes.ok) throw new Error(`runs list ${runsRes.status}`);
-  const runs = (await runsRes.json()).workflow_runs as Array<{ id: number }>;
+  // Only look at runs of the Shippabel build workflows — a repo can contain
+  // other workflows (or other apps) whose artifacts must never be published.
+  const runs: Array<{ id: number }> = [];
+  for (const wf of ["capacitor-build.yml", "eas-build.yml"]) {
+    const runsRes = await fetch(
+      `https://api.github.com/repos/${repoPath}/actions/workflows/${wf}/runs?status=success&per_page=10`,
+      { headers: ghH },
+    );
+    if (!runsRes.ok) continue;
+    runs.push(...(((await runsRes.json()).workflow_runs ?? []) as Array<{ id: number; created_at: string }>));
+  }
+  if (runs.length === 0) return null;
+  // Newest first across both workflows
+  runs.sort((a, b) => b.id - a.id);
 
   for (const run of runs) {
     const artsRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/runs/${run.id}/artifacts`, { headers: ghH });

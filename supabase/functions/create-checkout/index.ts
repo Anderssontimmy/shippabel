@@ -52,6 +52,16 @@ Deno.serve(async (req) => {
     const price_id = PRICE_BY_PLAN[plan];
     if (!price_id) throw new Error("Unknown plan");
 
+    // Only allow post-checkout redirects back to our own origins — otherwise
+    // the trusted Stripe checkout can be used as an open redirect.
+    const REDIRECT_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
+    const validRedirect = (url: string | undefined): boolean => {
+      if (!url) return false;
+      try { return REDIRECT_ORIGINS.includes(new URL(url).origin); } catch { return false; }
+    };
+    const safeSuccessUrl = validRedirect(success_url) ? success_url : "https://shippabel.com/dashboard?checkout=success";
+    const safeCancelUrl = validRedirect(cancel_url) ? cancel_url : "https://shippabel.com/pricing";
+
     // Check if user already has a Stripe customer ID (stored in user metadata)
     let customerId = user.user_metadata?.stripe_customer_id as string | undefined;
 
@@ -85,8 +95,8 @@ Deno.serve(async (req) => {
       "line_items[0][price]": price_id,
       "line_items[0][quantity]": "1",
       mode: "payment",
-      success_url,
-      cancel_url,
+      success_url: safeSuccessUrl,
+      cancel_url: safeCancelUrl,
       "metadata[plan]": plan,
       "metadata[supabase_user_id]": user.id,
     });

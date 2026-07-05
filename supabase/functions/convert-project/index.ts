@@ -294,7 +294,7 @@ registerRootComponent(App);
         }
 
         const body: Record<string, unknown> = {
-          message: `chore: configure for App Store (via Shippabel)`,
+          message: `chore: configure for Google Play (via Shippabel)`,
           content: btoa(unescape(encodeURIComponent(file.content))),
           branch: defaultBranch,
         };
@@ -321,26 +321,26 @@ registerRootComponent(App);
       }
     }
 
-    // Re-scan the project to get updated score
-    // (We call ourselves recursively through the scan endpoint)
+    // If we planned pushes but none landed, the conversion did NOT happen.
+    if (filesToPush.length > 0 && pushedFiles.length === 0) {
+      throw new Error("We couldn't push any changes to your repository. Check that your GitHub token has write access, then try again.");
+    }
+
+    // Re-scan the project to get updated score and issue list. The re-scan is
+    // the source of truth for which issues remain — don't blanket-mark issues
+    // as fixed here (an existing but incomplete app.json gets no fix pushed).
     const { error: rescanError } = await supabase.functions.invoke("scan-project", {
       body: { project_id, repo_url: project.repo_url, github_token: pushToken },
     });
-
-    // Mark auto-fixable issues as fixed
-    await supabase
-      .from("issues")
-      .update({ fixed: true, fixed_at: new Date().toISOString() })
-      .eq("project_id", project_id)
-      .eq("auto_fixable", true);
 
     return new Response(
       JSON.stringify({
         success: true,
         files_pushed: pushedFiles,
         total_files: filesToPush.length,
+        rescan_ok: !rescanError,
         message: pushedFiles.length > 0
-          ? `Updated ${pushedFiles.length} files in your repository. Your app is being re-scanned.`
+          ? `Updated ${pushedFiles.length} file${pushedFiles.length > 1 ? "s" : ""} in your repository.${rescanError ? " Re-scan didn't finish — refresh in a moment to see updated results." : " Your app is being re-scanned."}`
           : "No changes were needed.",
       }),
       { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }

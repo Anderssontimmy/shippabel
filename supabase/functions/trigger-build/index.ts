@@ -1,6 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { decryptCreds } from "../_shared/crypto.ts";
+import { projectCallbackToken } from "../_shared/callback.ts";
+import { setGitHubSecret } from "../_shared/githubSecrets.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 function getCorsHeaders(req: Request) {
@@ -76,7 +78,7 @@ jobs:
           STATUS=\${{ job.status }}
           curl -s -X POST "https://fpqjxkilatlcihunfxpb.supabase.co/functions/v1/build-complete" \\
             -H "Content-Type: application/json" \\
-            -H "x-callback-secret: \${{ vars.SHIPPABEL_CALLBACK_SECRET }}" \\
+            -H "x-callback-secret: \${{ secrets.SHIPPABEL_CALLBACK_SECRET }}" \\
             -d "{\\\"project_id\\\": \\\"\${{ vars.SHIPPABEL_PROJECT_ID }}\\\", \\\"status\\\": \\\"$STATUS\\\"}" || true
 `;
 
@@ -135,7 +137,7 @@ jobs:
           STATUS=\${{ job.status }}
           curl -s -X POST "https://fpqjxkilatlcihunfxpb.supabase.co/functions/v1/build-complete" \\
             -H "Content-Type: application/json" \\
-            -H "x-callback-secret: \${{ vars.SHIPPABEL_CALLBACK_SECRET }}" \\
+            -H "x-callback-secret: \${{ secrets.SHIPPABEL_CALLBACK_SECRET }}" \\
             -d "{\\\"project_id\\\": \\\"\${{ vars.SHIPPABEL_PROJECT_ID }}\\\", \\\"status\\\": \\\"$STATUS\\\"}" || true
 `;
 
@@ -184,9 +186,13 @@ Deno.serve(async (req) => {
       await pushFile(repoPath, workflowFile, CAPACITOR_WORKFLOW, hasWorkflow ? "Update Capacitor workflow" : "Add Capacitor workflow", ghHeaders, defaultBranch);
       if (!hasWorkflow) throw new Error("We just added the build workflow. Please click Retry in 15 seconds.");
 
-      // Set project ID + callback secret for the build-complete callback
+      // Set project ID (public) + per-project callback token (secret) for the callback
       await setGitHubVariable(repoPath, "SHIPPABEL_PROJECT_ID", project_id, ghHeaders);
-      await setGitHubVariable(repoPath, "SHIPPABEL_CALLBACK_SECRET", Deno.env.get("BUILD_CALLBACK_SECRET") ?? "", ghHeaders);
+      const capToken = await projectCallbackToken(Deno.env.get("BUILD_CALLBACK_SECRET") ?? "", project_id);
+      if (!await setGitHubSecret(repoPath, "SHIPPABEL_CALLBACK_SECRET", capToken, ghHeaders))
+        throw new Error("Couldn't configure the build callback. Check that your GitHub token has repo access.");
+      // Clean up the plaintext variable older builds wrote
+      await deleteGitHubVariable(repoPath, "SHIPPABEL_CALLBACK_SECRET", ghHeaders);
 
       // Trigger Capacitor workflow
       const wt = await triggerWorkflow(repoPath, defaultBranch, platform, ghHeaders, "capacitor-build.yml");
@@ -240,19 +246,28 @@ Deno.serve(async (req) => {
         const easProject = await findOrCreateEasProject(easToken, easAccount, slug);
         if (easProject?.id) await setGitHubVariable(repoPath, "EAS_PROJECT_ID", easProject.id, ghHeaders);
       }
-      await setGitHubVariable(repoPath, "EXPO_TOKEN", easToken, ghHeaders);
+      // Tokens are sensitive — store them as encrypted Actions secrets, never as
+      // plaintext variables (variables are readable by any repo collaborator).
+      if (!await setGitHubSecret(repoPath, "EXPO_TOKEN", easToken, ghHeaders))
+        throw new Error("Couldn't store your Expo token securely in the repo. Check that your GitHub token has repo access.");
 
       // Google credentials
       const { data: googleCred } = await supabase.from("user_credentials").select("credentials").eq("user_id", user.id).eq("provider", "google").single();
       if (googleCred?.credentials) {
         const googleCreds = await decryptCreds(googleCred.credentials as Record<string, unknown>, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "");
         const gKey = googleCreds.service_account_json;
-        if (gKey) await setGitHubVariable(repoPath, "GOOGLE_SERVICE_ACCOUNT_KEY", gKey, ghHeaders);
+        if (gKey) await setGitHubSecret(repoPath, "GOOGLE_SERVICE_ACCOUNT_KEY", gKey, ghHeaders);
       }
 
-      // Set project ID + callback secret for the build-complete callback
+      // Set project ID (public) + per-project callback token (secret) for the callback
       await setGitHubVariable(repoPath, "SHIPPABEL_PROJECT_ID", project_id, ghHeaders);
-      await setGitHubVariable(repoPath, "SHIPPABEL_CALLBACK_SECRET", Deno.env.get("BUILD_CALLBACK_SECRET") ?? "", ghHeaders);
+      const easCallbackToken = await projectCallbackToken(Deno.env.get("BUILD_CALLBACK_SECRET") ?? "", project_id);
+      if (!await setGitHubSecret(repoPath, "SHIPPABEL_CALLBACK_SECRET", easCallbackToken, ghHeaders))
+        throw new Error("Couldn't configure the build callback. Check that your GitHub token has repo access.");
+      // Clean up plaintext variables older builds wrote
+      await deleteGitHubVariable(repoPath, "SHIPPABEL_CALLBACK_SECRET", ghHeaders);
+      await deleteGitHubVariable(repoPath, "EXPO_TOKEN", ghHeaders);
+      await deleteGitHubVariable(repoPath, "GOOGLE_SERVICE_ACCOUNT_KEY", ghHeaders);
 
       // Trigger EAS workflow
       const wt = await triggerWorkflow(repoPath, defaultBranch, platform, ghHeaders, "eas-build.yml");
@@ -322,6 +337,13 @@ async function fetchAppConfig(repoPath: string, token?: string): Promise<Record<
     if (r.ok) return await r.json();
   } catch {}
   return null;
+}
+
+// Remove legacy plaintext Actions variables that older builds may have written.
+async function deleteGitHubVariable(repoPath: string, name: string, headers: Record<string, string>): Promise<void> {
+  try {
+    await fetch(`https://api.github.com/repos/${repoPath}/actions/variables/${name}`, { method: "DELETE", headers });
+  } catch { /* best effort */ }
 }
 
 async function setGitHubVariable(repoPath: string, name: string, value: string, headers: Record<string, string>): Promise<boolean> {

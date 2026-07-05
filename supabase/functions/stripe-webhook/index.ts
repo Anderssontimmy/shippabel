@@ -63,7 +63,14 @@ Deno.serve(async (req) => {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 
-  if (expectedSig !== sig) {
+  // Constant-time comparison — no timing side-channel on the HMAC
+  const sigBytes = new TextEncoder().encode(sig);
+  const expBytes = new TextEncoder().encode(expectedSig);
+  let sigDiff = sigBytes.length === expBytes.length ? 0 : 1;
+  for (let i = 0; i < Math.min(sigBytes.length, expBytes.length); i++) {
+    sigDiff |= sigBytes[i]! ^ expBytes[i]!;
+  }
+  if (sigDiff !== 0) {
     return new Response(JSON.stringify({ error: "Signature verification failed" }), { status: 400 });
   }
 
@@ -74,6 +81,19 @@ Deno.serve(async (req) => {
   }
 
   const event = JSON.parse(body);
+
+  // Idempotency: Stripe delivers at-least-once. First writer wins; a
+  // duplicate insert conflicts and the event is skipped.
+  if (event.id) {
+    const { error: dupeError } = await supabase
+      .from("stripe_events")
+      .insert({ id: event.id, type: event.type ?? "unknown" });
+    if (dupeError) {
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
 
   try {
     switch (event.type) {
@@ -99,6 +119,10 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
+    // Un-mark the event so Stripe's retry can process it again
+    if (event.id) {
+      await supabase.from("stripe_events").delete().eq("id", event.id);
+    }
     const message = err instanceof Error ? err.message : "Webhook handler error";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,

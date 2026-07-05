@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { projectCallbackToken, timingSafeEqual } from "../_shared/callback.ts";
 
 Deno.serve(async (req) => {
   // Allow from anywhere (GitHub Actions callback)
@@ -16,16 +17,22 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Authenticate the callback — the build workflow includes a shared secret.
-    const expectedSecret = Deno.env.get("BUILD_CALLBACK_SECRET");
-    const providedSecret = req.headers.get("x-callback-secret");
-    if (!expectedSecret || providedSecret !== expectedSecret) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-    }
-
     const { project_id, status } = await req.json();
     if (!project_id) {
       return new Response(JSON.stringify({ error: "project_id required" }), { status: 400, headers: corsHeaders });
+    }
+
+    // Authenticate the callback with the per-project token. Each repo only
+    // knows its own project's token, so it can't spoof callbacks for others.
+    // (The legacy global secret is also accepted during the transition, but
+    // only counts for repos built before the per-project rollout.)
+    const masterSecret = Deno.env.get("BUILD_CALLBACK_SECRET") ?? "";
+    const providedSecret = req.headers.get("x-callback-secret") ?? "";
+    const expectedToken = await projectCallbackToken(masterSecret, project_id);
+    const validPerProject = masterSecret !== "" && timingSafeEqual(providedSecret, expectedToken);
+    const validLegacy = masterSecret !== "" && timingSafeEqual(providedSecret, masterSecret);
+    if (!validPerProject && !validLegacy) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
     }
 
     const buildStatus = status === "success" ? "completed" : "failed";

@@ -129,19 +129,22 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
     }
 
     // Store the privacy policy and generate a hosted URL
-    const policyId = crypto.randomUUID();
     const policyUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/privacy-policies/${project_id}.html`;
 
     // Convert markdown to basic HTML
     const html = generatePrivacyHtml(app_name, privacyPolicy);
 
-    // Upload to Supabase Storage
-    await supabase.storage
+    // Upload to Supabase Storage — fail loudly, otherwise we'd hand the user
+    // a hosted URL that 404s and they'd submit it to Google Play
+    const { error: uploadError } = await supabase.storage
       .from("privacy-policies")
       .upload(`${project_id}.html`, new Blob([html], { type: "text/html" }), {
         upsert: true,
         contentType: "text/html",
       });
+    if (uploadError) {
+      throw new Error(`Couldn't publish the privacy policy: ${uploadError.message}`);
+    }
 
     // Update the store listing with privacy policy URL
     await supabase

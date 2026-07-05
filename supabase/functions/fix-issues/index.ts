@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { decryptCreds } from "../_shared/crypto.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 
@@ -87,8 +88,20 @@ Deno.serve(async (req) => {
     const { data: issues, error: issuesError } = await query;
     if (issuesError || !issues) throw new Error("Could not fetch issues");
 
+    // Use the user's stored GitHub token (works for private repos), falling
+    // back to a platform token for public ones.
+    let githubToken = Deno.env.get("GITHUB_TOKEN") ?? "";
+    const { data: ghCred } = await supabase
+      .from("user_credentials").select("credentials")
+      .eq("user_id", user.id).eq("provider", "github").single();
+    if (ghCred?.credentials) {
+      const ghCreds = await decryptCreds(ghCred.credentials as Record<string, unknown>, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "");
+      githubToken = ghCreds.access_token ?? githubToken;
+    }
+    if (!githubToken) throw new Error("Connect your GitHub account first so we can push fixes to your repo.");
+
     // Fetch current app.json from GitHub
-    const appJson = await fetchFileFromGitHub(repoPath, "app.json");
+    const appJson = await fetchFileFromGitHub(repoPath, "app.json", githubToken);
     let config: Record<string, unknown> | null = null;
     if (appJson) {
       try {
@@ -98,34 +111,47 @@ Deno.serve(async (req) => {
       }
     }
 
-    const fixed: string[] = [];
+    // Apply fixes locally, tracking what each one needs pushed. Only issues
+    // whose backing push actually succeeds are reported (and stored) as fixed.
+    const configFixIds: string[] = [];
+    const noopFixIds: string[] = [];
     const failed: string[] = [];
-    const fileUpdates: Map<string, string> = new Map();
+    const fileUpdates: Map<string, { content: string; ids: string[] }> = new Map();
 
     for (const issue of issues) {
       const result = applyFix(issue, config, repoPath);
-      if (result.success) {
-        fixed.push(issue.id);
-        if (result.fileContent && result.filePath) {
-          fileUpdates.set(result.filePath, result.fileContent);
-        }
-      } else {
+      if (!result.success) {
         failed.push(issue.id);
+      } else if (result.fileContent && result.filePath) {
+        const entry = fileUpdates.get(result.filePath) ?? { content: result.fileContent, ids: [] };
+        entry.ids.push(issue.id);
+        fileUpdates.set(result.filePath, entry);
+      } else if (result.touchesConfig) {
+        configFixIds.push(issue.id);
+      } else {
+        noopFixIds.push(issue.id);
       }
     }
 
-    // Push file updates to GitHub
-    const githubToken = Deno.env.get("GITHUB_TOKEN");
-    if (githubToken && fileUpdates.size > 0) {
-      for (const [filePath, content] of fileUpdates) {
-        await pushFileToGitHub(repoPath, filePath, content, githubToken);
-      }
+    const fixed: string[] = [...noopFixIds];
+
+    // Push file updates to GitHub — verify each push
+    for (const [filePath, entry] of fileUpdates) {
+      const ok = await pushFileToGitHub(repoPath, filePath, entry.content, githubToken);
+      if (ok) fixed.push(...entry.ids);
+      else failed.push(...entry.ids);
     }
 
-    // If we modified app.json, serialize and push it
-    if (config && fixed.length > 0 && githubToken) {
-      const updatedContent = JSON.stringify(config, null, 2) + "\n";
-      await pushFileToGitHub(repoPath, "app.json", updatedContent, githubToken);
+    // If we modified app.json, serialize, push, and verify
+    if (configFixIds.length > 0) {
+      if (config) {
+        const updatedContent = JSON.stringify(config, null, 2) + "\n";
+        const ok = await pushFileToGitHub(repoPath, "app.json", updatedContent, githubToken);
+        if (ok) fixed.push(...configFixIds);
+        else failed.push(...configFixIds);
+      } else {
+        failed.push(...configFixIds);
+      }
     }
 
     // Mark issues as fixed in database
@@ -170,7 +196,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        success: true,
+        success: failed.length === 0,
         fixed: fixed.length,
         failed: failed.length,
         fixed_ids: fixed,
@@ -191,6 +217,7 @@ interface FixResult {
   success: boolean;
   filePath?: string;
   fileContent?: string;
+  touchesConfig?: boolean;
 }
 
 function applyFix(
@@ -213,7 +240,7 @@ function applyFix(
       if (!expo.android) expo.android = {};
       (expo.ios as Record<string, unknown>).bundleIdentifier = `com.app.${name}`;
       (expo.android as Record<string, unknown>).package = `com.app.${name}`;
-      return { success: true };
+      return { success: true, touchesConfig: true };
     }
 
     case "Default bundle identifier detected": {
@@ -224,12 +251,12 @@ function applyFix(
       if (!expo.android) expo.android = {};
       (expo.ios as Record<string, unknown>).bundleIdentifier = `com.app.${name}`;
       (expo.android as Record<string, unknown>).package = `com.app.${name}`;
-      return { success: true };
+      return { success: true, touchesConfig: true };
     }
 
     case "Version not set": {
       expo.version = "1.0.0";
-      return { success: true };
+      return { success: true, touchesConfig: true };
     }
 
     case "Build number not set": {
@@ -237,7 +264,7 @@ function applyFix(
       if (!expo.android) expo.android = {};
       (expo.ios as Record<string, unknown>).buildNumber = "1";
       (expo.android as Record<string, unknown>).versionCode = 1;
-      return { success: true };
+      return { success: true, touchesConfig: true };
     }
 
     case "Missing privacy policy URL": {
@@ -248,7 +275,7 @@ function applyFix(
     case "No app category set": {
       if (!expo.ios) expo.ios = {};
       (expo.ios as Record<string, unknown>).appStoreCategory = "UTILITIES";
-      return { success: true };
+      return { success: true, touchesConfig: true };
     }
 
     case "Environment file committed to repository":
@@ -297,12 +324,15 @@ function extractGitHubPath(url: string): string | null {
 
 async function fetchFileFromGitHub(
   repoPath: string,
-  filePath: string
+  filePath: string,
+  token?: string
 ): Promise<{ content: string; sha: string } | null> {
   try {
+    const headers: Record<string, string> = { Accept: "application/vnd.github.v3+json" };
+    if (token) headers.Authorization = `token ${token}`;
     const res = await fetch(
       `https://api.github.com/repos/${repoPath}/contents/${filePath}`,
-      { headers: { Accept: "application/vnd.github.v3+json" } }
+      { headers }
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -318,7 +348,7 @@ async function pushFileToGitHub(
   filePath: string,
   content: string,
   token: string
-) {
+): Promise<boolean> {
   // Get current file SHA if it exists
   let sha: string | undefined;
   try {
@@ -341,20 +371,26 @@ async function pushFileToGitHub(
 
   const body: Record<string, unknown> = {
     message: `fix: auto-fix by Shippabel`,
-    content: btoa(content),
+    // btoa alone throws on non-ASCII content
+    content: btoa(unescape(encodeURIComponent(content))),
   };
   if (sha) body.sha = sha;
 
-  await fetch(
-    `https://api.github.com/repos/${repoPath}/contents/${filePath}`,
-    {
-      method: "PUT",
-      headers: {
-        Authorization: `token ${token}`,
-        Accept: "application/vnd.github.v3+json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    }
-  );
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${repoPath}/contents/${filePath}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github.v3+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
