@@ -66,13 +66,14 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
       setLoading(false);
       return;
     }
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("store_listings")
       .select("*")
       .eq("project_id", projectId)
       .eq("platform", platform)
       .maybeSingle();
 
+    if (loadError) setError(loadError.message);
     setListing(data ? (data as StoreListing) : null);
     setLoading(false);
   };
@@ -140,14 +141,15 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
     setListing((prev) => prev ? { ...prev, [field]: value } : null);
   };
 
-  const save = async () => {
-    if (!listing) return;
+  const save = async (): Promise<boolean> => {
+    if (!listing) return false;
     setSaving(true);
+    setError(null);
 
     if (isDemo) {
       await new Promise((r) => setTimeout(r, 800));
       setSaving(false);
-      return;
+      return true;
     }
 
     const payload = {
@@ -183,6 +185,7 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
 
     if (saveError) setError(saveError.message);
     setSaving(false);
+    return !saveError;
   };
 
   const generatePrivacy = async (appName: string, _devName?: string, _devEmail?: string) => {

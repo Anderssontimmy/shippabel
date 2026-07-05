@@ -6,9 +6,14 @@ import { Card } from "@/components/ui/Card";
 import { useScan } from "@/hooks/useScan";
 import { useAuth } from "@/hooks/useAuth";
 import { useCredentials } from "@/hooks/useCredentials";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { trackEvent } from "@/lib/analytics";
 
 export const Scan = () => {
+  useDocumentHead({
+    title: "Free Google Play Readiness Scanner",
+    description: "Check if your app is ready for Google Play in 30 seconds. Paste your GitHub link and get a detailed report with issues, fixes, and a readiness score.",
+  });
   const { githubToken } = useAuth();
   const { hasCredential } = useCredentials();
   const hasGitHub = !!githubToken || hasCredential("github");
@@ -100,7 +105,7 @@ export const Scan = () => {
         {mode === "url" ? (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-surface-700">
+              <label htmlFor="scan-repo-url" className="block text-sm font-medium text-surface-700">
                 Paste your GitHub link here
               </label>
               <button
@@ -125,7 +130,9 @@ export const Scan = () => {
             )}
 
             <input
-              type="url"
+              id="scan-repo-url"
+              type="text"
+              inputMode="url"
               value={repoUrl}
               onChange={(e) => { setRepoUrl(e.target.value); setValidationError(null); }}
               placeholder="https://github.com/your-name/your-app"
@@ -190,7 +197,7 @@ export const Scan = () => {
                     </label>
                   </p>
                 </div>
-                <p className="text-xs text-surface-300">Zip files up to 100 MB</p>
+                <p className="text-xs text-surface-500">Zip files up to 100 MB</p>
               </div>
             )}
           </div>
@@ -255,11 +262,11 @@ export const Scan = () => {
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            { text: "Does your app have an icon?", detail: "Both stores require one" },
+            { text: "Does your app have an icon?", detail: "Google Play requires one" },
             { text: "Is there a loading screen?", detail: "Makes your app look polished" },
             { text: "Are your app's settings correct?", detail: "Name, version, permissions" },
             { text: "Are any passwords exposed?", detail: "We catch hidden security risks" },
-            { text: "Is there a privacy policy?", detail: "Required by Apple & Google" },
+            { text: "Is there a privacy policy?", detail: "Required by Google Play" },
             { text: "Is your app ready to build?", detail: "We check the full setup" },
           ].map((item) => (
             <div key={item.text} className="flex items-start gap-2.5 rounded-xl bg-surface-50 border border-surface-100 px-4 py-3.5">

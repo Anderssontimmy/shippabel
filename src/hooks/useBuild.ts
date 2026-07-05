@@ -37,12 +37,13 @@ export const useBuild = (projectId: string) => {
       setLoading(false);
       return;
     }
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("submissions")
       .select("*")
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
 
+    if (loadError) setError(loadError.message);
     setSubmissions((data ?? []) as Submission[]);
     setLoading(false);
   }, [projectId, isDemo]);
@@ -133,7 +134,7 @@ export const useBuild = (projectId: string) => {
     }
   };
 
-  const submitToStore = async (submissionId: string) => {
+  const submitToStore = async (submissionId: string): Promise<boolean> => {
     setSubmitting(true);
     setError(null);
 
@@ -145,7 +146,7 @@ export const useBuild = (projectId: string) => {
       await new Promise((r) => setTimeout(r, 3000));
       setSubmissions([{ ...base, review_status: "approved", submitted_at: new Date().toISOString(), reviewed_at: new Date().toISOString() }]);
       setSubmitting(false);
-      return;
+      return true;
     }
 
     try {
@@ -157,8 +158,10 @@ export const useBuild = (projectId: string) => {
 
       startPolling(submissionId);
       await loadSubmissions();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submission failed");
+      return false;
     } finally {
       setSubmitting(false);
     }

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useStripe, type PlanId } from "@/hooks/useStripe";
 import { useAuth } from "@/hooks/useAuth";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { trackEvent } from "@/lib/analytics";
 
 const plans = [
@@ -67,12 +68,17 @@ const plans = [
 export const Pricing = () => {
   const { checkout, loading, error } = useStripe();
   const { user } = useAuth();
+  useDocumentHead({
+    title: "Pricing",
+    description: "Free scan. $99 to publish one app. $179 for unlimited apps. No subscription, no hidden fees.",
+  });
 
   const handleCheckout = async (planId: PlanId | null) => {
     if (!planId) return;
     trackEvent("CTA Clicked", { location: "pricing", action: "checkout", plan: planId });
     if (!user) {
-      window.location.href = "/login";
+      // Preserve intent: come back to pricing after login
+      window.location.href = "/login?next=%2Fpricing";
       return;
     }
     await checkout(planId);
@@ -90,8 +96,8 @@ export const Pricing = () => {
       </div>
 
       {error && (
-        <div className="max-w-md mx-auto mb-8 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-center">
-          <p className="text-sm text-red-300">{error}</p>
+        <div className="max-w-md mx-auto mb-8 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-center">
+          <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 

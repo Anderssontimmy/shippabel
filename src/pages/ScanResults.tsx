@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   AlertCircle,
@@ -39,8 +39,8 @@ const demoScanResult: ScanResult = {
     {
       id: "1", project_id: "demo", severity: "critical", category: "assets",
       title: "Missing app icon",
-      description: "Your project is missing a 1024x1024 app icon. The App Store requires this exact size without transparency. Without it, your submission will be rejected.",
-      auto_fixable: false, fix_description: "Add a 1024x1024 PNG file without alpha channel as your app icon in app.json.", fixed: false,
+      description: "Your project is missing a 512x512 app icon. Google Play requires this exact size. Without it, your submission will be rejected.",
+      auto_fixable: false, fix_description: "Add a 512x512 PNG file as your app icon in app.json.", fixed: false,
     },
     {
       id: "2", project_id: "demo", severity: "critical", category: "security",
@@ -57,14 +57,14 @@ const demoScanResult: ScanResult = {
     {
       id: "4", project_id: "demo", severity: "warning", category: "config",
       title: "Missing privacy policy URL",
-      description: "No privacy policy URL is set. Both Apple and Google require a privacy policy.",
+      description: "No privacy policy URL is set. Google Play requires a privacy policy.",
       auto_fixable: true, fix_description: "We can generate and host a privacy policy for your app.", fixed: false,
     },
     {
       id: "5", project_id: "demo", severity: "warning", category: "config",
       title: "Build number not set",
       description: "Your build number is missing. Each submission requires an incremented build number.",
-      auto_fixable: true, fix_description: "Set ios.buildNumber and android.versionCode in app.json.", fixed: false,
+      auto_fixable: true, fix_description: "Set android.versionCode in app.json.", fixed: false,
     },
     {
       id: "6", project_id: "demo", severity: "warning", category: "assets",
@@ -82,7 +82,7 @@ const demoScanResult: ScanResult = {
       id: "8", project_id: "demo", severity: "info", category: "config",
       title: "Consider setting app category",
       description: "No app category is specified. Setting a category helps with store discoverability.",
-      auto_fixable: true, fix_description: "Add ios.appStoreCategory to app.json.", fixed: false,
+      auto_fixable: true, fix_description: "Choose a category for your Google Play listing.", fixed: false,
     },
     {
       id: "9", project_id: "demo", severity: "info", category: "code",
@@ -207,6 +207,8 @@ const ScoreRing = ({ score }: { score: number }) => {
 
 export const ScanResults = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [projectName, setProjectName] = useState<string>("");
@@ -223,6 +225,13 @@ export const ScanResults = () => {
   });
   const { toast } = useToast();
 
+  // Clear the pending post-convert reload if the user navigates away
+  useEffect(() => {
+    return () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+    };
+  }, []);
+
   const reload = async () => {
     if (id === "demo") return;
     const { data } = await supabase
@@ -237,12 +246,12 @@ export const ScanResults = () => {
 
   const handleConvert = async () => {
     if (!user) {
-      window.location.href = "/login";
+      navigate(`/login?next=${encodeURIComponent(`/scan/${id}`)}`);
       return;
     }
     if (!isPaid) {
       toast("error", "This feature requires the Ship plan.");
-      window.location.href = "/pricing";
+      navigate("/pricing");
       return;
     }
 
@@ -250,9 +259,12 @@ export const ScanResults = () => {
     if (result) {
       toast("success", result.message);
       // Wait a moment for re-scan to complete, then reload
-      setTimeout(() => reload(), 3000);
-    } else if (convertError) {
-      toast("error", convertError);
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      reloadTimerRef.current = setTimeout(() => reload(), 3000);
+    } else {
+      // convertError state hasn't propagated to this closure yet — the inline
+      // error banner shows the details.
+      toast("error", "Conversion failed. See the error message for details.");
     }
   };
 

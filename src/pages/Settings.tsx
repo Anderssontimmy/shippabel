@@ -190,17 +190,24 @@ export const Settings = () => {
       return;
     }
 
-    await saveCredential(provider.id, formData, provider.name);
-    if (!error) {
+    const ok = await saveCredential(provider.id, formData, provider.name);
+    if (ok) {
       toast("success", `${provider.name} credentials saved!`);
       setEditingProvider(null);
       setFormData({});
+    } else {
+      toast("error", `Couldn't save ${provider.name} credentials. Please check the values and try again.`);
     }
   };
 
   const handleRemove = async (provider: ProviderConfig) => {
-    await removeCredential(provider.id);
-    toast("info", `${provider.name} credentials removed.`);
+    if (!window.confirm(`Remove your ${provider.name} credentials? Builds and submissions that need them will stop working.`)) return;
+    const ok = await removeCredential(provider.id);
+    if (ok) {
+      toast("info", `${provider.name} credentials removed.`);
+    } else {
+      toast("error", `Couldn't remove ${provider.name} credentials. Please try again.`);
+    }
   };
 
   const startEditing = (provider: ProviderConfig) => {
@@ -374,7 +381,7 @@ export const Settings = () => {
                         {connected ? "Update" : "Connect"}
                       </Button>
                       {connected && (
-                        <Button size="sm" variant="ghost" onClick={() => handleRemove(provider)} className="text-red-400 hover:text-red-300">
+                        <Button size="sm" variant="ghost" aria-label={`Remove ${provider.name} credentials`} onClick={() => handleRemove(provider)} className="text-red-400 hover:text-red-300">
                           <X className="h-3.5 w-3.5" />
                         </Button>
                       )}
@@ -396,8 +403,7 @@ export const Settings = () => {
             { label: "Generate Store Listing", ready: true, note: "AI-powered" },
             { label: "Generate Screenshots", ready: true, note: "Client-side" },
             { label: "Build (EAS)", ready: hasCredential("eas"), note: hasCredential("eas") ? "Connected" : "Needs EAS token" },
-            { label: "Submit to iOS", ready: hasCredential("apple") && hasCredential("eas"), note: hasCredential("apple") ? "Connected" : "Needs Apple credentials" },
-            { label: "Submit to Android", ready: hasCredential("google") && hasCredential("eas"), note: hasCredential("google") ? "Connected" : "Needs Google credentials" },
+            { label: "Submit to Google Play", ready: hasCredential("google") && hasCredential("eas"), note: hasCredential("google") ? "Connected" : "Needs Google credentials" },
           ].map((step) => (
             <div key={step.label} className="flex items-center justify-between">
               <div className="flex items-center gap-2">

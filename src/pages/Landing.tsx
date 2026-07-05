@@ -90,7 +90,7 @@ const FaqItem = ({ q, a }: { q: string; a: string }) => {
   const [open, setOpen] = useState(false);
   return (
     <div className="border-b border-gray-200/60">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between py-5 text-left cursor-pointer group">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="w-full flex items-center justify-between py-5 text-left cursor-pointer group">
         <span className="text-sm font-semibold text-gray-900 group-hover:text-green-700 transition-colors pr-4">{q}</span>
         <ChevronDown className={`h-4 w-4 text-gray-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -120,7 +120,9 @@ const HeroScanField = () => {
     <form onSubmit={handleSubmit} className="animate-fade-up-delay-3 mt-8">
       <div className="flex rounded-full border border-gray-200 bg-white shadow-lg shadow-green-600/5 overflow-hidden max-w-md">
         <input
-          type="url"
+          type="text"
+          inputMode="url"
+          aria-label="GitHub repository link"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Paste your GitHub link..."
@@ -182,7 +184,7 @@ export const Landing = () => {
               <div className="animate-fade-up-delay-3 mt-5 flex items-center gap-2 text-xs text-gray-400">
                 <span>Free to check</span>
                 <span className="text-gray-300">·</span>
-                <span className="text-green-400 font-medium">$99 to publish</span>
+                <span className="text-green-700 font-medium">$99 to publish</span>
               </div>
             </div>
 
@@ -323,7 +325,7 @@ export const Landing = () => {
               <span className="text-green-600">go live?</span>
             </h2>
             <p className="mt-5 text-sm text-gray-500 max-w-md mx-auto">
-              Be one of the first to publish your AI-built app with Shippabel.
+              From GitHub link to Google Play — start with a free 30-second check.
             </p>
           </FadeIn>
           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">

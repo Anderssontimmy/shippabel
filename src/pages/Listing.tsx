@@ -34,6 +34,7 @@ const CharCount = ({ current, max }: { current: number; max: number }) => {
 
 export const Listing = () => {
   const { id } = useParams();
+  const isDemo = id === "demo";
   const [platform] = useState<"ios" | "android">("android");
   const [appContext, setAppContext] = useState("");
   const [privacyModal, setPrivacyModal] = useState(false);
@@ -82,10 +83,24 @@ export const Listing = () => {
   }, [id, platform]);
 
   const handleSave = async () => {
-    await save();
+    const ok = await save();
+    if (!ok) {
+      toast("error", "Couldn't save your store page. Please try again.");
+      return;
+    }
     toast("success", "Store listing saved!");
     setTimeout(() => navigate(`/app/${id}/screenshots`), 1000);
   };
+
+  // Close the privacy modal on Escape
+  useEffect(() => {
+    if (!privacyModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPrivacyModal(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [privacyModal]);
 
   const limits = charLimits[platform]!;
   const lim = (key: string) => limits[key] ?? 100;
@@ -96,7 +111,7 @@ export const Listing = () => {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-16">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <Link to={`/scan/${id}`} className="text-surface-400 hover:text-surface-700 transition-colors">
+        <Link to={`/scan/${id}`} aria-label="Back to scan results" className="text-surface-400 hover:text-surface-700 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
@@ -112,7 +127,7 @@ export const Listing = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Generate CTA */}
           {!listing?.app_name && !generating && (
-            isPaid ? (
+            isPaid || isDemo ? (
             <Card className="border-surface-200">
               <div className="text-center py-4">
                 <Sparkles className="h-8 w-8 text-surface-400 mx-auto mb-3" />
@@ -282,7 +297,7 @@ export const Listing = () => {
                     ) : (
                       <div>
                         <p className="text-sm text-surface-500 mb-3">
-                          Apple and Google won't accept your app without a privacy policy. It explains what data your app collects. We'll write one for you and host it — takes one click.
+                          Google Play won't accept your app without a privacy policy. It explains what data your app collects. We'll write one for you and host it — takes one click.
                         </p>
                         <Button
                           size="sm"
@@ -366,22 +381,34 @@ export const Listing = () => {
 
       {/* Privacy modal */}
       {privacyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-          <Card className="max-w-md w-full">
-            <h3 className="text-lg font-semibold text-surface-900 mb-4">Generate Privacy Policy</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4"
+          onClick={() => setPrivacyModal(false)}
+        >
+          <Card
+            className="max-w-md w-full"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="privacy-modal-title"
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <h3 id="privacy-modal-title" className="text-lg font-semibold text-surface-900 mb-4">Generate Privacy Policy</h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Developer / Company Name</label>
+                <label htmlFor="privacy-dev-name" className="block text-sm font-medium text-surface-700 mb-1">Developer / Company Name</label>
                 <input
+                  id="privacy-dev-name"
                   value={devName}
                   onChange={(e) => setDevName(e.target.value)}
                   placeholder="Your Name or Company"
+                  autoFocus
                   className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-sm text-surface-900 outline-none focus:border-surface-400"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-700 mb-1">Contact Email</label>
+                <label htmlFor="privacy-dev-email" className="block text-sm font-medium text-surface-700 mb-1">Contact Email</label>
                 <input
+                  id="privacy-dev-email"
                   value={devEmail}
                   onChange={(e) => setDevEmail(e.target.value)}
                   placeholder="privacy@yourapp.com"

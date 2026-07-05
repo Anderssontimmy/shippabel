@@ -79,12 +79,14 @@ export const useShipFlow = (projectId?: string) => {
       return;
     }
 
-    // Fetch project
-    const { data: project } = await supabase
+    // Fetch project. On a transient query error, keep the previous state
+    // instead of rendering the flow as "not scanned" (visible progress regression).
+    const { data: project, error: projectError } = await supabase
       .from("projects")
       .select("*")
       .eq("id", projectId)
       .single();
+    if (projectError) return;
 
     let scanned = false;
     let score: number | null = null;

@@ -52,21 +52,22 @@ export const useScan = () => {
 
       setState((s) => ({ ...s, progress: "Scanning project..." }));
 
-      // 2. Call scan edge function (with 60s timeout)
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60_000);
+      // 2. Call scan edge function (with 90s timeout — invoke() can't be
+      // aborted reliably across supabase-js versions, so race it instead)
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("Scan took too long. Please try again.")), 90_000);
+      });
       try {
-        const { error: fnError } = await supabase.functions.invoke("scan-project", {
-          body: { project_id: project.id, repo_url: repoUrl, github_token: getGitHubToken() },
-        });
+        const { error: fnError } = await Promise.race([
+          supabase.functions.invoke("scan-project", {
+            body: { project_id: project.id, repo_url: repoUrl, github_token: getGitHubToken() },
+          }),
+          timeoutPromise,
+        ]);
         if (fnError) throw new Error(fnError.message ?? "Scan failed");
-      } catch (invokeErr) {
-        if (invokeErr instanceof DOMException && invokeErr.name === "AbortError") {
-          throw new Error("Scan took too long. Please try again.");
-        }
-        throw invokeErr;
       } finally {
-        clearTimeout(timeout);
+        clearTimeout(timeoutId);
       }
 
       trackEvent("Scan Completed");

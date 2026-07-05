@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ShipFlowBar } from "@/components/ShipFlowBar";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -64,6 +64,20 @@ export const Screenshots = () => {
   const { id } = useParams();
   const { toast } = useToast();
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // Object URLs created for uploaded screenshots — revoked on unmount
+  const objectUrlsRef = useRef<Set<string>>(new Set());
+  const trackObjectUrl = (file: File) => {
+    const url = URL.createObjectURL(file);
+    objectUrlsRef.current.add(url);
+    return url;
+  };
+  useEffect(() => {
+    const urls = objectUrlsRef.current;
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u));
+      urls.clear();
+    };
+  }, []);
 
   const [pages, setPages] = useState<PageData[]>(() =>
     Array.from({ length: PAGE_COUNT }, () => ({ phones: [], texts: [], bgColor: "#f0f0ff", bgGradient: null }))
@@ -96,7 +110,7 @@ export const Screenshots = () => {
     input.type = "file"; input.accept = "image/*";
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      const url = file ? URL.createObjectURL(file) : null;
+      const url = file ? trackObjectUrl(file) : null;
       const phone: PhoneData = { id: crypto.randomUUID(), screenshotUrl: url, rotation, scale, x: 25, y: 10, frameColor: "#1d1d1f" };
       updatePage(activePage, (p) => ({ ...p, phones: [...p.phones, phone] }));
       setSelected({ type: "phone", id: phone.id });
@@ -161,9 +175,9 @@ export const Screenshots = () => {
 
   const handleMouseUp = useCallback(() => setIsDragging(false), []);
 
-  // Export for App Store: target 1290px wide (iPhone 6.7")
-  // Display width is 323px, scale 4 = 1292px output — matches Apple requirement
-  // Scale 5+ crashes some browsers due to canvas memory limits
+  // Export for Google Play: 9:16 portrait (Play rejects screenshots taller than 2:1).
+  // Display width is 323px, scale 4 = 1292px wide output — comfortably within
+  // Play's 320–3840px range. Scale 5+ crashes some browsers (canvas memory limits).
   const EXPORT_SCALE = 4;
 
   const exportPage = useCallback(async (idx: number) => {
@@ -190,7 +204,11 @@ export const Screenshots = () => {
   const [saving, setSaving] = useState(false);
 
   const saveToSupabase = useCallback(async () => {
-    if (!id || id === "demo") return;
+    if (!id) return;
+    if (id === "demo") {
+      toast("info", "This is the demo — your work isn't saved. Scan your own app to save screenshots.");
+      return;
+    }
     setSaving(true);
 
     const urls: string[] = [];
@@ -271,11 +289,19 @@ export const Screenshots = () => {
   const pageBg = (pg: PageData) => pg.bgGradient ?? pg.bgColor;
   const { isPaid } = usePlan();
   const allEmpty = pages.every((pg) => pg.phones.length === 0 && pg.texts.length === 0);
+
+  // Editor state lives only in memory — warn before the browser discards it
+  useEffect(() => {
+    if (allEmpty) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [allEmpty]);
   const filledPages = pages.filter((pg) => pg.phones.length > 0 || pg.texts.length > 0).length;
-  const MIN_SCREENSHOTS = 3;
+  const MIN_SCREENSHOTS = 2; // Google Play's minimum
   const canContinue = filledPages >= MIN_SCREENSHOTS;
 
-  if (!isPaid) {
+  if (!isPaid && id !== "demo") {
     return (
       <div>
         {id && <ShipFlowBar projectId={id} />}
@@ -285,9 +311,9 @@ export const Screenshots = () => {
             feature="Professional Screenshots"
             description="Make your app look amazing in the store with device-framed screenshots."
             benefits={[
-              "Frame screenshots in iPhone & Android mockups",
+              "Frame screenshots in phone mockups",
               "Add captions and gradient backgrounds",
-              "Export in store-required sizes",
+              "Export in Google Play's required sizes",
               "Drag and drop — no design skills needed",
             ]}
           />
@@ -301,9 +327,9 @@ export const Screenshots = () => {
       {id && <ShipFlowBar projectId={id} />}
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-surface-800 bg-surface-950">
-        <Link to={`/scan/${id}`} className="text-surface-500 hover:text-white"><ArrowLeft className="h-4 w-4" /></Link>
-        <h1 className="text-sm font-bold">Screenshot Editor</h1>
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-surface-200 bg-white">
+        <Link to={`/scan/${id}`} aria-label="Back to scan results" className="text-surface-500 hover:text-surface-900"><ArrowLeft className="h-4 w-4" /></Link>
+        <h1 className="text-sm font-bold text-surface-900">Screenshot Editor</h1>
         <div className="flex-1" />
         <span className={`text-xs font-medium ${canContinue ? "text-green-600" : "text-surface-400"}`}>
           {filledPages}/{MIN_SCREENSHOTS} screenshots
@@ -332,7 +358,7 @@ export const Screenshots = () => {
               <h2 className="text-xl font-semibold text-surface-900 mb-2">Create your store screenshots</h2>
               <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
                 Google Play shows screenshots of your app to help people decide to download it.
-                You need at least 3 screenshots — show the best parts of your app.
+                You need at least 2 screenshots — show the best parts of your app.
               </p>
 
               <div className="text-left max-w-sm mx-auto space-y-3 mb-8">
@@ -354,7 +380,6 @@ export const Screenshots = () => {
                 <Smartphone className="h-4 w-4" />
                 Add my first screenshot
               </Button>
-              <p className="text-xs text-surface-400 mt-3">You can also drag and drop images directly onto the pages</p>
             </div>
           </div>
         )}
@@ -396,7 +421,7 @@ export const Screenshots = () => {
                     <h4 className="text-[10px] font-semibold text-gray-400 uppercase">Selected Device</h4>
                     <button onClick={() => {
                       const input = document.createElement("input"); input.type = "file"; input.accept = "image/*";
-                      input.onchange = (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) updatePhone(selected!.id, { screenshotUrl: URL.createObjectURL(f) }); };
+                      input.onchange = (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) updatePhone(selected!.id, { screenshotUrl: trackObjectUrl(f) }); };
                       input.click();
                     }} className="w-full text-xs bg-indigo-50 text-indigo-600 rounded-lg px-3 py-2 hover:bg-indigo-100 cursor-pointer font-medium">
                       {selectedPhone.screenshotUrl ? "Change image" : "Add image"}
@@ -409,6 +434,7 @@ export const Screenshots = () => {
                       <div className="flex gap-1 mt-1">
                         {["#1d1d1f", "#f5f5f7", "#4a4a4c", "#1f4e79", "#8b5e3c", "#b91c1c"].map((c) => (
                           <button key={c} onClick={() => updatePhone(selected!.id, { frameColor: c })}
+                            aria-label={`Frame color ${c}`}
                             className={`h-5 w-5 rounded-full border-2 cursor-pointer ${selectedPhone.frameColor === c ? "border-indigo-500" : "border-gray-200"}`} style={{ background: c }} />
                         ))}
                       </div>
@@ -436,7 +462,7 @@ export const Screenshots = () => {
                     <input type="text" value={selectedText.text} onChange={(e) => updateText(selected!.id, { text: e.target.value })}
                       className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700" />
                     <div className="flex gap-2">
-                      <input type="color" value={selectedText.color} onChange={(e) => updateText(selected!.id, { color: e.target.value })} className="h-7 w-7 rounded cursor-pointer border-0" />
+                      <input type="color" aria-label="Text color" value={selectedText.color} onChange={(e) => updateText(selected!.id, { color: e.target.value })} className="h-7 w-7 rounded cursor-pointer border-0" />
                       <select value={selectedText.fontWeight} onChange={(e) => updateText(selected!.id, { fontWeight: e.target.value })}
                         className="flex-1 rounded-lg border border-gray-200 px-2 py-1 text-xs cursor-pointer">
                         <option value="400">Regular</option>
@@ -451,6 +477,7 @@ export const Screenshots = () => {
                       <div className="flex gap-1 mt-1">
                         {["#000000", "#ffffff", "#1d4ed8", "#dc2626", "#059669", "#7c3aed", "#ea580c"].map((c) => (
                           <button key={c} onClick={() => updateText(selected!.id, { color: c })}
+                            aria-label={`Text color ${c}`}
                             className={`h-5 w-5 rounded-full border cursor-pointer ${selectedText.color === c ? "border-indigo-500 border-2" : "border-gray-200"}`} style={{ background: c }} />
                         ))}
                       </div>
@@ -472,6 +499,7 @@ export const Screenshots = () => {
                   <div className="grid grid-cols-6 gap-1.5">
                     {["#ffffff", "#f0f0ff", "#f8fafc", "#fefce8", "#fef2f2", "#ecfdf5", "#eff6ff", "#fdf2f8", "#f5f3ff", "#000000", "#1e1b4b", "#0f172a"].map((c) => (
                       <button key={c} onClick={() => updatePage(activePage, (p) => ({ ...p, bgColor: c, bgGradient: null }))}
+                        aria-label={`Background color ${c}`}
                         className={`h-7 rounded-md border cursor-pointer transition-all ${page.bgColor === c && !page.bgGradient ? "ring-2 ring-indigo-400 ring-offset-1" : "border-gray-200 hover:border-gray-300"}`}
                         style={{ background: c }} />
                     ))}
@@ -491,7 +519,7 @@ export const Screenshots = () => {
                 </div>
                 <div>
                   <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-2">Custom</h4>
-                  <input type="color" value={page.bgColor} onChange={(e) => updatePage(activePage, (p) => ({ ...p, bgColor: e.target.value, bgGradient: null }))} className="w-full h-8 rounded-lg cursor-pointer border-0" />
+                  <input type="color" aria-label="Custom background color" value={page.bgColor} onChange={(e) => updatePage(activePage, (p) => ({ ...p, bgColor: e.target.value, bgGradient: null }))} className="w-full h-8 rounded-lg cursor-pointer border-0" />
                 </div>
               </>
             )}
@@ -507,7 +535,7 @@ export const Screenshots = () => {
                 <div
                   ref={(el) => { pageRefs.current[pageIdx] = el; }}
                   className={`relative select-none overflow-visible ${pageIdx === activePage ? "ring-2 ring-indigo-400 ring-offset-2" : ""}`}
-                  style={{ width: 323, aspectRatio: "1290 / 2796", background: pageBg(pg), boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
+                  style={{ width: 323, aspectRatio: "9 / 16", background: pageBg(pg), boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
                   onMouseDown={() => setActivePage(pageIdx)}
                   onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
                 >

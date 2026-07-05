@@ -1,8 +1,13 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Clock, Calendar } from "lucide-react";
 import { blogPosts } from "@/lib/blog-data";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 export const BlogIndex = () => {
+  useDocumentHead({
+    title: "Blog — Learn how to publish your AI-built app",
+    description: "Step-by-step guides for getting your AI-built app on Google Play. No technical knowledge required.",
+  });
   return (
     <div className="mx-auto max-w-4xl px-6 py-16 sm:py-24">
       <div className="text-center mb-16">
@@ -53,6 +58,11 @@ export const BlogIndex = () => {
 export const BlogPost = () => {
   const { slug } = useParams();
   const post = blogPosts.find((p) => p.slug === slug);
+
+  useDocumentHead({
+    title: post?.title,
+    description: post?.excerpt,
+  });
 
   if (!post) {
     return (
