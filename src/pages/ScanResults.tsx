@@ -135,7 +135,7 @@ const severityColor = {
   info: "text-blue-600",
 };
 
-const IssueCard = ({ issue, onFix, fixingId, canFix }: { issue: Issue; onFix: (id: string) => void; fixingId: string | null; canFix: boolean }) => {
+const IssueCard = ({ issue, onFix, fixingId, canFix, conversionFirst }: { issue: Issue; onFix: (id: string) => void; fixingId: string | null; canFix: boolean; conversionFirst?: boolean }) => {
   const [open, setOpen] = useState(false);
   const Icon = severityIcon[issue.severity];
   const isFixing = fixingId === issue.id;
@@ -167,13 +167,18 @@ const IssueCard = ({ issue, onFix, fixingId, canFix }: { issue: Issue; onFix: (i
               <p className="text-sm text-surface-600">{issue.fix_description}</p>
             </div>
           )}
-          {issue.auto_fixable && canFix && (
+          {issue.auto_fixable && conversionFirst && (
+            <p className="mt-3 text-xs font-medium text-surface-500">
+              We'll fix this automatically. First click "Make it Google Play ready" above.
+            </p>
+          )}
+          {issue.auto_fixable && !conversionFirst && canFix && (
             <Button size="sm" className="mt-3 gap-1.5" onClick={() => onFix(issue.id)} disabled={isFixing}>
               {isFixing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wrench className="h-3.5 w-3.5" />}
               {isFixing ? "Fixing..." : "Fix this issue"}
             </Button>
           )}
-          {issue.auto_fixable && !canFix && (
+          {issue.auto_fixable && !conversionFirst && !canFix && (
             <UpgradePrompt feature="Auto-fix" compact />
           )}
         </div>
@@ -450,6 +455,13 @@ export const ScanResults = () => {
         </div>
       )}
 
+      {/* App Potential — the personal hook: what your app is, and what it could become */}
+      {scan.potential_analysis && (
+        <div className="mb-10">
+          <AppPotentialCard analysis={scan.potential_analysis} projectId={id ?? "demo"} />
+        </div>
+      )}
+
       {/* Issues — grouped by what they mean for the user, not by jargon */}
       <div id="issues-section" />
       {(["critical", "warning", "info"] as const).map((severity) => {
@@ -470,19 +482,13 @@ export const ScanResults = () => {
             </h2>
             <div className="space-y-2">
               {issues.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} onFix={handleFixOne} fixingId={fixingIssueId} canFix={isPaid} />
+                <IssueCard key={issue.id} issue={issue} onFix={handleFixOne} fixingId={fixingIssueId} canFix={isPaid} conversionFirst={scan.needs_conversion} />
               ))}
             </div>
           </div>
         );
       })}
 
-      {/* App Potential Analysis — the encouraging extra, after the actionable list */}
-      {scan.potential_analysis && (
-        <div className="mt-10 mb-10">
-          <AppPotentialCard analysis={scan.potential_analysis} projectId={id ?? "demo"} />
-        </div>
-      )}
 
       {/* Guided next step */}
       {id && id !== "demo" && (

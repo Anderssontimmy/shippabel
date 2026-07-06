@@ -132,6 +132,16 @@ Deno.serve(async (req) => {
       packageJson = result.packageJson;
     }
 
+    // If we couldn't read anything from the repo (bad/expired GitHub token,
+    // GitHub rate limit, empty repo), say so instead of scoring thin air.
+    if (repo_url && !appConfig && !packageJson && fileList.length === 0) {
+      await supabase.from("projects").update({ status: "issues_found", updated_at: new Date().toISOString() }).eq("id", project_id);
+      return new Response(
+        JSON.stringify({ error: "We couldn't read your app's code on GitHub. If the app is private, connect your GitHub account in Settings and scan again. If it's public, wait a minute and try again." }),
+        { status: 422, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
     // Detect project type
     const projectType = detectProjectType(appConfig, packageJson, fileList);
 

@@ -118,7 +118,9 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Claude API error: ${errText}`);
+      // Never leak provider/billing internals to customers
+      console.error("Claude API error:", response.status, errText.slice(0, 300));
+      throw new Error("Our AI writer is temporarily unavailable. Please try again in a little while. If it keeps happening, email us and we'll fix it.");
     }
 
     const result = await response.json();

@@ -119,7 +119,8 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
     });
 
     if (!response.ok) {
-      throw new Error(`Claude API error: ${response.status}`);
+      console.error("Claude API error:", response.status, (await response.text()).slice(0, 300));
+      throw new Error("Our AI writer is temporarily unavailable. Please try again in a little while. If it keeps happening, email us and we'll fix it.");
     }
 
     const result = await response.json();
