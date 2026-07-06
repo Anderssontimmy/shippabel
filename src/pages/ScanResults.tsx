@@ -187,6 +187,71 @@ const IssueCard = ({ issue, onFix, fixingId, canFix, conversionFirst }: { issue:
   );
 };
 
+// Email capture for anonymous scans: magic-link signup that also saves this
+// report to the new account (claimed via localStorage + the claim effect).
+const SaveReportCard = ({ projectId }: { projectId: string }) => {
+  const { signInWithEmail } = useAuth();
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setSending(true);
+    setError(null);
+    localStorage.setItem("shippabel-claim-project", projectId);
+    const { error: err } = await signInWithEmail(
+      email.trim(),
+      `${window.location.origin}/login?next=${encodeURIComponent(`/scan/${projectId}`)}`,
+    );
+    setSending(false);
+    if (err) setError(err.message);
+    else setSent(true);
+  };
+
+  if (sent) {
+    return (
+      <div className="mb-8 rounded-2xl border border-green-200 bg-green-50 px-6 py-5 text-center">
+        <p className="text-sm font-semibold text-green-900">Check your email</p>
+        <p className="text-sm text-green-700 mt-1">
+          We sent a link to <span className="font-medium">{email}</span>. Click it and this report is saved to your free account.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-8 rounded-2xl border border-surface-200 bg-surface-50 px-6 py-5">
+      <div className="sm:flex sm:items-center sm:justify-between sm:gap-6">
+        <div className="mb-3 sm:mb-0">
+          <p className="text-sm font-semibold text-surface-900">Don't lose this report</p>
+          <p className="text-sm text-surface-500 mt-0.5">Save it to a free account and pick up right where you left off.</p>
+        </div>
+        <form onSubmit={submit} className="flex gap-2 shrink-0">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setError(null); }}
+            placeholder="you@example.com"
+            aria-label="Email address"
+            className="w-44 sm:w-52 rounded-lg bg-white border border-surface-200 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400"
+          />
+          <Button type="submit" size="sm" disabled={sending} className="gap-1.5 whitespace-nowrap">
+            {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            Save my report
+          </Button>
+        </form>
+      </div>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+    </div>
+  );
+};
+
 const ScoreRing = ({ score }: { score: number }) => {
   const circumference = 2 * Math.PI * 52;
   const offset = circumference - (score / 100) * circumference;
@@ -217,6 +282,7 @@ export const ScanResults = () => {
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [projectName, setProjectName] = useState<string>("");
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const { fixingIssueId, fixing, fixAll, fixOne } = useFix(id ?? "");
   const { converting, error: convertError, convert } = useConvert(id ?? "");
   const { user } = useAuth();
@@ -316,12 +382,32 @@ export const ScanResults = () => {
       } else {
         setScan(data.scan_result as ScanResult);
         setProjectName(data.name);
+        setOwnerId(data.user_id ?? null);
       }
       setLoading(false);
     };
 
     loadProject();
   }, [id]);
+
+  // Claim an anonymous scan for the signed-in user (e.g. right after the
+  // "email me this report" magic-link login).
+  useEffect(() => {
+    if (!user || ownerId !== null || !id || id === "demo" || loading) return;
+    (async () => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ user_id: user.id })
+        .eq("id", id)
+        .is("user_id", null);
+      if (!error) {
+        setOwnerId(user.id);
+        localStorage.removeItem("shippabel-claim-project");
+        toast("success", "Report saved to your account.");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, ownerId, id, loading]);
 
   if (loading) {
     return <ScanResultsSkeleton />;
@@ -416,6 +502,9 @@ export const ScanResults = () => {
           </div>
         </div>
       </div>
+
+      {/* Save-report email capture — anonymous scans only */}
+      {!user && id && id !== "demo" && ownerId === null && <SaveReportCard projectId={id} />}
 
       {/* Conversion CTA — for non-Expo projects */}
       {scan.needs_conversion && (

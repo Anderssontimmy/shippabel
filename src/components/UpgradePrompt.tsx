@@ -60,6 +60,11 @@ export const UpgradePrompt = ({ feature, description, benefits, compact = false,
             ))}
           </div>
 
+          {/* Price anchor */}
+          <p className="text-xs text-surface-500 mb-4">
+            A freelance developer charges <span className="line-through">$500&ndash;2,000</span> for this.
+          </p>
+
           {/* CTA */}
           <Link to="/pricing">
             <Button size="lg" className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white">
@@ -67,7 +72,9 @@ export const UpgradePrompt = ({ feature, description, benefits, compact = false,
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <p className="text-xs text-surface-400 mt-3">One-time payment — no subscription.</p>
+          <p className="text-xs text-surface-500 mt-3">
+            One-time payment, no subscription. If we can't get your app on Google Play, you get your money back.
+          </p>
         </div>
       </div>
     </div>

@@ -175,6 +175,23 @@ export const Dashboard = () => {
     loadProjects();
   }, [user, authLoading, navigate, loadProjects]);
 
+  // If the user arrived via the "save my report" magic link but the redirect
+  // landed here, claim the anonymous scan and take them back to it.
+  useEffect(() => {
+    if (!user) return;
+    const pending = localStorage.getItem("shippabel-claim-project");
+    if (!pending) return;
+    localStorage.removeItem("shippabel-claim-project");
+    (async () => {
+      await supabase
+        .from("projects")
+        .update({ user_id: user.id })
+        .eq("id", pending)
+        .is("user_id", null);
+      navigate(`/scan/${pending}`);
+    })();
+  }, [user, navigate]);
+
   // Handle post-checkout redirect — refresh session so plan metadata is current
   useEffect(() => {
     const checkoutStatus = searchParams.get("checkout");
