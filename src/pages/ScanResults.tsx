@@ -340,6 +340,25 @@ export const ScanResults = () => {
 
   const autoFixable = scan.issues.filter((i) => i.auto_fixable && !i.fixed).length;
 
+  // Verdict-first: answer "can my app be on Google Play?" before anything else.
+  const isReady = scan.summary.critical === 0 && !scan.needs_conversion;
+  const verdict = scan.needs_conversion
+    ? {
+        title: "Your app can be on Google Play",
+        sub: "It needs a quick one-time conversion to a mobile app first. That's one click, and we do it for you.",
+      }
+    : isReady
+    ? {
+        title: "Your app is ready for Google Play",
+        sub: "Nothing blocks publication. The next step is writing your store page.",
+      }
+    : {
+        title: `Almost there. ${scan.summary.critical} thing${scan.summary.critical > 1 ? "s" : ""} to fix first`,
+        sub: autoFixable > 0
+          ? "Google would reject the app as it is, but most of it we can fix for you automatically."
+          : "Google would reject the app as it is. Open each item below to see exactly what to do.",
+      };
+
   return (
     <div>
       {/* Flow progress bar */}
@@ -358,27 +377,31 @@ export const ScanResults = () => {
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900 mb-2">Readiness Report</h1>
-          <p className="text-surface-500 mb-4">
-            {scan.score >= 80
-              ? "Looking great! Just a few small things to take care of."
-              : scan.score >= 50
-              ? "Getting there! Fix the issues marked in red below to continue."
-              : "Your app needs some work before it can be published. Don't worry — we'll help you fix everything."}
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900 mb-2">{verdict.title}</h1>
+          <p className="text-surface-500 mb-4 max-w-lg">{verdict.sub}</p>
           <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
             {scan.summary.critical > 0 && <Badge severity="critical">{scan.summary.critical} must fix</Badge>}
-            {scan.summary.warning > 0 && <Badge severity="warning">{scan.summary.warning} should fix</Badge>}
-            {scan.summary.info > 0 && <Badge severity="info">{scan.summary.info} optional</Badge>}
+            {scan.summary.warning > 0 && <Badge severity="warning">{scan.summary.warning} good to fix</Badge>}
+            {scan.summary.info > 0 && <Badge severity="info">{scan.summary.info} nice to know</Badge>}
           </div>
-          <div className="mt-4 flex gap-3 justify-center sm:justify-start">
-            {autoFixable > 0 && isPaid && (
+          <div className="mt-4 flex flex-wrap gap-3 justify-center sm:justify-start">
+            {/* One primary action. When the app needs conversion, the green
+                panel below IS the next step, so nothing competes with it here. */}
+            {!scan.needs_conversion && isReady && id && (
+              <Link to={`/app/${id}/listing`}>
+                <Button size="sm" className="gap-1.5">
+                  Create your store page
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            )}
+            {!scan.needs_conversion && !isReady && autoFixable > 0 && isPaid && (
               <Button size="sm" className="gap-1.5" onClick={handleFixAll} disabled={fixing}>
                 {fixing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wrench className="h-3.5 w-3.5" />}
-                {fixing ? "Fixing..." : `Auto-fix ${autoFixable} issues`}
+                {fixing ? "Fixing..." : `Fix ${autoFixable} issue${autoFixable > 1 ? "s" : ""} for me`}
               </Button>
             )}
-            {autoFixable > 0 && !isPaid && (
+            {!scan.needs_conversion && !isReady && autoFixable > 0 && !isPaid && (
               <UpgradePrompt feature="Auto-fix" compact />
             )}
             <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(window.location.href); toast("success", "Link copied!"); }}>
@@ -427,25 +450,23 @@ export const ScanResults = () => {
         </div>
       )}
 
-      {/* App Potential Analysis */}
-      {scan.potential_analysis && (
-        <div className="mb-10">
-          <AppPotentialCard analysis={scan.potential_analysis} projectId={id ?? "demo"} />
-        </div>
-      )}
-
-      {/* Issues */}
+      {/* Issues — grouped by what they mean for the user, not by jargon */}
       <div id="issues-section" />
       {(["critical", "warning", "info"] as const).map((severity) => {
         const issues = groupedIssues[severity];
         if (issues.length === 0) return null;
+        const groupLabel =
+          severity === "critical" ? "Must fix before publishing"
+          : severity === "warning" ? "Good to fix"
+          : "Nice to know";
         return (
           <div key={severity} className="mb-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-surface-500 mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-surface-700 mb-3 flex items-center gap-2">
               {severity === "critical" && <AlertCircle className="h-4 w-4 text-red-600" />}
               {severity === "warning" && <AlertTriangle className="h-4 w-4 text-amber-600" />}
               {severity === "info" && <Info className="h-4 w-4 text-blue-600" />}
-              {severity} ({issues.length})
+              {groupLabel}
+              <span className="font-normal text-surface-400">({issues.length})</span>
             </h2>
             <div className="space-y-2">
               {issues.map((issue) => (
@@ -456,17 +477,10 @@ export const ScanResults = () => {
         );
       })}
 
-      {/* Success banner — when app is ready (and not still needing conversion) */}
-      {scan.summary.critical === 0 && scan.score >= 80 && !scan.needs_conversion && id && (
-        <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
-          <h3 className="text-lg font-semibold text-surface-900 mb-1">Your app looks great!</h3>
-          <p className="text-sm text-surface-500 mb-5">No critical issues. You're ready for the next step.</p>
-          <Link to={`/app/${id}/listing`}>
-            <Button className="gap-2">
-              Create your store page
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+      {/* App Potential Analysis — the encouraging extra, after the actionable list */}
+      {scan.potential_analysis && (
+        <div className="mt-10 mb-10">
+          <AppPotentialCard analysis={scan.potential_analysis} projectId={id ?? "demo"} />
         </div>
       )}
 

@@ -133,7 +133,7 @@ export const Listing = () => {
                 <Sparkles className="h-8 w-8 text-surface-400 mx-auto mb-3" />
                 <h3 className="text-lg font-semibold text-surface-900 mb-2">Let AI write your store page</h3>
                 <p className="text-sm text-surface-500 mb-4 max-w-md mx-auto">
-                  Describe your app in a few sentences and we'll write everything the {platform === "ios" ? "App Store" : "Google Play Store"} needs — name, description, keywords, and more.
+                  Describe your app in a few sentences and we'll write everything the {platform === "ios" ? "App Store" : "Google Play Store"} needs: name, description, keywords, and more.
                 </p>
                 <textarea
                   value={appContext}

@@ -71,7 +71,7 @@ const providers: ProviderConfig[] = [
       "Click 'Access Tokens' in the left sidebar",
       "Click 'Create Token'",
       "Name it 'Shippabel' and click 'Create'",
-      "Copy the token — you won't be able to see it again!",
+      "Copy the token right away (you won't be able to see it again)",
     ],
     setupLink: { label: "Open Expo Token Settings", url: "https://expo.dev/settings/access-tokens" },
     fields: [
@@ -134,16 +134,16 @@ const providers: ProviderConfig[] = [
       "Go to play.google.com/console and sign in",
       "Click 'Setup' → 'API access' in the left sidebar",
       "Click 'Create new service account'",
-      "This opens Google Cloud Console — click 'Create Service Account'",
+      "This opens Google Cloud Console. Click 'Create Service Account'",
       "Name it 'Shippabel', click 'Create and Continue'",
       "For role, select 'Service Account User', then click 'Done'",
       "Click the ⋮ menu next to your new account → 'Manage Keys'",
       "Click 'Add Key' → 'Create new key' → choose JSON → 'Create'",
-      "A JSON file downloads — open it and copy everything inside",
+      "A JSON file downloads. Open it and copy everything inside",
       "Still in Google Cloud: search the top bar for 'Google Play Android Developer API', open it, and click the blue 'Enable' button (this lets us upload your app)",
       "Back in Play Console, click 'Grant Access' next to the service account",
       "Enable 'Admin' permissions and click 'Invite User'",
-      "Last thing — in Play Console, click 'Create app' and give it the same name and package name as your app. (Google can't let us create it for you the first time.)",
+      "Last thing: in Play Console, click 'Create app' and give it the same name and package name as your app. (Google can't let us create it for you the first time.)",
     ],
     setupLink: { label: "Open Google Play Console", url: "https://play.google.com/console/developers" },
     fields: [
@@ -271,6 +271,7 @@ export const Settings = () => {
                       <div className="rounded-lg border border-surface-200 overflow-hidden">
                         <button
                           onClick={() => setShowGuide((s) => ({ ...s, [provider.id]: !s[provider.id] }))}
+                          aria-expanded={!!showGuide[provider.id]}
                           className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-surface-50 transition-colors cursor-pointer"
                         >
                           <span className="flex items-center gap-2 text-xs font-medium text-surface-700">

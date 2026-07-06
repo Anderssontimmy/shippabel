@@ -1,7 +1,7 @@
 /**
- * PhoneFrame — A pure CSS iPhone mockup with correct proportions.
- * Renders children (screenshot image) inside the screen area.
- * No Three.js, no Canvas, no external images. Just CSS.
+ * PhoneFrame — a pure CSS Android phone mockup with correct proportions
+ * (punch-hole camera, gesture bar). Renders children (screenshot image)
+ * inside the screen area. No Three.js, no Canvas, no external images.
  */
 
 interface PhoneFrameProps {
@@ -19,7 +19,7 @@ export const PhoneFrame = ({ children, width = "100%", frameColor = "#1d1d1f", c
       <div
         className="relative w-full h-full"
         style={{
-          borderRadius: "15.5% / 7.6%",
+          borderRadius: "13% / 6.4%",
           background: `linear-gradient(145deg, ${lighten(frameColor, 20)}, ${frameColor}, ${lighten(frameColor, 10)})`,
           boxShadow: `
             0 20px 60px -15px rgba(0,0,0,0.3),
@@ -37,7 +37,7 @@ export const PhoneFrame = ({ children, width = "100%", frameColor = "#1d1d1f", c
             left: "4.5%",
             right: "4.5%",
             bottom: "2.2%",
-            borderRadius: "12% / 5.8%",
+            borderRadius: "10% / 4.9%",
             background: "#000",
           }}
         >
@@ -57,15 +57,16 @@ export const PhoneFrame = ({ children, width = "100%", frameColor = "#1d1d1f", c
           )}
         </div>
 
-        {/* Dynamic Island */}
+        {/* Punch-hole camera */}
         <div
           className="absolute left-1/2 -translate-x-1/2"
           style={{
-            top: "3.5%",
-            width: "24%",
-            height: "2.8%",
+            top: "3.4%",
+            width: "3.6%",
+            aspectRatio: "1",
             borderRadius: "999px",
             background: "#000",
+            boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,0.08)",
           }}
         />
 
@@ -81,23 +82,6 @@ export const PhoneFrame = ({ children, width = "100%", frameColor = "#1d1d1f", c
           }}
         />
 
-        {/* Power button */}
-        <div
-          className="absolute"
-          style={{
-            right: "-1.8%",
-            top: "22%",
-            width: "1.2%",
-            height: "9%",
-            borderRadius: "0 2px 2px 0",
-            background: `linear-gradient(180deg, ${lighten(frameColor, 15)}, ${frameColor})`,
-          }}
-        />
-
-        {/* Volume buttons */}
-        <div className="absolute" style={{ left: "-1.8%", top: "18%", width: "1.2%", height: "4%", borderRadius: "2px 0 0 2px", background: `linear-gradient(180deg, ${lighten(frameColor, 15)}, ${frameColor})` }} />
-        <div className="absolute" style={{ left: "-1.8%", top: "24%", width: "1.2%", height: "7%", borderRadius: "2px 0 0 2px", background: `linear-gradient(180deg, ${lighten(frameColor, 15)}, ${frameColor})` }} />
-        <div className="absolute" style={{ left: "-1.8%", top: "33%", width: "1.2%", height: "7%", borderRadius: "2px 0 0 2px", background: `linear-gradient(180deg, ${lighten(frameColor, 15)}, ${frameColor})` }} />
       </div>
     </div>
   );

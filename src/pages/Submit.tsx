@@ -200,7 +200,7 @@ export const Submit = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">Publish Your App</h1>
           <p className="text-surface-400 text-sm mt-1">
-            We'll prepare your app and send it to the stores for you
+            We'll prepare your app and send it to Google Play for you
           </p>
         </div>
       </div>

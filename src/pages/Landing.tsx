@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Shield, Layers, Wand2, Scan, Wrench, ChevronDown, Globe } from "lucide-react";
 import { useState, useRef, type ReactNode } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import PhoneMockup from "@/components/PhoneMockup";
+import PlayPhone from "@/components/PlayPhone";
 import { trackEvent } from "@/lib/analytics";
 
 const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) => {
@@ -165,7 +165,7 @@ export const Landing = () => {
             <div>
               <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-1.5 text-xs font-medium text-green-700 mb-5">
                 <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                Free to try — no account needed
+                Free to try, no account needed
               </div>
 
               <h1 className="animate-fade-up-delay-1 font-display text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
@@ -175,8 +175,8 @@ export const Landing = () => {
               </h1>
 
               <p className="animate-fade-up-delay-2 mt-6 text-sm text-gray-500 leading-relaxed max-w-md">
-                You built an app with AI. Now let us put it on
-                Google Play — no tech skills needed.
+                You built an app with AI. We take it the rest of the way:
+                onto Google Play, with no tech skills needed.
               </p>
 
               <HeroScanField />
@@ -188,9 +188,9 @@ export const Landing = () => {
               </div>
             </div>
 
-            {/* Right: Phone mockup */}
-            <div className="relative flex justify-center lg:justify-end">
-              <PhoneMockup />
+            {/* Right: your app, live on Google Play */}
+            <div className="relative flex justify-center lg:justify-end lg:pr-12">
+              <PlayPhone />
             </div>
           </div>
         </div>
@@ -325,7 +325,7 @@ export const Landing = () => {
               <span className="text-green-600">go live?</span>
             </h2>
             <p className="mt-5 text-sm text-gray-500 max-w-md mx-auto">
-              From GitHub link to Google Play — start with a free 30-second check.
+              From GitHub link to Google Play. Start with a free 30-second check.
             </p>
           </FadeIn>
           <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
