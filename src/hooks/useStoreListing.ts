@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/invokeEdge";
 
 export interface StoreCopyVariant {
   app_name: string;
@@ -101,11 +102,11 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
     }
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("generate-copy", {
-        body: { project_id: projectId, platform, app_context: _appContext },
+      const { data, error: fnError } = await invokeEdge<{ variants: StoreCopyVariant[] }>("generate-copy", {
+        project_id: projectId, platform, app_context: _appContext,
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError || !data) throw new Error(fnError ?? "Generation failed");
       setVariants(data.variants ?? []);
 
       // Auto-select first variant
@@ -198,16 +199,14 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
     }
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("generate-privacy", {
-        body: {
-          project_id: projectId,
-          app_name: appName,
-          developer_name: _devName,
-          developer_email: _devEmail,
-        },
+      const { data, error: fnError } = await invokeEdge<{ hosted_url?: string }>("generate-privacy", {
+        project_id: projectId,
+        app_name: appName,
+        developer_name: _devName,
+        developer_email: _devEmail,
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError || !data) throw new Error(fnError ?? "Failed to generate privacy policy");
       if (data.hosted_url) {
         updateField("privacy_policy_url", data.hosted_url);
       }

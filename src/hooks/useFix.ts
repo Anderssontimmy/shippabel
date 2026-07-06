@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/invokeEdge";
 
 interface FixResult {
   fixed: number;
   failed: number;
   fixed_ids: string[];
+  errorMessage?: string;
 }
 
 export const useFix = (projectId: string) => {
@@ -27,16 +28,15 @@ export const useFix = (projectId: string) => {
     }
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("fix-issues", {
-        body: { project_id: projectId },
-      });
+      const { data, error: fnError } = await invokeEdge<FixResult>("fix-issues", { project_id: projectId });
 
-      if (fnError) throw new Error(fnError.message);
-      setLastResult(data as FixResult);
-      return data as FixResult;
+      if (fnError || !data) throw new Error(fnError ?? "Fix failed");
+      setLastResult(data);
+      return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fix failed");
-      return null;
+      const msg = err instanceof Error ? err.message : "Fix failed";
+      setError(msg);
+      return { fixed: 0, failed: 0, fixed_ids: [], errorMessage: msg };
     } finally {
       setFixing(false);
     }
@@ -55,16 +55,15 @@ export const useFix = (projectId: string) => {
     }
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("fix-issues", {
-        body: { project_id: projectId, issue_ids: [issueId] },
-      });
+      const { data, error: fnError } = await invokeEdge<FixResult>("fix-issues", { project_id: projectId, issue_ids: [issueId] });
 
-      if (fnError) throw new Error(fnError.message);
-      setLastResult(data as FixResult);
-      return data as FixResult;
+      if (fnError || !data) throw new Error(fnError ?? "Fix failed");
+      setLastResult(data);
+      return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fix failed");
-      return null;
+      const msg = err instanceof Error ? err.message : "Fix failed";
+      setError(msg);
+      return { fixed: 0, failed: 0, fixed_ids: [], errorMessage: msg };
     } finally {
       setFixingIssueId(null);
     }

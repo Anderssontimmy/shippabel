@@ -279,7 +279,7 @@ export const ScanResults = () => {
       toast("success", "Issue fixed successfully!");
       await reload();
     } else {
-      toast("error", "Could not fix this issue automatically.");
+      toast("error", result?.errorMessage ?? "Could not fix this issue automatically.");
     }
   };
 
@@ -289,7 +289,7 @@ export const ScanResults = () => {
       toast("success", `Fixed ${result.fixed} issue${result.fixed > 1 ? "s" : ""}!`);
       await reload();
     } else {
-      toast("error", "No issues could be auto-fixed.");
+      toast("error", result?.errorMessage ?? "No issues could be auto-fixed.");
     }
   };
 

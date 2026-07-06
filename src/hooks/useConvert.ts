@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/invokeEdge";
 
 export const useConvert = (projectId: string) => {
   const [converting, setConverting] = useState(false);
@@ -11,17 +11,13 @@ export const useConvert = (projectId: string) => {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("convert-project", {
-        body: { project_id: projectId },
-      });
+      const { data, error: fnError } = await invokeEdge<{ files_pushed: string[]; message: string }>(
+        "convert-project",
+        { project_id: projectId },
+      );
 
-      if (fnError) {
-        throw new Error(fnError.message || "Failed to connect to the service");
-      }
-
-      // Edge functions return error in data body when status is non-2xx
-      if (data?.error) {
-        throw new Error(data.error);
+      if (fnError || !data) {
+        throw new Error(fnError || "Failed to connect to the service");
       }
 
       setResult(data);

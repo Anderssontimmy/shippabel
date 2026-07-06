@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/invokeEdge";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { useCredentials } from "@/hooks/useCredentials";
@@ -60,12 +61,10 @@ export const useScan = () => {
       });
       try {
         const { error: fnError } = await Promise.race([
-          supabase.functions.invoke("scan-project", {
-            body: { project_id: project.id, repo_url: repoUrl, github_token: getGitHubToken() },
-          }),
+          invokeEdge("scan-project", { project_id: project.id, repo_url: repoUrl, github_token: getGitHubToken() }),
           timeoutPromise,
         ]);
-        if (fnError) throw new Error(fnError.message ?? "Scan failed");
+        if (fnError) throw new Error(fnError);
       } finally {
         clearTimeout(timeoutId);
       }
@@ -117,12 +116,10 @@ export const useScan = () => {
       setState((s) => ({ ...s, progress: "Scanning project..." }));
 
       // 3. Call scan edge function
-      const { error: fnError } = await supabase.functions.invoke("scan-project", {
-        body: { project_id: project.id, file_path: filePath },
-      });
+      const { error: fnError } = await invokeEdge("scan-project", { project_id: project.id, file_path: filePath });
 
       if (fnError) {
-        throw new Error(fnError.message ?? "Scan failed");
+        throw new Error(fnError);
       }
 
       setState({
