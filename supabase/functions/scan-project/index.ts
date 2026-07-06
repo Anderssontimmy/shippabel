@@ -552,35 +552,42 @@ async function fetchGitHubProject(repoPath: string, token?: string) {
   if (token) ghHeaders.Authorization = `token ${token}`;
 
   try {
-    // Get repo tree
-    const treeRes = await fetch(
-      `https://api.github.com/repos/${repoPath}/git/trees/main?recursive=1`,
+    // Resolve the repo's actual default branch — file contents were previously
+    // fetched from a hardcoded "main", which silently 404'd for repos whose
+    // default branch is "master" (or anything else) and made every scan blind.
+    let branch = "main";
+    try {
+      const repoRes = await fetch(`https://api.github.com/repos/${repoPath}`, { headers: ghHeaders });
+      if (repoRes.ok) branch = ((await repoRes.json()).default_branch as string) ?? "main";
+    } catch { /* keep "main" */ }
+
+    // Get repo tree from the default branch, with a master fallback
+    let treeRes = await fetch(
+      `https://api.github.com/repos/${repoPath}/git/trees/${branch}?recursive=1`,
       { headers: ghHeaders }
     );
-
-    if (!treeRes.ok) {
+    if (!treeRes.ok && branch !== "master") {
       const masterRes = await fetch(
         `https://api.github.com/repos/${repoPath}/git/trees/master?recursive=1`,
         { headers: ghHeaders }
       );
       if (masterRes.ok) {
-        const data = await masterRes.json();
-        fileList = (data.tree ?? [])
-          .filter((t: { type: string }) => t.type === "blob")
-          .map((t: { path: string }) => t.path);
+        branch = "master";
+        treeRes = masterRes;
       }
-    } else {
+    }
+    if (treeRes.ok) {
       const data = await treeRes.json();
       fileList = (data.tree ?? [])
         .filter((t: { type: string }) => t.type === "blob")
         .map((t: { path: string }) => t.path);
     }
 
-    // Fetch app.json, package.json, and README in parallel
+    // Fetch app.json, package.json, and README in parallel from the same branch
     const fetchFile = async (name: string) => {
       const headers: Record<string, string> = {};
       if (token) headers.Authorization = `token ${token}`;
-      const res = await fetch(`https://raw.githubusercontent.com/${repoPath}/main/${name}`, { headers });
+      const res = await fetch(`https://raw.githubusercontent.com/${repoPath}/${branch}/${name}`, { headers });
       return res.ok ? await res.text() : null;
     };
 
