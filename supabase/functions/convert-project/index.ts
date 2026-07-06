@@ -329,8 +329,11 @@ registerRootComponent(App);
     // Re-scan the project to get updated score and issue list. The re-scan is
     // the source of truth for which issues remain — don't blanket-mark issues
     // as fixed here (an existing but incomplete app.json gets no fix pushed).
+    // Forward the USER's auth header: scan-project's ownership guard rejects
+    // the call otherwise (the service-role token carries no user identity).
     const { error: rescanError } = await supabase.functions.invoke("scan-project", {
       body: { project_id, repo_url: project.repo_url, github_token: pushToken },
+      headers: { Authorization: authHeader },
     });
 
     return new Response(
@@ -340,7 +343,7 @@ registerRootComponent(App);
         total_files: filesToPush.length,
         rescan_ok: !rescanError,
         message: pushedFiles.length > 0
-          ? `Updated ${pushedFiles.length} file${pushedFiles.length > 1 ? "s" : ""} in your repository.${rescanError ? " Re-scan didn't finish — refresh in a moment to see updated results." : " Your app is being re-scanned."}`
+          ? `Updated ${pushedFiles.length} file${pushedFiles.length > 1 ? "s" : ""} in your repository.${rescanError ? " The re-scan didn't finish, so click Re-scan (or refresh) to see updated results." : " Your app is being re-scanned."}`
           : "No changes were needed.",
       }),
       { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
