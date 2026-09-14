@@ -1,3 +1,4 @@
+import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { decryptCreds } from "../_shared/crypto.ts";
@@ -18,7 +19,7 @@ interface FixRequest {
   issue_ids?: string[]; // Fix specific issues, or all auto-fixable if omitted
 }
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("fix-issues", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
@@ -175,6 +176,9 @@ Deno.serve(async (req) => {
         const newScore = Math.max(0, Math.min(100, 100 - critical * 20 - warning * 6 - info * 2));
 
         const scanResult = project.scan_result as Record<string, unknown>;
+        scanResult.issues = (scanResult.issues as Record<string, unknown>[]).map((issue) =>
+          fixed.includes(issue.id as string) ? { ...issue, fixed: true } : issue
+        );
         scanResult.score = newScore;
         (scanResult as { summary: Record<string, number> }).summary = {
           critical,
@@ -211,7 +215,7 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
-});
+}));
 
 interface FixResult {
   success: boolean;
@@ -268,8 +272,8 @@ function applyFix(
     }
 
     case "Missing privacy policy URL": {
-      // Will be set when privacy policy is generated
-      return { success: true };
+      // A policy is only fixed after generate-privacy has actually produced it.
+      return { success: false };
     }
 
     case "No app category set": {

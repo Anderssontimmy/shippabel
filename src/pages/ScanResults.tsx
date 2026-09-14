@@ -399,7 +399,7 @@ export const ScanResults = () => {
         .from("projects")
         .update({ user_id: user.id })
         .eq("id", id)
-        .is("user_id", null);
+        .is("user_id", null).select("id").single();
       if (!error) {
         setOwnerId(user.id);
         localStorage.removeItem("shippabel-claim-project");
@@ -553,6 +553,9 @@ export const ScanResults = () => {
 
       {/* Issues — grouped by what they mean for the user, not by jargon */}
       <div id="issues-section" />
+      <p className="text-sm text-surface-500 mb-6">
+        The security check samples up to 10 JavaScript or TypeScript files. A clean report does not replace a full security review.
+      </p>
       {(["critical", "warning", "info"] as const).map((severity) => {
         const issues = groupedIssues[severity];
         if (issues.length === 0) return null;

@@ -1,3 +1,4 @@
+import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -24,7 +25,7 @@ const PRICE_BY_PLAN: Record<string, string> = {
   unlimited: Deno.env.get("STRIPE_PRICE_UNLIMITED") ?? "price_1Tj4GTKTudcNlvgZAJkYOo04",
 };
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("create-checkout", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
@@ -47,6 +48,12 @@ Deno.serve(async (req) => {
     );
     if (authError || !user) throw new Error("Unauthorized");
 
+    if (!Deno.env.get("STRIPE_WEBHOOK_SECRET")) {
+      return Response.json({ error: "Payments are temporarily unavailable. Please try again later." }, {
+        status: 503, headers: getCorsHeaders(req),
+      });
+    }
+
     const { plan, success_url, cancel_url } = (await req.json()) as CheckoutRequest;
 
     const price_id = PRICE_BY_PLAN[plan];
@@ -63,7 +70,9 @@ Deno.serve(async (req) => {
     const safeCancelUrl = validRedirect(cancel_url) ? cancel_url : "https://shippabel.com/pricing";
 
     // Check if user already has a Stripe customer ID (stored in user metadata)
-    let customerId = user.user_metadata?.stripe_customer_id as string | undefined;
+    const paymentMode = stripeKey.startsWith("sk_live_") ? "live" : "test";
+    let customerId = user.app_metadata?.payment_mode === paymentMode
+      ? user.app_metadata?.stripe_customer_id as string | undefined : undefined;
 
     // Create Stripe customer if needed
     if (!customerId) {
@@ -72,6 +81,7 @@ Deno.serve(async (req) => {
         headers: {
           Authorization: `Basic ${btoa(stripeKey + ":")}`,
           "Content-Type": "application/x-www-form-urlencoded",
+          "Idempotency-Key": `customer-${paymentMode}-${user.id}`,
         },
         body: new URLSearchParams({
           email: user.email ?? "",
@@ -84,9 +94,10 @@ Deno.serve(async (req) => {
       customerId = customer.id;
 
       // Store customer ID in user metadata
-      await supabase.auth.admin.updateUserById(user.id, {
-        user_metadata: { stripe_customer_id: customerId },
+      const { error: customerError } = await supabase.auth.admin.updateUserById(user.id, {
+        app_metadata: { stripe_customer_id: customerId, payment_mode: paymentMode },
       });
+      if (customerError) throw new Error("Could not save payment customer. Try again.");
     }
 
     // All plans are one-time payments
@@ -129,4 +140,4 @@ Deno.serve(async (req) => {
       { status, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
-});
+}));

@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase";
 import { invokeEdge } from "@/lib/invokeEdge";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
-import { useCredentials } from "@/hooks/useCredentials";
 import type { Project } from "@/lib/types";
 
 interface ScanState {
@@ -14,21 +13,13 @@ interface ScanState {
 }
 
 export const useScan = () => {
-  const { githubToken, user } = useAuth();
-  const { getCredential } = useCredentials();
+  const { user } = useAuth();
   const [state, setState] = useState<ScanState>({
     scanning: false,
     progress: "",
     error: null,
     projectId: null,
   });
-
-  // Prefer OAuth token, fall back to stored PAT
-  const getGitHubToken = () => {
-    if (githubToken) return githubToken;
-    const cred = getCredential("github");
-    return cred?.credentials?.access_token ?? null;
-  };
 
   const scanFromUrl = async (repoUrl: string) => {
     setState({ scanning: true, progress: "Creating project...", error: null, projectId: null });
@@ -61,7 +52,7 @@ export const useScan = () => {
       });
       try {
         const { error: fnError } = await Promise.race([
-          invokeEdge("scan-project", { project_id: project.id, repo_url: repoUrl, github_token: getGitHubToken() }),
+          invokeEdge("scan-project", { project_id: project.id, repo_url: repoUrl }),
           timeoutPromise,
         ]);
         if (fnError) throw new Error(fnError);
@@ -90,7 +81,9 @@ export const useScan = () => {
     setState({ scanning: true, progress: "Uploading project...", error: null, projectId: null });
 
     try {
-      const name = file.name.replace(/\.(zip|tar\.gz)$/, "");
+      if (!file.name.toLowerCase().endsWith(".zip")) throw new Error("Please upload a .zip file.");
+      if (file.size > 20 * 1024 * 1024) throw new Error("ZIP files must be 20 MB or smaller.");
+      const name = file.name.replace(/\.zip$/i, "");
 
       // 1. Create project record
       const { data: project, error: insertError } = await supabase
@@ -104,10 +97,10 @@ export const useScan = () => {
       }
 
       // 2. Upload file to storage
-      const filePath = `scans/${project.id}/${file.name}`;
+      const filePath = `scans/${project.id}/source.zip`;
       const { error: uploadError } = await supabase.storage
-        .from("projects")
-        .upload(filePath, file);
+        .from("project-archives")
+        .upload(filePath, file, { contentType: "application/zip" });
 
       if (uploadError) {
         throw new Error(uploadError.message ?? "Upload failed");

@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build",
+  "buildCommand": "node scripts/deploy-gate.mjs && npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
   "redirects": [
@@ -17,9 +17,13 @@
     { "source": "/og-image.svg", "destination": "/og-image.png", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|version\\.json$).*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/version.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
     {
       "source": "/assets/(.*)",
       "headers": [

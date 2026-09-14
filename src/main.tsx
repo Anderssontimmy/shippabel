@@ -6,6 +6,9 @@ import { AuthProvider } from "./hooks/useAuth";
 import { ToastProvider } from "./components/ui/Toast";
 import App from "./App";
 import "./index.css";
+import { initMonitoring } from "./lib/monitoring";
+
+initMonitoring();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

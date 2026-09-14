@@ -8,7 +8,6 @@ export interface Credential {
   id: string;
   user_id: string;
   provider: Provider;
-  credentials: Record<string, string>;
   label: string | null;
   is_valid: boolean;
   created_at: string;
@@ -90,7 +89,7 @@ export const useCredentials = () => {
     setLoading(true);
     const { data, error: loadError } = await supabase
       .from("user_credentials")
-      .select("*")
+      .select("id,user_id,provider,label,is_valid,created_at,updated_at")
       .eq("user_id", user.id);
 
     if (loadError) setError(loadError.message);

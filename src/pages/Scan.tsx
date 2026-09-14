@@ -36,7 +36,7 @@ export const Scan = () => {
         setValidationError("Paste the link to your app above first.");
         return;
       }
-      if (!repoUrl.includes("github.com/")) {
+      if (!/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(repoUrl.trim())) {
         setValidationError("That doesn't look like a GitHub link. It should start with https://github.com/");
         return;
       }
@@ -56,7 +56,7 @@ export const Scan = () => {
     e.preventDefault();
     setDragOver(false);
     const dropped = e.dataTransfer.files[0];
-    if (dropped && (dropped.name.endsWith(".zip") || dropped.name.endsWith(".tar.gz"))) {
+    if (dropped && dropped.name.toLowerCase().endsWith(".zip")) {
       setFile(dropped);
       setMode("upload");
       setValidationError(null);
@@ -187,7 +187,7 @@ export const Scan = () => {
                       pick a file from your computer
                       <input
                         type="file"
-                        accept=".zip,.tar.gz"
+                        accept=".zip"
                         className="hidden"
                         onChange={(e) => {
                           const f = e.target.files?.[0];
@@ -197,7 +197,7 @@ export const Scan = () => {
                     </label>
                   </p>
                 </div>
-                <p className="text-xs text-surface-500">Zip files up to 100 MB</p>
+                <p className="text-xs text-surface-500">Zip files up to 20 MB</p>
               </div>
             )}
           </div>

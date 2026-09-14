@@ -1,6 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { decryptCreds } from "../_shared/crypto.ts";
+import { analyzeZip, extractGitHubPath, fetchGitHubProject, findSecrets, ScanError, type ScanSource } from "../_shared/scanSource.ts";
+import { canScanProject, validateScanRequest } from "../_shared/scanAccess.ts";
+import { instrument } from "../_shared/monitoring.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 
@@ -9,15 +12,8 @@ function getCorsHeaders(req: Request) {
   const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
   "Access-Control-Allow-Origin": allowed,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-guest-token",
   };
-}
-
-interface ScanRequest {
-  project_id: string;
-  repo_url?: string;
-  file_path?: string;
-  github_token?: string;
 }
 
 type ProjectType = "expo" | "react-native" | "capacitor" | "react-web" | "nextjs" | "vue" | "static" | "unknown";
@@ -27,13 +23,13 @@ interface Issue {
   category: string;
   title: string;
   description: string;
-  friendly_title: string;
-  friendly_description: string;
+  friendly_title?: string;
+  friendly_description?: string;
   auto_fixable: boolean;
   fix_description: string | null;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("scan-project", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
@@ -44,103 +40,42 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { project_id, repo_url, file_path, github_token } = (await req.json()) as ScanRequest;
-
-    if (!project_id) {
-      return new Response(
-        JSON.stringify({ error: "project_id is required" }),
-        { status: 400, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
-      );
-    }
-
-    // Rate limiting for unauthenticated scans: 10/hour per IP, plus a global
-    // backstop of 200/hour across all anonymous traffic. Counted in scan_events
-    // so re-scanning the same project_id is limited too (each scan costs GitHub
-    // fetches + an AI call).
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-      ?? req.headers.get("cf-connecting-ip")
-      ?? "unknown";
-    const authHeader = req.headers.get("Authorization");
-    const isAuthenticated = !!authHeader && authHeader !== "Bearer placeholder-key";
-
-    if (!isAuthenticated) {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const [{ count: ipCount }, { count: globalCount }] = await Promise.all([
-        supabase.from("scan_events").select("*", { count: "exact", head: true })
-          .eq("ip", clientIp).gte("created_at", oneHourAgo),
-        supabase.from("scan_events").select("*", { count: "exact", head: true })
-          .gte("created_at", oneHourAgo),
-      ]);
-
-      if ((ipCount !== null && ipCount >= 10) || (globalCount !== null && globalCount >= 200)) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please sign in for unlimited scans." }),
-          { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
-        );
-      }
-
-      await supabase.from("scan_events").insert({ ip: clientIp, project_id });
-    }
-
-    // Ownership guard — a scan may only (re)write your own project or an anonymous one.
+    if (req.method !== "POST") throw new ScanError("Method not allowed", 405);
+    const { project_id, repo_url, file_path } = validateScanRequest(await req.json().catch(() => null));
+    const bearer = req.headers.get("Authorization")?.replace(/^Bearer /i, "") ?? "";
     let requesterId: string | null = null;
-    if (isAuthenticated && authHeader) {
-      const { data: { user } } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-      requesterId = user?.id ?? null;
+    if (bearer && bearer !== Deno.env.get("SUPABASE_ANON_KEY")) {
+      const { data: { user }, error } = await supabase.auth.getUser(bearer);
+      if (error || !user) throw new ScanError("Please sign in again.", 401);
+      requesterId = user.id;
     }
-    const { data: ownerRow } = await supabase
-      .from("projects").select("user_id").eq("id", project_id).single();
-    if (ownerRow?.user_id && ownerRow.user_id !== requesterId) {
-      return new Response(
-        JSON.stringify({ error: "Project not found" }),
-        { status: 404, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
-      );
+    const { data: project, error: projectError } = await supabase.from("projects")
+      .select("user_id, guest_token_hash, repo_url").eq("id", project_id).maybeSingle();
+    if (projectError) throw new ScanError("Could not load your project. Try again.", 503);
+    if (!await canScanProject(project, requesterId, req.headers.get("x-guest-token") ?? "")) throw new ScanError("Project not found", 404);
+    if (repo_url && repo_url !== project?.repo_url) throw new ScanError("The repository does not match this project.", 400);
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const { data: quota, error: quotaError } = await supabase.rpc("consume_scan_quota", { p_ip: clientIp, p_project_id: project_id, p_user_id: requesterId });
+    if (quotaError) throw new ScanError("Scanning is temporarily unavailable. Try again shortly.", 503);
+    if (!quota) throw new ScanError("Scan limit reached. Please try again in an hour.", 429);
+
+    // Only the authenticated owner's encrypted server credential is trusted.
+    let githubToken: string | undefined;
+    if (requesterId && project?.user_id === requesterId) {
+      const { data: credential, error } = await supabase.from("user_credentials").select("credentials")
+        .eq("user_id", requesterId).eq("provider", "github").maybeSingle();
+      if (error) throw new ScanError("Could not load your GitHub connection.", 503);
+      if (credential?.credentials) githubToken = (await decryptCreds(credential.credentials, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "")).access_token;
     }
-
-    // GitHub token: prefer the stored (encrypted) credential for authenticated users;
-    // the client no longer sends it. Falls back to any client-supplied token (legacy).
-    let effectiveGithubToken = github_token;
-    if (!effectiveGithubToken && requesterId) {
-      const { data: ghCred } = await supabase
-        .from("user_credentials").select("credentials")
-        .eq("user_id", requesterId).eq("provider", "github").single();
-      if (ghCred?.credentials) {
-        const ghCreds = await decryptCreds(ghCred.credentials as Record<string, unknown>, Deno.env.get("CREDENTIALS_ENC_KEY") ?? "");
-        effectiveGithubToken = ghCreds.access_token;
-      }
-    }
-
-    // Fetch project files for analysis
-    let appConfig: Record<string, unknown> | null = null;
-    let fileList: string[] = [];
-    let packageJson: Record<string, unknown> | null = null;
-    let readmeContent: string | null = null;
-
+    let source: ScanSource;
     if (repo_url) {
-      const repoPath = extractGitHubPath(repo_url);
-      if (repoPath) {
-        const result = await fetchGitHubProject(repoPath, effectiveGithubToken);
-        appConfig = result.appConfig;
-        fileList = result.fileList;
-        packageJson = result.packageJson;
-        readmeContent = result.readmeContent;
-      }
-    } else if (file_path) {
-      const result = await analyzeZipFromStorage(supabase, file_path);
-      appConfig = result.appConfig;
-      fileList = result.fileList;
-      packageJson = result.packageJson;
+      source = await fetchGitHubProject(extractGitHubPath(repo_url), githubToken);
+    } else {
+      const { data, error } = await supabase.storage.from("project-archives").download(file_path!);
+      if (error || !data) throw new ScanError("Your ZIP could not be downloaded. Upload it again.");
+      source = analyzeZip(new Uint8Array(await data.arrayBuffer()));
     }
-
-    // If we couldn't read anything from the repo (bad/expired GitHub token,
-    // GitHub rate limit, empty repo), say so instead of scoring thin air.
-    if (repo_url && !appConfig && !packageJson && fileList.length === 0) {
-      await supabase.from("projects").update({ status: "issues_found", updated_at: new Date().toISOString() }).eq("id", project_id);
-      return new Response(
-        JSON.stringify({ error: "We couldn't read your app's code on GitHub. If the app is private, connect your GitHub account in Settings and scan again. If it's public, wait a minute and try again." }),
-        { status: 422, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
-      );
-    }
+    const { appConfig, packageJson, readmeContent, fileList } = source;
 
     // Detect project type
     const projectType = detectProjectType(appConfig, packageJson, fileList);
@@ -271,7 +206,7 @@ Deno.serve(async (req) => {
           title: "Missing privacy policy URL",
           description:
             "No privacy policy URL is configured. Both Apple and Google require a privacy policy for all published apps.",
-          auto_fixable: true,
+          auto_fixable: false,
           fix_description: "We can generate and host a privacy policy for your app.",
         });
       }
@@ -305,37 +240,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- Security scan (check file contents for common patterns) ---
-    if (repo_url) {
-      const repoPath = extractGitHubPath(repo_url);
-      if (repoPath) {
-        const securityIssues = await scanForSecurityIssues(repoPath, fileList);
-        issues.push(...securityIssues);
-      }
-    } else if (file_path) {
-      // For zip uploads, check file list for .env files and missing .gitignore
-      const envFiles = fileList.filter(f => f === ".env" || f === ".env.local" || f === ".env.production");
-      if (envFiles.length > 0) {
-        issues.push({
-          severity: "critical",
-          category: "security",
-          title: "Environment files included in upload",
-          description: `Found ${envFiles.join(", ")} in your project. These files often contain API keys and secrets.`,
-          auto_fixable: true,
-          fix_description: "Add .env* to your .gitignore and remove secrets from source.",
-        });
-      }
-      if (!fileList.includes(".gitignore")) {
-        issues.push({
-          severity: "warning",
-          category: "security",
-          title: "No .gitignore file",
-          description: "Your project has no .gitignore file. This may lead to accidentally committing sensitive files.",
-          auto_fixable: true,
-          fix_description: "Add a .gitignore with standard Expo/React Native exclusions.",
-        });
-      }
+    // Security checks use the same authenticated snapshot as the config scan.
+    for (const { file, name } of findSecrets(source)) {
+      issues.push({ severity: "critical", category: "security", title: `Hardcoded ${name} found in ${file}`,
+        description: `A ${name} was found in ${file}. Credentials in an app bundle can be extracted.`,
+        auto_fixable: false, fix_description: "Revoke the exposed key and move the privileged operation to a server. App environment variables do not protect secrets." });
     }
+    const envFiles = fileList.filter((f) => /(^|\/)\.env(?:$|\.)/.test(f) && !/\.(example|sample|template)$/.test(f));
+    if (envFiles.length) issues.push({ severity: "critical", category: "security",
+      title: repo_url ? "Environment file committed to repository" : "Environment files included in upload",
+      description: `Found ${envFiles.join(", ")}. These files may contain private credentials.`, auto_fixable: false,
+      fix_description: "Remove private credentials from the app and rotate any exposed keys." });
+    if (!fileList.includes(".gitignore")) issues.push({ severity: "warning", category: "security", title: "No .gitignore file",
+      description: "A .gitignore helps keep private files out of source control.", auto_fixable: true,
+      fix_description: "Add a .gitignore with standard exclusions." });
 
     // --- Code quality checks ---
     const hasErrorBoundary = fileList.some(
@@ -356,6 +274,9 @@ Deno.serve(async (req) => {
     // Add friendly descriptions to all issues
     const friendlyIssues = issues.map((issue) => ({
       ...issue,
+      id: crypto.randomUUID(),
+      project_id,
+      fixed: false,
       friendly_title: friendlyTitles[issue.title] ?? issue.title,
       friendly_description: friendlyDescriptions[issue.title] ?? issue.description,
     }));
@@ -389,27 +310,10 @@ Deno.serve(async (req) => {
     // Update project with scan results
     const newStatus = criticalCount > 0 ? "issues_found" : score >= 80 ? "ready" : "issues_found";
 
-    await supabase
-      .from("projects")
-      .update({
-        scan_result: scanResult,
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", project_id);
-
-    // Clear old issues from previous scans, then insert fresh ones
-    await supabase.from("issues").delete().eq("project_id", project_id);
-
-    if (issues.length > 0) {
-      await supabase.from("issues").insert(
-        issues.map((issue) => ({
-          project_id,
-          ...issue,
-          fixed: false,
-        }))
-      );
-    }
+    const { error: saveError } = await supabase.rpc("save_scan_result", {
+      p_project_id: project_id, p_result: scanResult, p_status: newStatus,
+    });
+    if (saveError) throw new ScanError("Your report could not be saved. Please scan again.", 503);
 
     return new Response(JSON.stringify({ success: true, scan_result: scanResult }), {
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
@@ -417,278 +321,13 @@ Deno.serve(async (req) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     return new Response(JSON.stringify({ error: message }), {
-      status: 500,
+      status: err instanceof ScanError ? err.status : 500,
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
-});
+}));
 
 // --- Helpers ---
-
-async function analyzeZipFromStorage(
-  supabase: ReturnType<typeof createClient>,
-  storagePath: string
-): Promise<{ appConfig: Record<string, unknown> | null; fileList: string[]; packageJson: Record<string, unknown> | null }> {
-  let appConfig: Record<string, unknown> | null = null;
-  let packageJson: Record<string, unknown> | null = null;
-  const fileList: string[] = [];
-
-  try {
-    // Download zip from storage
-    const { data: fileData, error } = await supabase.storage
-      .from("projects")
-      .download(storagePath);
-
-    if (error || !fileData) {
-      return { appConfig, fileList, packageJson };
-    }
-
-    // Use JSZip-like approach: read zip as array buffer and parse entries
-    // Deno has built-in zip support via streams
-    const arrayBuffer = await fileData.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-
-    // Parse zip central directory to get file listing
-    // Find end of central directory record (last 22+ bytes)
-    let eocdOffset = -1;
-    for (let i = bytes.length - 22; i >= 0; i--) {
-      if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) {
-        eocdOffset = i;
-        break;
-      }
-    }
-
-    if (eocdOffset === -1) {
-      return { appConfig, fileList };
-    }
-
-    // Read central directory offset and size
-    const view = new DataView(arrayBuffer);
-    const cdOffset = view.getUint32(eocdOffset + 16, true);
-    const cdSize = view.getUint32(eocdOffset + 12, true);
-    const entryCount = view.getUint16(eocdOffset + 10, true);
-
-    // Parse central directory entries
-    let pos = cdOffset;
-    const decoder = new TextDecoder();
-    const fileContents: Map<string, string> = new Map();
-
-    for (let i = 0; i < entryCount && pos < cdOffset + cdSize; i++) {
-      // Central directory file header signature = 0x02014b50
-      if (view.getUint32(pos, true) !== 0x02014b50) break;
-
-      const compressedSize = view.getUint32(pos + 20, true);
-      const uncompressedSize = view.getUint32(pos + 24, true);
-      const nameLen = view.getUint16(pos + 28, true);
-      const extraLen = view.getUint16(pos + 30, true);
-      const commentLen = view.getUint16(pos + 32, true);
-      const localHeaderOffset = view.getUint32(pos + 42, true);
-      const compressionMethod = view.getUint16(pos + 10, true);
-
-      const nameBytes = bytes.slice(pos + 46, pos + 46 + nameLen);
-      let fileName = decoder.decode(nameBytes);
-
-      // Strip top-level directory prefix (common in zip exports)
-      const slashIdx = fileName.indexOf("/");
-      if (slashIdx > 0 && !fileName.substring(0, slashIdx).includes(".")) {
-        fileName = fileName.substring(slashIdx + 1);
-      }
-
-      if (fileName && !fileName.endsWith("/")) {
-        fileList.push(fileName);
-
-        // Extract content for key files (only uncompressed/stored files)
-        const keyFiles = ["app.json", "app.config.js", "package.json", ".env", ".env.local", ".env.production", ".gitignore"];
-        if (keyFiles.includes(fileName) && compressionMethod === 0 && uncompressedSize < 100000) {
-          // Read from local file header
-          const localNameLen = view.getUint16(localHeaderOffset + 26, true);
-          const localExtraLen = view.getUint16(localHeaderOffset + 28, true);
-          const dataOffset = localHeaderOffset + 30 + localNameLen + localExtraLen;
-          const fileBytes = bytes.slice(dataOffset, dataOffset + uncompressedSize);
-          const content = decoder.decode(fileBytes);
-          fileContents.set(fileName, content);
-        }
-      }
-
-      pos += 46 + nameLen + extraLen + commentLen;
-    }
-
-    // Try to parse app.json and package.json
-    const appJsonContent = fileContents.get("app.json");
-    if (appJsonContent) {
-      try { appConfig = JSON.parse(appJsonContent); } catch { /* invalid */ }
-    }
-    const pkgContent = fileContents.get("package.json");
-    if (pkgContent) {
-      try { packageJson = JSON.parse(pkgContent); } catch { /* invalid */ }
-    }
-  } catch {
-    // Zip parsing failed — non-fatal
-  }
-
-  return { appConfig, fileList, packageJson };
-}
-
-function extractGitHubPath(url: string): string | null {
-  try {
-    const u = new URL(url);
-    if (!u.hostname.includes("github.com")) return null;
-    const parts = u.pathname.split("/").filter(Boolean);
-    if (parts.length < 2) return null;
-    const repo = parts[1]!.replace(/\.git$/, "");
-    return `${parts[0]}/${repo}`;
-  } catch {
-    return null;
-  }
-}
-
-async function fetchGitHubProject(repoPath: string, token?: string) {
-  let appConfig: Record<string, unknown> | null = null;
-  let packageJson: Record<string, unknown> | null = null;
-  let readmeContent: string | null = null;
-  let fileList: string[] = [];
-
-  const ghHeaders: Record<string, string> = { Accept: "application/vnd.github.v3+json" };
-  if (token) ghHeaders.Authorization = `token ${token}`;
-
-  try {
-    // Resolve the repo's actual default branch — file contents were previously
-    // fetched from a hardcoded "main", which silently 404'd for repos whose
-    // default branch is "master" (or anything else) and made every scan blind.
-    let branch = "main";
-    try {
-      const repoRes = await fetch(`https://api.github.com/repos/${repoPath}`, { headers: ghHeaders });
-      if (repoRes.ok) branch = ((await repoRes.json()).default_branch as string) ?? "main";
-    } catch { /* keep "main" */ }
-
-    // Get repo tree from the default branch, with a master fallback
-    let treeRes = await fetch(
-      `https://api.github.com/repos/${repoPath}/git/trees/${branch}?recursive=1`,
-      { headers: ghHeaders }
-    );
-    if (!treeRes.ok && branch !== "master") {
-      const masterRes = await fetch(
-        `https://api.github.com/repos/${repoPath}/git/trees/master?recursive=1`,
-        { headers: ghHeaders }
-      );
-      if (masterRes.ok) {
-        branch = "master";
-        treeRes = masterRes;
-      }
-    }
-    if (treeRes.ok) {
-      const data = await treeRes.json();
-      fileList = (data.tree ?? [])
-        .filter((t: { type: string }) => t.type === "blob")
-        .map((t: { path: string }) => t.path);
-    }
-
-    // Fetch app.json, package.json, and README in parallel from the same branch
-    const fetchFile = async (name: string) => {
-      const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `token ${token}`;
-      const res = await fetch(`https://raw.githubusercontent.com/${repoPath}/${branch}/${name}`, { headers });
-      return res.ok ? await res.text() : null;
-    };
-
-    const [appJsonText, pkgText, readmeText] = await Promise.all([
-      fileList.includes("app.json") ? fetchFile("app.json") : Promise.resolve(null),
-      fileList.includes("package.json") ? fetchFile("package.json") : Promise.resolve(null),
-      fileList.find((f) => f.toLowerCase() === "readme.md") ? fetchFile("README.md") : Promise.resolve(null),
-    ]);
-
-    if (appJsonText) {
-      try { appConfig = JSON.parse(appJsonText); } catch { /* invalid JSON */ }
-    }
-    if (pkgText) {
-      try { packageJson = JSON.parse(pkgText); } catch { /* invalid JSON */ }
-    }
-    if (readmeText) {
-      readmeContent = readmeText.slice(0, 2000);
-    }
-  } catch {
-    // GitHub API failure is non-fatal
-  }
-
-  return { appConfig, fileList, packageJson, readmeContent };
-}
-
-async function scanForSecurityIssues(repoPath: string, fileList: string[]): Promise<Issue[]> {
-  const issues: Issue[] = [];
-
-  // Check for .env files committed
-  const envFiles = fileList.filter(
-    (f) => f === ".env" || f === ".env.local" || f === ".env.production"
-  );
-  if (envFiles.length > 0) {
-    issues.push({
-      severity: "critical",
-      category: "security",
-      title: "Environment file committed to repository",
-      description: `Found ${envFiles.join(", ")} in the repository. Environment files often contain API keys and secrets that should not be in source control.`,
-      auto_fixable: true,
-      fix_description: "Add .env* to your .gitignore and remove the files from git history.",
-    });
-  }
-
-  // Check for common secret patterns in source files
-  const sourceFiles = fileList.filter(
-    (f) =>
-      (f.endsWith(".ts") || f.endsWith(".tsx") || f.endsWith(".js") || f.endsWith(".jsx")) &&
-      !f.includes("node_modules") &&
-      !f.includes(".d.ts")
-  );
-
-  // Sample a few files for hardcoded keys (rate-limit friendly)
-  const filesToCheck = sourceFiles.slice(0, 10);
-  for (const filePath of filesToCheck) {
-    try {
-      const res = await fetch(
-        `https://raw.githubusercontent.com/${repoPath}/main/${filePath}`
-      );
-      if (!res.ok) continue;
-      const content = await res.text();
-
-      // Check for common API key patterns
-      const keyPatterns = [
-        { pattern: /sk[-_]live[-_][a-zA-Z0-9]{20,}/g, name: "Stripe secret key" },
-        { pattern: /AIza[0-9A-Za-z_-]{35}/g, name: "Google API key" },
-        { pattern: /sk-[a-zA-Z0-9]{40,}/g, name: "OpenAI/Anthropic API key" },
-        { pattern: /AKIA[0-9A-Z]{16}/g, name: "AWS access key" },
-      ];
-
-      for (const { pattern, name } of keyPatterns) {
-        if (pattern.test(content)) {
-          issues.push({
-            severity: "critical",
-            category: "security",
-            title: `Hardcoded ${name} found in ${filePath}`,
-            description: `A ${name} was detected in ${filePath}. This key will be visible in your published app bundle. Attackers can decompile your app and extract it.`,
-            auto_fixable: true,
-            fix_description: "Move the key to environment variables using expo-constants.",
-          });
-          break; // One issue per file is enough
-        }
-      }
-    } catch {
-      // Skip files we can't fetch
-    }
-  }
-
-  // Check for .gitignore
-  if (!fileList.includes(".gitignore")) {
-    issues.push({
-      severity: "warning",
-      category: "security",
-      title: "No .gitignore file",
-      description: "Your project has no .gitignore file. This may lead to accidentally committing sensitive files, build artifacts, or node_modules.",
-      auto_fixable: true,
-      fix_description: "Add a .gitignore with standard Expo/React Native exclusions.",
-    });
-  }
-
-  return issues;
-}
 
 async function generatePotentialAnalysis(
   appConfig: Record<string, unknown> | null,
@@ -728,6 +367,7 @@ Be specific based on detected frameworks and features. If you see navigation lib
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
+      signal: AbortSignal.timeout(25000),
       headers: {
         "Content-Type": "application/json",
         "x-api-key": anthropicKey,

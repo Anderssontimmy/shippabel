@@ -1,12 +1,13 @@
 [api]
 enabled = true
-port = 54321
+port = 55321
 schemas = ["public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-port = 54322
+port = 55322
+shadow_port = 55320
 major_version = 17
 
 [auth]
@@ -22,3 +23,12 @@ enable_confirmations = false
 enabled = false
 client_id = ""
 secret = ""
+
+[studio]
+port = 55323
+
+[inbucket]
+port = 55324
+
+[analytics]
+port = 55327

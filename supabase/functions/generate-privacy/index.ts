@@ -1,3 +1,4 @@
+import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -19,7 +20,7 @@ interface GeneratePrivacyRequest {
   developer_email?: string;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("generate-privacy", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
@@ -168,7 +169,7 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
-});
+}));
 
 async function analyzeProjectPrivacy(repoUrl: string) {
   const services: string[] = [];

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { reportError } from "@/lib/monitoring";
 
 /**
  * Invoke an edge function and surface the server's real error message.
@@ -11,12 +12,15 @@ export async function invokeEdge<T = Record<string, unknown>>(
   name: string,
   body: Record<string, unknown>,
 ): Promise<{ data: T | null; error: string | null }> {
-  const { data, error: fnError } = await supabase.functions.invoke(name, { body });
+  const { data, error: fnError } = await supabase.functions.invoke(name, { body, timeout: 90_000 });
 
   if (!fnError) {
     const errInBody = (data as { error?: string } | null)?.error;
     return errInBody ? { data: null, error: errInBody } : { data: data as T, error: null };
   }
+
+  const status = (fnError as { context?: { status?: number } }).context?.status;
+  if (!status || status >= 500) reportError(new Error(`Function ${name} failed (${status ?? "network"})`), name);
 
   let message = "";
   try {
