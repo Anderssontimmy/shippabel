@@ -16,6 +16,7 @@
     "check:edge": "deno task --config supabase/deno.json check",
     "test:e2e": "playwright test",
     "test:db": "supabase test db",
+    "test:integration": "node scripts/test-integration.mjs",
     "smoke": "node --env-file-if-exists=.env scripts/smoke.mjs"
   },
   "dependencies": {

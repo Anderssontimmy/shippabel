@@ -10,6 +10,7 @@ for (const name of ["scan-project","save-credential","create-checkout","stripe-w
 }
 Object.defineProperty(Deno, "serve", { value: serve, configurable: true });
 serve({ hostname: "127.0.0.1", port: 55325 }, (request) => {
+  if (new URL(request.url).pathname === "/health") return Response.json({ ready: true });
   const name = new URL(request.url).pathname.split("/").pop() ?? "";
   return handlers.get(name)?.(request) ?? Response.json({ error: "Not found" }, { status: 404 });
 });

@@ -24,7 +24,7 @@ jobs:
       - run: npm run type-check
       - run: npm run lint
       - run: npm test
-      - run: node --test scripts/deploy-gate.test.mjs
+      - run: node --test scripts/*.test.mjs
       - run: npm run build
       - uses: denoland/setup-deno@v2
         with:
@@ -43,8 +43,14 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
       - uses: supabase/setup-cli@v1
         with:
           version: 2.117.0
       - run: supabase start
       - run: supabase test db
+      - run: npm run test:integration

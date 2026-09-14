@@ -35,8 +35,8 @@ The scanner, access controls and deployment checks have been hardened. This is n
 
 `npm ci`, `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, `npm run check:edge`, `npm run test:edge`, `node --test scripts/deploy-gate.test.mjs`, `npx playwright test`, `npx supabase start`, `npm run test:db`.
 
-For integration tests, run the local handler router in `scripts/serve-test-functions.ts` with local Supabase keys and synthetic encryption/callback/Stripe secrets, then run `scripts/integration.mjs` with the same environment. Optional `TEST_PRIVATE_REPO` and `TEST_GITHUB_TOKEN` enable actual GitHub checks; use an isolated fixture. The runner rejects non-local Supabase URLs and removes its accounts/reports in `finally`.
+For integration tests, start local Supabase and run `npm run test:integration`. The runner obtains local keys, creates synthetic encryption/callback/Stripe secrets, starts the real function handlers and stops them after testing. This also runs in the CI database job. Optional `TEST_PRIVATE_REPO` and `TEST_GITHUB_TOKEN` enable actual GitHub checks; use an isolated fixture. The runner rejects non-local Supabase URLs and removes its accounts/reports in `finally`.
 
-Run `npm run smoke` with public `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Secrets and temporary deployment/test outputs belong in ignored files and must not be committed.
+Run `npm run smoke` with public `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The workflow requires GitHub repository variables with these names. It checks `/version.json` and the application JavaScript in addition to page/backend responses; `SMOKE_EXPECTED_COMMIT` verifies an exact deployment. Preview deployments do not trigger production checks. Secrets and temporary deployment/test outputs belong in ignored files and must not be committed.
 
 Reference behavior: [GitHub workflow run API](https://docs.github.com/en/rest/actions/workflow-runs), [Vercel system environment variables](https://vercel.com/docs/environment-variables/system-environment-variables), [Stripe webhooks](https://docs.stripe.com/webhooks).
