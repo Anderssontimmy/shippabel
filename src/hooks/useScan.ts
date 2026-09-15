@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/invokeEdge";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
-import { useCredentials } from "@/hooks/useCredentials";
 import type { Project } from "@/lib/types";
 
 interface ScanState {
@@ -13,21 +13,13 @@ interface ScanState {
 }
 
 export const useScan = () => {
-  const { githubToken, user } = useAuth();
-  const { getCredential } = useCredentials();
+  const { user } = useAuth();
   const [state, setState] = useState<ScanState>({
     scanning: false,
     progress: "",
     error: null,
     projectId: null,
   });
-
-  // Prefer OAuth token, fall back to stored PAT
-  const getGitHubToken = () => {
-    if (githubToken) return githubToken;
-    const cred = getCredential("github");
-    return cred?.credentials?.access_token ?? null;
-  };
 
   const scanFromUrl = async (repoUrl: string) => {
     setState({ scanning: true, progress: "Creating project...", error: null, projectId: null });
@@ -52,21 +44,20 @@ export const useScan = () => {
 
       setState((s) => ({ ...s, progress: "Scanning project..." }));
 
-      // 2. Call scan edge function (with 60s timeout)
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60_000);
+      // 2. Call scan edge function (with 90s timeout — invoke() can't be
+      // aborted reliably across supabase-js versions, so race it instead)
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("Scan took too long. Please try again.")), 90_000);
+      });
       try {
-        const { error: fnError } = await supabase.functions.invoke("scan-project", {
-          body: { project_id: project.id, repo_url: repoUrl, github_token: getGitHubToken() },
-        });
-        if (fnError) throw new Error(fnError.message ?? "Scan failed");
-      } catch (invokeErr) {
-        if (invokeErr instanceof DOMException && invokeErr.name === "AbortError") {
-          throw new Error("Scan took too long. Please try again.");
-        }
-        throw invokeErr;
+        const { error: fnError } = await Promise.race([
+          invokeEdge("scan-project", { project_id: project.id, repo_url: repoUrl }),
+          timeoutPromise,
+        ]);
+        if (fnError) throw new Error(fnError);
       } finally {
-        clearTimeout(timeout);
+        clearTimeout(timeoutId);
       }
 
       trackEvent("Scan Completed");
@@ -90,7 +81,9 @@ export const useScan = () => {
     setState({ scanning: true, progress: "Uploading project...", error: null, projectId: null });
 
     try {
-      const name = file.name.replace(/\.(zip|tar\.gz)$/, "");
+      if (!file.name.toLowerCase().endsWith(".zip")) throw new Error("Please upload a .zip file.");
+      if (file.size > 20 * 1024 * 1024) throw new Error("ZIP files must be 20 MB or smaller.");
+      const name = file.name.replace(/\.zip$/i, "");
 
       // 1. Create project record
       const { data: project, error: insertError } = await supabase
@@ -104,10 +97,10 @@ export const useScan = () => {
       }
 
       // 2. Upload file to storage
-      const filePath = `scans/${project.id}/${file.name}`;
+      const filePath = `scans/${project.id}/source.zip`;
       const { error: uploadError } = await supabase.storage
-        .from("projects")
-        .upload(filePath, file);
+        .from("project-archives")
+        .upload(filePath, file, { contentType: "application/zip" });
 
       if (uploadError) {
         throw new Error(uploadError.message ?? "Upload failed");
@@ -116,12 +109,10 @@ export const useScan = () => {
       setState((s) => ({ ...s, progress: "Scanning project..." }));
 
       // 3. Call scan edge function
-      const { error: fnError } = await supabase.functions.invoke("scan-project", {
-        body: { project_id: project.id, file_path: filePath },
-      });
+      const { error: fnError } = await invokeEdge("scan-project", { project_id: project.id, file_path: filePath });
 
       if (fnError) {
-        throw new Error(fnError.message ?? "Scan failed");
+        throw new Error(fnError);
       }
 
       setState({

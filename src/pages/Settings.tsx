@@ -71,7 +71,7 @@ const providers: ProviderConfig[] = [
       "Click 'Access Tokens' in the left sidebar",
       "Click 'Create Token'",
       "Name it 'Shippabel' and click 'Create'",
-      "Copy the token — you won't be able to see it again!",
+      "Copy the token right away (you won't be able to see it again)",
     ],
     setupLink: { label: "Open Expo Token Settings", url: "https://expo.dev/settings/access-tokens" },
     fields: [
@@ -134,16 +134,16 @@ const providers: ProviderConfig[] = [
       "Go to play.google.com/console and sign in",
       "Click 'Setup' → 'API access' in the left sidebar",
       "Click 'Create new service account'",
-      "This opens Google Cloud Console — click 'Create Service Account'",
+      "This opens Google Cloud Console. Click 'Create Service Account'",
       "Name it 'Shippabel', click 'Create and Continue'",
       "For role, select 'Service Account User', then click 'Done'",
       "Click the ⋮ menu next to your new account → 'Manage Keys'",
       "Click 'Add Key' → 'Create new key' → choose JSON → 'Create'",
-      "A JSON file downloads — open it and copy everything inside",
+      "A JSON file downloads. Open it and copy everything inside",
       "Still in Google Cloud: search the top bar for 'Google Play Android Developer API', open it, and click the blue 'Enable' button (this lets us upload your app)",
       "Back in Play Console, click 'Grant Access' next to the service account",
       "Enable 'Admin' permissions and click 'Invite User'",
-      "Last thing — in Play Console, click 'Create app' and give it the same name and package name as your app. (Google can't let us create it for you the first time.)",
+      "Last thing: in Play Console, click 'Create app' and give it the same name and package name as your app. (Google can't let us create it for you the first time.)",
     ],
     setupLink: { label: "Open Google Play Console", url: "https://play.google.com/console/developers" },
     fields: [
@@ -190,17 +190,24 @@ export const Settings = () => {
       return;
     }
 
-    await saveCredential(provider.id, formData, provider.name);
-    if (!error) {
+    const ok = await saveCredential(provider.id, formData, provider.name);
+    if (ok) {
       toast("success", `${provider.name} credentials saved!`);
       setEditingProvider(null);
       setFormData({});
+    } else {
+      toast("error", `Couldn't save ${provider.name} credentials. Please check the values and try again.`);
     }
   };
 
   const handleRemove = async (provider: ProviderConfig) => {
-    await removeCredential(provider.id);
-    toast("info", `${provider.name} credentials removed.`);
+    if (!window.confirm(`Remove your ${provider.name} credentials? Builds and submissions that need them will stop working.`)) return;
+    const ok = await removeCredential(provider.id);
+    if (ok) {
+      toast("info", `${provider.name} credentials removed.`);
+    } else {
+      toast("error", `Couldn't remove ${provider.name} credentials. Please try again.`);
+    }
   };
 
   const startEditing = (provider: ProviderConfig) => {
@@ -264,6 +271,7 @@ export const Settings = () => {
                       <div className="rounded-lg border border-surface-200 overflow-hidden">
                         <button
                           onClick={() => setShowGuide((s) => ({ ...s, [provider.id]: !s[provider.id] }))}
+                          aria-expanded={!!showGuide[provider.id]}
                           className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-surface-50 transition-colors cursor-pointer"
                         >
                           <span className="flex items-center gap-2 text-xs font-medium text-surface-700">
@@ -374,7 +382,7 @@ export const Settings = () => {
                         {connected ? "Update" : "Connect"}
                       </Button>
                       {connected && (
-                        <Button size="sm" variant="ghost" onClick={() => handleRemove(provider)} className="text-red-400 hover:text-red-300">
+                        <Button size="sm" variant="ghost" aria-label={`Remove ${provider.name} credentials`} onClick={() => handleRemove(provider)} className="text-red-400 hover:text-red-300">
                           <X className="h-3.5 w-3.5" />
                         </Button>
                       )}
@@ -396,8 +404,7 @@ export const Settings = () => {
             { label: "Generate Store Listing", ready: true, note: "AI-powered" },
             { label: "Generate Screenshots", ready: true, note: "Client-side" },
             { label: "Build (EAS)", ready: hasCredential("eas"), note: hasCredential("eas") ? "Connected" : "Needs EAS token" },
-            { label: "Submit to iOS", ready: hasCredential("apple") && hasCredential("eas"), note: hasCredential("apple") ? "Connected" : "Needs Apple credentials" },
-            { label: "Submit to Android", ready: hasCredential("google") && hasCredential("eas"), note: hasCredential("google") ? "Connected" : "Needs Google credentials" },
+            { label: "Submit to Google Play", ready: hasCredential("google") && hasCredential("eas"), note: hasCredential("google") ? "Connected" : "Needs Google credentials" },
           ].map((step) => (
             <div key={step.label} className="flex items-center justify-between">
               <div className="flex items-center gap-2">

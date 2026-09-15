@@ -45,7 +45,7 @@ export function deriveSteps(f: ShipFacts): FlowStepState[] {
     { id: "signup", label: "Sign Up", description: "Create a free account to continue", completed: f.loggedIn, available: f.scanned },
     { id: "listing", label: "Store Page", description: "Write your app's name, description, and more", completed: f.hasListing, available: f.scanned && f.loggedIn },
     { id: "screenshots", label: "Screenshots", description: "Add screenshots of your app", completed: f.hasScreenshots, available: f.scanned && f.loggedIn && f.hasListing },
-    { id: "connect", label: "Connect", description: "Link your Apple and Google accounts", completed: f.hasEas, available: f.loggedIn && f.hasListing },
+    { id: "connect", label: "Connect", description: "Link your Expo and Google accounts", completed: f.hasEas, available: f.loggedIn && f.hasListing },
     { id: "build", label: "Build", description: "Prepare your app for the stores", completed: f.hasBuild, available: f.hasEas && f.hasListing },
     { id: "submit", label: "Go Live", description: "Send your app to Google Play", completed: f.isSubmitted || f.isLive, available: f.hasBuild },
   ];

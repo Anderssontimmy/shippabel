@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Landing } from "./pages/Landing";
@@ -24,10 +24,22 @@ const About = lazy(() => import("./pages/About").then((m) => ({ default: m.About
 const NotFound = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFound })));
 
 const PageLoader = () => (
-  <div className="flex items-center justify-center py-32">
-    <Loader2 className="h-8 w-8 text-primary-400 animate-spin" />
+  <div role="status" aria-label="Loading page" className="flex items-center justify-center py-32">
+    <Loader2 aria-hidden="true" className="h-8 w-8 text-primary-400 animate-spin" />
   </div>
 );
+
+// Keep canonical + og:url in sync during client-side navigation.
+// (Crawlers get correct values from the prerendered static HTML.)
+const CanonicalSync = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const href = `https://shippabel.com${pathname}`;
+    document.querySelector('link[rel="canonical"]')?.setAttribute("href", href);
+    document.querySelector('meta[property="og:url"]')?.setAttribute("content", href);
+  }, [pathname]);
+  return null;
+};
 
 const Home = () => {
   const { user, loading } = useAuth();
@@ -39,6 +51,7 @@ const Home = () => {
 const App = () => {
   return (
     <ErrorBoundary fallbackTitle="The app encountered an error">
+      <CanonicalSync />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route element={<Layout />}>

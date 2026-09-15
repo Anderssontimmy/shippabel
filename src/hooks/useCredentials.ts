@@ -8,7 +8,6 @@ export interface Credential {
   id: string;
   user_id: string;
   provider: Provider;
-  credentials: Record<string, string>;
   label: string | null;
   is_valid: boolean;
   created_at: string;
@@ -88,11 +87,12 @@ export const useCredentials = () => {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("user_credentials")
-      .select("*")
+      .select("id,user_id,provider,label,is_valid,created_at,updated_at")
       .eq("user_id", user.id);
 
+    if (loadError) setError(loadError.message);
     setCredentials((data ?? []) as Credential[]);
     setLoading(false);
   }, [user]);
@@ -111,8 +111,8 @@ export const useCredentials = () => {
     provider: Provider,
     creds: Record<string, string>,
     label?: string
-  ) => {
-    if (!user) return;
+  ): Promise<boolean> => {
+    if (!user) return false;
     setSaving(true);
     setError(null);
 
@@ -130,21 +130,28 @@ export const useCredentials = () => {
 
       if (fnError) throw new Error(fnError.message);
       await load();
+      setSaving(false);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
+      setSaving(false);
+      return false;
     }
-
-    setSaving(false);
   };
 
-  const removeCredential = async (provider: Provider) => {
-    if (!user) return;
-    await supabase
+  const removeCredential = async (provider: Provider): Promise<boolean> => {
+    if (!user) return false;
+    const { error: deleteError } = await supabase
       .from("user_credentials")
       .delete()
       .eq("user_id", user.id)
       .eq("provider", provider);
+    if (deleteError) {
+      setError(deleteError.message);
+      return false;
+    }
     await load();
+    return true;
   };
 
   return {

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   AlertCircle,
@@ -39,8 +39,8 @@ const demoScanResult: ScanResult = {
     {
       id: "1", project_id: "demo", severity: "critical", category: "assets",
       title: "Missing app icon",
-      description: "Your project is missing a 1024x1024 app icon. The App Store requires this exact size without transparency. Without it, your submission will be rejected.",
-      auto_fixable: false, fix_description: "Add a 1024x1024 PNG file without alpha channel as your app icon in app.json.", fixed: false,
+      description: "Your project is missing a 512x512 app icon. Google Play requires this exact size. Without it, your submission will be rejected.",
+      auto_fixable: false, fix_description: "Add a 512x512 PNG file as your app icon in app.json.", fixed: false,
     },
     {
       id: "2", project_id: "demo", severity: "critical", category: "security",
@@ -57,14 +57,14 @@ const demoScanResult: ScanResult = {
     {
       id: "4", project_id: "demo", severity: "warning", category: "config",
       title: "Missing privacy policy URL",
-      description: "No privacy policy URL is set. Both Apple and Google require a privacy policy.",
+      description: "No privacy policy URL is set. Google Play requires a privacy policy.",
       auto_fixable: true, fix_description: "We can generate and host a privacy policy for your app.", fixed: false,
     },
     {
       id: "5", project_id: "demo", severity: "warning", category: "config",
       title: "Build number not set",
       description: "Your build number is missing. Each submission requires an incremented build number.",
-      auto_fixable: true, fix_description: "Set ios.buildNumber and android.versionCode in app.json.", fixed: false,
+      auto_fixable: true, fix_description: "Set android.versionCode in app.json.", fixed: false,
     },
     {
       id: "6", project_id: "demo", severity: "warning", category: "assets",
@@ -82,7 +82,7 @@ const demoScanResult: ScanResult = {
       id: "8", project_id: "demo", severity: "info", category: "config",
       title: "Consider setting app category",
       description: "No app category is specified. Setting a category helps with store discoverability.",
-      auto_fixable: true, fix_description: "Add ios.appStoreCategory to app.json.", fixed: false,
+      auto_fixable: true, fix_description: "Choose a category for your Google Play listing.", fixed: false,
     },
     {
       id: "9", project_id: "demo", severity: "info", category: "code",
@@ -135,7 +135,7 @@ const severityColor = {
   info: "text-blue-600",
 };
 
-const IssueCard = ({ issue, onFix, fixingId, canFix }: { issue: Issue; onFix: (id: string) => void; fixingId: string | null; canFix: boolean }) => {
+const IssueCard = ({ issue, onFix, fixingId, canFix, conversionFirst }: { issue: Issue; onFix: (id: string) => void; fixingId: string | null; canFix: boolean; conversionFirst?: boolean }) => {
   const [open, setOpen] = useState(false);
   const Icon = severityIcon[issue.severity];
   const isFixing = fixingId === issue.id;
@@ -167,17 +167,87 @@ const IssueCard = ({ issue, onFix, fixingId, canFix }: { issue: Issue; onFix: (i
               <p className="text-sm text-surface-600">{issue.fix_description}</p>
             </div>
           )}
-          {issue.auto_fixable && canFix && (
+          {issue.auto_fixable && conversionFirst && (
+            <p className="mt-3 text-xs font-medium text-surface-500">
+              We'll fix this automatically. First click "Make it Google Play ready" above.
+            </p>
+          )}
+          {issue.auto_fixable && !conversionFirst && canFix && (
             <Button size="sm" className="mt-3 gap-1.5" onClick={() => onFix(issue.id)} disabled={isFixing}>
               {isFixing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wrench className="h-3.5 w-3.5" />}
               {isFixing ? "Fixing..." : "Fix this issue"}
             </Button>
           )}
-          {issue.auto_fixable && !canFix && (
+          {issue.auto_fixable && !conversionFirst && !canFix && (
             <UpgradePrompt feature="Auto-fix" compact />
           )}
         </div>
       )}
+    </div>
+  );
+};
+
+// Email capture for anonymous scans: magic-link signup that also saves this
+// report to the new account (claimed via localStorage + the claim effect).
+const SaveReportCard = ({ projectId }: { projectId: string }) => {
+  const { signInWithEmail } = useAuth();
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setSending(true);
+    setError(null);
+    localStorage.setItem("shippabel-claim-project", projectId);
+    const { error: err } = await signInWithEmail(
+      email.trim(),
+      `${window.location.origin}/login?next=${encodeURIComponent(`/scan/${projectId}`)}`,
+    );
+    setSending(false);
+    if (err) setError(err.message);
+    else setSent(true);
+  };
+
+  if (sent) {
+    return (
+      <div className="mb-8 rounded-2xl border border-green-200 bg-green-50 px-6 py-5 text-center">
+        <p className="text-sm font-semibold text-green-900">Check your email</p>
+        <p className="text-sm text-green-700 mt-1">
+          We sent a link to <span className="font-medium">{email}</span>. Click it and this report is saved to your free account.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-8 rounded-2xl border border-surface-200 bg-surface-50 px-6 py-5">
+      <div className="sm:flex sm:items-center sm:justify-between sm:gap-6">
+        <div className="mb-3 sm:mb-0">
+          <p className="text-sm font-semibold text-surface-900">Don't lose this report</p>
+          <p className="text-sm text-surface-500 mt-0.5">Save it to a free account and pick up right where you left off.</p>
+        </div>
+        <form onSubmit={submit} className="flex gap-2 shrink-0">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setError(null); }}
+            placeholder="you@example.com"
+            aria-label="Email address"
+            className="w-44 sm:w-52 rounded-lg bg-white border border-surface-200 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400"
+          />
+          <Button type="submit" size="sm" disabled={sending} className="gap-1.5 whitespace-nowrap">
+            {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            Save my report
+          </Button>
+        </form>
+      </div>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
     </div>
   );
 };
@@ -207,9 +277,12 @@ const ScoreRing = ({ score }: { score: number }) => {
 
 export const ScanResults = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [projectName, setProjectName] = useState<string>("");
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const { fixingIssueId, fixing, fixAll, fixOne } = useFix(id ?? "");
   const { converting, error: convertError, convert } = useConvert(id ?? "");
   const { user } = useAuth();
@@ -222,6 +295,13 @@ export const ScanResults = () => {
       : "App store readiness scan results",
   });
   const { toast } = useToast();
+
+  // Clear the pending post-convert reload if the user navigates away
+  useEffect(() => {
+    return () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+    };
+  }, []);
 
   const reload = async () => {
     if (id === "demo") return;
@@ -237,12 +317,12 @@ export const ScanResults = () => {
 
   const handleConvert = async () => {
     if (!user) {
-      window.location.href = "/login";
+      navigate(`/login?next=${encodeURIComponent(`/scan/${id}`)}`);
       return;
     }
     if (!isPaid) {
       toast("error", "This feature requires the Ship plan.");
-      window.location.href = "/pricing";
+      navigate("/pricing");
       return;
     }
 
@@ -250,9 +330,12 @@ export const ScanResults = () => {
     if (result) {
       toast("success", result.message);
       // Wait a moment for re-scan to complete, then reload
-      setTimeout(() => reload(), 3000);
-    } else if (convertError) {
-      toast("error", convertError);
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+      reloadTimerRef.current = setTimeout(() => reload(), 3000);
+    } else {
+      // convertError state hasn't propagated to this closure yet — the inline
+      // error banner shows the details.
+      toast("error", "Conversion failed. See the error message for details.");
     }
   };
 
@@ -262,7 +345,7 @@ export const ScanResults = () => {
       toast("success", "Issue fixed successfully!");
       await reload();
     } else {
-      toast("error", "Could not fix this issue automatically.");
+      toast("error", result?.errorMessage ?? "Could not fix this issue automatically.");
     }
   };
 
@@ -272,7 +355,7 @@ export const ScanResults = () => {
       toast("success", `Fixed ${result.fixed} issue${result.fixed > 1 ? "s" : ""}!`);
       await reload();
     } else {
-      toast("error", "No issues could be auto-fixed.");
+      toast("error", result?.errorMessage ?? "No issues could be auto-fixed.");
     }
   };
 
@@ -299,12 +382,32 @@ export const ScanResults = () => {
       } else {
         setScan(data.scan_result as ScanResult);
         setProjectName(data.name);
+        setOwnerId(data.user_id ?? null);
       }
       setLoading(false);
     };
 
     loadProject();
   }, [id]);
+
+  // Claim an anonymous scan for the signed-in user (e.g. right after the
+  // "email me this report" magic-link login).
+  useEffect(() => {
+    if (!user || ownerId !== null || !id || id === "demo" || loading) return;
+    (async () => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ user_id: user.id })
+        .eq("id", id)
+        .is("user_id", null).select("id").single();
+      if (!error) {
+        setOwnerId(user.id);
+        localStorage.removeItem("shippabel-claim-project");
+        toast("success", "Report saved to your account.");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, ownerId, id, loading]);
 
   if (loading) {
     return <ScanResultsSkeleton />;
@@ -328,6 +431,25 @@ export const ScanResults = () => {
 
   const autoFixable = scan.issues.filter((i) => i.auto_fixable && !i.fixed).length;
 
+  // Verdict-first: answer "can my app be on Google Play?" before anything else.
+  const isReady = scan.summary.critical === 0 && !scan.needs_conversion;
+  const verdict = scan.needs_conversion
+    ? {
+        title: "Your app can be on Google Play",
+        sub: "It needs a quick one-time conversion to a mobile app first. That's one click, and we do it for you.",
+      }
+    : isReady
+    ? {
+        title: "Your app is ready for Google Play",
+        sub: "Nothing blocks publication. The next step is writing your store page.",
+      }
+    : {
+        title: `Almost there. ${scan.summary.critical} thing${scan.summary.critical > 1 ? "s" : ""} to fix first`,
+        sub: autoFixable > 0
+          ? "Google would reject the app as it is, but most of it we can fix for you automatically."
+          : "Google would reject the app as it is. Open each item below to see exactly what to do.",
+      };
+
   return (
     <div>
       {/* Flow progress bar */}
@@ -346,27 +468,31 @@ export const ScanResults = () => {
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900 mb-2">Readiness Report</h1>
-          <p className="text-surface-500 mb-4">
-            {scan.score >= 80
-              ? "Looking great! Just a few small things to take care of."
-              : scan.score >= 50
-              ? "Getting there! Fix the issues marked in red below to continue."
-              : "Your app needs some work before it can be published. Don't worry — we'll help you fix everything."}
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900 mb-2">{verdict.title}</h1>
+          <p className="text-surface-500 mb-4 max-w-lg">{verdict.sub}</p>
           <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
             {scan.summary.critical > 0 && <Badge severity="critical">{scan.summary.critical} must fix</Badge>}
-            {scan.summary.warning > 0 && <Badge severity="warning">{scan.summary.warning} should fix</Badge>}
-            {scan.summary.info > 0 && <Badge severity="info">{scan.summary.info} optional</Badge>}
+            {scan.summary.warning > 0 && <Badge severity="warning">{scan.summary.warning} good to fix</Badge>}
+            {scan.summary.info > 0 && <Badge severity="info">{scan.summary.info} nice to know</Badge>}
           </div>
-          <div className="mt-4 flex gap-3 justify-center sm:justify-start">
-            {autoFixable > 0 && isPaid && (
+          <div className="mt-4 flex flex-wrap gap-3 justify-center sm:justify-start">
+            {/* One primary action. When the app needs conversion, the green
+                panel below IS the next step, so nothing competes with it here. */}
+            {!scan.needs_conversion && isReady && id && (
+              <Link to={`/app/${id}/listing`}>
+                <Button size="sm" className="gap-1.5">
+                  Create your store page
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            )}
+            {!scan.needs_conversion && !isReady && autoFixable > 0 && isPaid && (
               <Button size="sm" className="gap-1.5" onClick={handleFixAll} disabled={fixing}>
                 {fixing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wrench className="h-3.5 w-3.5" />}
-                {fixing ? "Fixing..." : `Auto-fix ${autoFixable} issues`}
+                {fixing ? "Fixing..." : `Fix ${autoFixable} issue${autoFixable > 1 ? "s" : ""} for me`}
               </Button>
             )}
-            {autoFixable > 0 && !isPaid && (
+            {!scan.needs_conversion && !isReady && autoFixable > 0 && !isPaid && (
               <UpgradePrompt feature="Auto-fix" compact />
             )}
             <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(window.location.href); toast("success", "Link copied!"); }}>
@@ -376,6 +502,9 @@ export const ScanResults = () => {
           </div>
         </div>
       </div>
+
+      {/* Save-report email capture — anonymous scans only */}
+      {!user && id && id !== "demo" && ownerId === null && <SaveReportCard projectId={id} />}
 
       {/* Conversion CTA — for non-Expo projects */}
       {scan.needs_conversion && (
@@ -415,48 +544,43 @@ export const ScanResults = () => {
         </div>
       )}
 
-      {/* App Potential Analysis */}
+      {/* App Potential — the personal hook: what your app is, and what it could become */}
       {scan.potential_analysis && (
         <div className="mb-10">
           <AppPotentialCard analysis={scan.potential_analysis} projectId={id ?? "demo"} />
         </div>
       )}
 
-      {/* Issues */}
+      {/* Issues — grouped by what they mean for the user, not by jargon */}
       <div id="issues-section" />
+      <p className="text-sm text-surface-500 mb-6">
+        The security check samples up to 10 JavaScript or TypeScript files. A clean report does not replace a full security review.
+      </p>
       {(["critical", "warning", "info"] as const).map((severity) => {
         const issues = groupedIssues[severity];
         if (issues.length === 0) return null;
+        const groupLabel =
+          severity === "critical" ? "Must fix before publishing"
+          : severity === "warning" ? "Good to fix"
+          : "Nice to know";
         return (
           <div key={severity} className="mb-8">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-surface-500 mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-surface-700 mb-3 flex items-center gap-2">
               {severity === "critical" && <AlertCircle className="h-4 w-4 text-red-600" />}
               {severity === "warning" && <AlertTriangle className="h-4 w-4 text-amber-600" />}
               {severity === "info" && <Info className="h-4 w-4 text-blue-600" />}
-              {severity} ({issues.length})
+              {groupLabel}
+              <span className="font-normal text-surface-400">({issues.length})</span>
             </h2>
             <div className="space-y-2">
               {issues.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} onFix={handleFixOne} fixingId={fixingIssueId} canFix={isPaid} />
+                <IssueCard key={issue.id} issue={issue} onFix={handleFixOne} fixingId={fixingIssueId} canFix={isPaid} conversionFirst={scan.needs_conversion} />
               ))}
             </div>
           </div>
         );
       })}
 
-      {/* Success banner — when app is ready (and not still needing conversion) */}
-      {scan.summary.critical === 0 && scan.score >= 80 && !scan.needs_conversion && id && (
-        <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
-          <h3 className="text-lg font-semibold text-surface-900 mb-1">Your app looks great!</h3>
-          <p className="text-sm text-surface-500 mb-5">No critical issues. You're ready for the next step.</p>
-          <Link to={`/app/${id}/listing`}>
-            <Button className="gap-2">
-              Create your store page
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-      )}
 
       {/* Guided next step */}
       {id && id !== "demo" && (

@@ -53,6 +53,17 @@ interface PageData {
 }
 
 type DeviceModel = "front" | "left" | "right" | "flat";
+
+// Rounded-rect path helper for canvas export.
+const rr = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+};
+
 const DEVICE_CONFIGS: { model: DeviceModel; label: string; scale: number }[] = [
   { model: "front", label: "Front", scale: 35 },
   { model: "left", label: "Angled Left", scale: 40 },
@@ -221,15 +232,6 @@ export const ScreenshotEditor = () => {
 
   // --- Export ---
 
-  const rr = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
-  };
-
   const exportPage = useCallback(async (pageIndex: number) => {
     const page = pages[pageIndex]!;
     const W = 1290, H = 2796;
@@ -295,7 +297,7 @@ export const ScreenshotEditor = () => {
       const a = document.createElement("a"); a.href = url; a.download = `screenshot_${pageIndex + 1}.png`; a.click();
       URL.revokeObjectURL(url);
     }, "image/png");
-  }, [pages, rr]);
+  }, [pages]);
 
   const exportAll = useCallback(async () => {
     for (let i = 0; i < pages.length; i++) {

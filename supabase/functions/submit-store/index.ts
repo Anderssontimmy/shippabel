@@ -1,3 +1,4 @@
+import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { decryptCreds } from "../_shared/crypto.ts";
@@ -24,7 +25,7 @@ interface SubmitResult {
   rejection_reason?: string;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("submit-store", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
@@ -130,7 +131,7 @@ Deno.serve(async (req) => {
       { status, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
-});
+}));
 
 // ===== Google Play =====
 
@@ -174,7 +175,7 @@ async function submitToGooglePlay(
   // 2. Fetch the built artifact (AAB preferred, APK fallback) from the latest successful build.
   let artifact: { bytes: Uint8Array; kind: "aab" | "apk" } | null;
   try {
-    artifact = await fetchLatestAndroidArtifact(repoPath, ghToken);
+    artifact = await fetchAndroidArtifact(repoPath, ghToken, String(submission.github_run_id ?? ""));
   } catch (err) {
     return {
       status: "pending_credentials",
@@ -234,13 +235,13 @@ async function submitToGooglePlay(
   try {
     if (artifact.kind === "aab") {
       const r = await fetch(`${upload}/edits/${editId}/bundles?uploadType=media`, {
-        method: "POST", headers: { ...authH, "Content-Type": "application/octet-stream" }, body: artifact.bytes,
+        method: "POST", headers: { ...authH, "Content-Type": "application/octet-stream" }, body: new Uint8Array(artifact.bytes),
       });
       if (!r.ok) throw new Error((await r.text()).slice(0, 300));
       versionCode = (await r.json()).versionCode as number;
     } else {
       const r = await fetch(`${upload}/edits/${editId}/apks?uploadType=media`, {
-        method: "POST", headers: { ...authH, "Content-Type": "application/vnd.android.package-archive" }, body: artifact.bytes,
+        method: "POST", headers: { ...authH, "Content-Type": "application/vnd.android.package-archive" }, body: new Uint8Array(artifact.bytes),
       });
       if (!r.ok) throw new Error((await r.text()).slice(0, 300));
       versionCode = (await r.json()).versionCode as number;
@@ -340,12 +341,17 @@ async function detectPackageName(repoPath: string, token: string): Promise<strin
   return null;
 }
 
-async function fetchLatestAndroidArtifact(repoPath: string, token: string): Promise<{ bytes: Uint8Array; kind: "aab" | "apk" } | null> {
+async function fetchAndroidArtifact(repoPath: string, token: string, runId: string): Promise<{ bytes: Uint8Array; kind: "aab" | "apk" } | null> {
   const ghH = { Authorization: `token ${token}`, Accept: "application/vnd.github+json", "User-Agent": "shippabel" };
 
-  const runsRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/runs?status=success&per_page=20`, { headers: ghH });
-  if (!runsRes.ok) throw new Error(`runs list ${runsRes.status}`);
-  const runs = (await runsRes.json()).workflow_runs as Array<{ id: number }>;
+  // Only look at runs of the Shippabel build workflows — a repo can contain
+  // other workflows (or other apps) whose artifacts must never be published.
+  if (!/^\d+$/.test(runId)) throw new Error("This build has no verified workflow run. Rebuild before submitting.");
+  const runResponse = await fetch(`https://api.github.com/repos/${repoPath}/actions/runs/${runId}`, { headers: ghH });
+  if (!runResponse.ok) throw new Error("Could not verify the workflow run.");
+  const runData = await runResponse.json();
+  if (runData.conclusion !== "success" || ![".github/workflows/capacitor-build.yml", ".github/workflows/eas-build.yml"].includes(runData.path)) throw new Error("The selected workflow has not completed successfully.");
+  const runs = [{ id: runId }];
 
   for (const run of runs) {
     const artsRes = await fetch(`https://api.github.com/repos/${repoPath}/actions/runs/${run.id}/artifacts`, { headers: ghH });

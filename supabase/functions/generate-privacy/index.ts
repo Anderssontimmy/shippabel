@@ -1,3 +1,4 @@
+import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -19,7 +20,7 @@ interface GeneratePrivacyRequest {
   developer_email?: string;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("generate-privacy", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
@@ -119,7 +120,8 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
     });
 
     if (!response.ok) {
-      throw new Error(`Claude API error: ${response.status}`);
+      console.error("Claude API error:", response.status, (await response.text()).slice(0, 300));
+      throw new Error("Our AI writer is temporarily unavailable. Please try again in a little while. If it keeps happening, email us and we'll fix it.");
     }
 
     const result = await response.json();
@@ -129,19 +131,22 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
     }
 
     // Store the privacy policy and generate a hosted URL
-    const policyId = crypto.randomUUID();
     const policyUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/privacy-policies/${project_id}.html`;
 
     // Convert markdown to basic HTML
     const html = generatePrivacyHtml(app_name, privacyPolicy);
 
-    // Upload to Supabase Storage
-    await supabase.storage
+    // Upload to Supabase Storage — fail loudly, otherwise we'd hand the user
+    // a hosted URL that 404s and they'd submit it to Google Play
+    const { error: uploadError } = await supabase.storage
       .from("privacy-policies")
       .upload(`${project_id}.html`, new Blob([html], { type: "text/html" }), {
         upsert: true,
         contentType: "text/html",
       });
+    if (uploadError) {
+      throw new Error(`Couldn't publish the privacy policy: ${uploadError.message}`);
+    }
 
     // Update the store listing with privacy policy URL
     await supabase
@@ -164,7 +169,7 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
-});
+}));
 
 async function analyzeProjectPrivacy(repoUrl: string) {
   const services: string[] = [];

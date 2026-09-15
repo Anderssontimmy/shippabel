@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useStripe, type PlanId } from "@/hooks/useStripe";
 import { useAuth } from "@/hooks/useAuth";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { trackEvent } from "@/lib/analytics";
 
 const plans = [
@@ -67,12 +68,17 @@ const plans = [
 export const Pricing = () => {
   const { checkout, loading, error } = useStripe();
   const { user } = useAuth();
+  useDocumentHead({
+    title: "Pricing",
+    description: "Free scan. $99 to publish one app. $179 for unlimited apps. No subscription, no hidden fees.",
+  });
 
   const handleCheckout = async (planId: PlanId | null) => {
     if (!planId) return;
     trackEvent("CTA Clicked", { location: "pricing", action: "checkout", plan: planId });
     if (!user) {
-      window.location.href = "/login";
+      // Preserve intent: come back to pricing after login
+      window.location.href = "/login?next=%2Fpricing";
       return;
     }
     await checkout(planId);
@@ -90,8 +96,8 @@ export const Pricing = () => {
       </div>
 
       {error && (
-        <div className="max-w-md mx-auto mb-8 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-center">
-          <p className="text-sm text-red-300">{error}</p>
+        <div className="max-w-md mx-auto mb-8 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-center">
+          <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
@@ -120,7 +126,7 @@ export const Pricing = () => {
 
             <ul className="space-y-3 mb-8 flex-1">
               {plan.features.map((feature) => (
-                <li key={feature} className="flex items-start gap-2 text-sm text-surface-300">
+                <li key={feature} className="flex items-start gap-2 text-sm text-surface-600">
                   <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                   {feature}
                 </li>
@@ -151,9 +157,18 @@ export const Pricing = () => {
         ))}
       </div>
 
-      <div className="mt-16 text-center">
+      {/* Guarantee */}
+      <div className="mt-14 max-w-xl mx-auto rounded-2xl border border-green-200 bg-green-50 px-6 py-5 text-center">
+        <p className="text-sm font-semibold text-green-900">Our promise: your app goes live, or you get your money back.</p>
+        <p className="text-sm text-green-700 mt-1">
+          If we can't get your app onto Google Play, we refund the full amount. Just email us.
+        </p>
+      </div>
+
+      <div className="mt-8 text-center">
         <p className="text-surface-500 text-sm">
           One-time payment. No subscriptions, no hidden fees.
+          {" "}A freelance developer charges $500&ndash;2,000 for the same job.
         </p>
       </div>
     </div>

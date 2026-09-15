@@ -8,3 +8,10 @@ mcp/dist/
 .vite/
 
 .vercel
+playwright-report/
+test-results/
+supabase/.temp/
+supabase/.branches/
+*.tsbuildinfo
+supabase/.env.test
+!.env.example

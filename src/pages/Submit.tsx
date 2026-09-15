@@ -58,8 +58,12 @@ export const Submit = () => {
 
   const handleAutoSubmit = async () => {
     if (!submission) return;
-    await submitToStore(submission.id);
-    toast("success", "Submitted! We'll track your review status.");
+    const ok = await submitToStore(submission.id);
+    if (ok) {
+      toast("success", "Submitted! We'll track your review status.");
+    } else {
+      toast("error", "Submission failed. See the error above for details.");
+    }
   };
 
   useEffect(() => {
@@ -93,6 +97,9 @@ export const Submit = () => {
       supabase.from("store_listings").select("id, app_name, screenshots").eq("project_id", id),
     ]);
 
+    if (projectRes.error) {
+      toast("error", "Couldn't load your app. Please refresh the page.");
+    }
     if (projectRes.data) setProject(projectRes.data as Project);
     const listings = listingRes.data ?? [];
     setHasListing(listings.some((l) => l.app_name && l.app_name.trim() !== ""));
@@ -137,7 +144,7 @@ export const Submit = () => {
   // Check if app needs conversion before it can be built
   const needsConversion = scan?.needs_conversion === true;
 
-  if (!isPaid) {
+  if (!isPaid && id !== "demo") {
     return (
       <div>
         {id && <ShipFlowBar projectId={id} />}
@@ -147,8 +154,8 @@ export const Submit = () => {
             feature="Publish Your App"
             description="We handle the entire build and submission process for you."
             benefits={[
-              "We build your app for iOS and Android",
-              "Submit directly to App Store and Google Play",
+              "We build your Android app for you",
+              "Submit directly to Google Play",
               "Track your review status in real-time",
               "Handle rejections with AI-powered guidance",
             ]}
@@ -187,13 +194,13 @@ export const Submit = () => {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-16">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <Link to={`/scan/${id}`} className="text-surface-500 hover:text-surface-700 transition-colors">
+        <Link to={`/scan/${id}`} aria-label="Back to scan results" className="text-surface-500 hover:text-surface-700 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">Publish Your App</h1>
           <p className="text-surface-400 text-sm mt-1">
-            We'll prepare your app and send it to the stores for you
+            We'll prepare your app and send it to Google Play for you
           </p>
         </div>
       </div>
@@ -203,9 +210,11 @@ export const Submit = () => {
         {steps.map((step, i) => (
           <div key={step.id} className="flex items-center flex-1">
             <button
-              onClick={() => setCurrentStep(step.id)}
-              className={`flex items-center gap-2 cursor-pointer ${
-                i <= currentStepIndex ? "text-surface-900" : "text-surface-400"
+              onClick={() => { if (i <= currentStepIndex) setCurrentStep(step.id); }}
+              aria-label={`Step ${i + 1}: ${step.label}`}
+              aria-current={i === currentStepIndex ? "step" : undefined}
+              className={`flex items-center gap-2 ${
+                i <= currentStepIndex ? "text-surface-900 cursor-pointer" : "text-surface-400 cursor-default"
               }`}
             >
               <div
@@ -464,7 +473,7 @@ jobs:
           ) : (
             <PublishGuide
               platform={platform}
-              buildUrl={submission?.eas_build_id}
+              buildUrl={submission?.eas_build_id?.startsWith("http") ? submission.eas_build_id : undefined}
               appName={project?.name}
               packageName={scan?.issues?.find((i) => i.title?.toLowerCase().includes("bundle"))?.description?.match(/[a-z]+\.[a-z]+\.[a-z]+/i)?.[0]}
               hasCredentials={platform === "ios" ? hasCredential("apple") : hasCredential("google")}
@@ -572,7 +581,7 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
   const statusMap: Record<string, { label: string; desc: string; color: string }> = {
     pending_credentials: {
       label: "Credentials Needed",
-      desc: "Please configure your Apple/Google developer account credentials.",
+      desc: "Please connect your Google Play credentials in Settings.",
       color: "text-amber-600",
     },
     waiting_for_review: {

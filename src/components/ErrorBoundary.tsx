@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { reportError } from "@/lib/monitoring";
 
 interface Props {
   children: ReactNode;
@@ -18,6 +19,10 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
+  componentDidCatch(error: Error) {
+    reportError(error);
+  }
+
   handleRetry = () => {
     this.setState({ hasError: false, error: null });
   };
@@ -29,15 +34,15 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center mb-4">
             <AlertTriangle className="h-6 w-6 text-danger" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">
+          <h3 className="text-lg font-semibold text-surface-900 mb-2">
             {this.props.fallbackTitle ?? "Something went wrong"}
           </h3>
-          <p className="text-surface-400 text-sm mb-6 max-w-md">
+          <p className="text-surface-500 text-sm mb-6 max-w-md">
             An unexpected error occurred. Try refreshing this section.
           </p>
           <button
             onClick={this.handleRetry}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-white text-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-900 hover:bg-surface-700 text-white text-sm transition-colors cursor-pointer"
           >
             <RefreshCw className="h-4 w-4" />
             Try again

@@ -2,7 +2,7 @@
 // Key is base64 of 32 random bytes, provided via the CREDENTIALS_ENC_KEY secret.
 // Stored shape: { enc: "<base64(iv(12) || ciphertext+tag)>", v: 1 }
 
-function b64ToBytes(b64: string): Uint8Array {
+function b64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);

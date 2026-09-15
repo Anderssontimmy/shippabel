@@ -1,3 +1,4 @@
+import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { decryptCreds } from "../_shared/crypto.ts";
@@ -17,15 +18,12 @@ interface ConvertRequest {
   project_id: string;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("convert-project", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!anthropicKey) throw new Error("AI service not configured");
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -46,6 +44,9 @@ Deno.serve(async (req) => {
         { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
+
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicKey) throw new Error("AI service not configured");
 
     // Per-user hourly rate limit (defense-in-depth against cost/abuse)
     const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -294,7 +295,7 @@ registerRootComponent(App);
         }
 
         const body: Record<string, unknown> = {
-          message: `chore: configure for App Store (via Shippabel)`,
+          message: `chore: configure for Google Play (via Shippabel)`,
           content: btoa(unescape(encodeURIComponent(file.content))),
           branch: defaultBranch,
         };
@@ -321,26 +322,29 @@ registerRootComponent(App);
       }
     }
 
-    // Re-scan the project to get updated score
-    // (We call ourselves recursively through the scan endpoint)
+    // If we planned pushes but none landed, the conversion did NOT happen.
+    if (filesToPush.length > 0 && pushedFiles.length === 0) {
+      throw new Error("We couldn't push any changes to your repository. Check that your GitHub token has write access, then try again.");
+    }
+
+    // Re-scan the project to get updated score and issue list. The re-scan is
+    // the source of truth for which issues remain — don't blanket-mark issues
+    // as fixed here (an existing but incomplete app.json gets no fix pushed).
+    // Forward the USER's auth header: scan-project's ownership guard rejects
+    // the call otherwise (the service-role token carries no user identity).
     const { error: rescanError } = await supabase.functions.invoke("scan-project", {
       body: { project_id, repo_url: project.repo_url, github_token: pushToken },
+      headers: { Authorization: authHeader },
     });
-
-    // Mark auto-fixable issues as fixed
-    await supabase
-      .from("issues")
-      .update({ fixed: true, fixed_at: new Date().toISOString() })
-      .eq("project_id", project_id)
-      .eq("auto_fixable", true);
 
     return new Response(
       JSON.stringify({
         success: true,
         files_pushed: pushedFiles,
         total_files: filesToPush.length,
+        rescan_ok: !rescanError,
         message: pushedFiles.length > 0
-          ? `Updated ${pushedFiles.length} files in your repository. Your app is being re-scanned.`
+          ? `Updated ${pushedFiles.length} file${pushedFiles.length > 1 ? "s" : ""} in your repository.${rescanError ? " The re-scan didn't finish, so click Re-scan (or refresh) to see updated results." : " Your app is being re-scanned."}`
           : "No changes were needed.",
       }),
       { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
@@ -352,7 +356,7 @@ registerRootComponent(App);
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
-});
+}));
 
 function extractGitHubPath(url: string): string | null {
   try {

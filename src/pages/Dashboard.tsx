@@ -110,18 +110,21 @@ export const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [extras, setExtras] = useState<Record<string, ProjectExtra>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
 
   const loadProjects = useCallback(async () => {
     if (!user) { setLoading(false); return; }
+    setLoadError(null);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("projects")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
+      if (error) throw error;
       const projs = (data ?? []) as Project[];
       setProjects(projs);
 
@@ -161,6 +164,7 @@ export const Dashboard = () => {
       }
     } catch (err) {
       console.error("Failed to load projects:", err);
+      setLoadError("We couldn't load your apps right now.");
     }
     setLoading(false);
   }, [user]);
@@ -171,6 +175,23 @@ export const Dashboard = () => {
     loadProjects();
   }, [user, authLoading, navigate, loadProjects]);
 
+  // If the user arrived via the "save my report" magic link but the redirect
+  // landed here, claim the anonymous scan and take them back to it.
+  useEffect(() => {
+    if (!user) return;
+    const pending = localStorage.getItem("shippabel-claim-project");
+    if (!pending) return;
+    localStorage.removeItem("shippabel-claim-project");
+    (async () => {
+      await supabase
+        .from("projects")
+        .update({ user_id: user.id })
+        .eq("id", pending)
+        .is("user_id", null);
+      navigate(`/scan/${pending}`);
+    })();
+  }, [user, navigate]);
+
   // Handle post-checkout redirect — refresh session so plan metadata is current
   useEffect(() => {
     const checkoutStatus = searchParams.get("checkout");
@@ -178,11 +199,28 @@ export const Dashboard = () => {
 
     setSearchParams({}, { replace: true });
 
-    supabase.auth.refreshSession().then(({ data }) => {
-      const plan = data?.user?.app_metadata?.plan as string | undefined;
-      setCheckoutPlan(plan ?? "ship");
-      setShowCheckoutSuccess(true);
-    });
+    // The Stripe webhook that writes app_metadata.plan may lag behind the
+    // redirect — retry a few times until the plan shows up.
+    let cancelled = false;
+    (async () => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { data } = await supabase.auth.refreshSession();
+        const plan = data?.user?.app_metadata?.plan as string | undefined;
+        if (cancelled) return;
+        if (plan) {
+          setCheckoutPlan(plan);
+          setShowCheckoutSuccess(true);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (!cancelled) {
+        // Webhook still hasn't landed — show a generic success rather than a wrong plan.
+        setCheckoutPlan(null);
+        setShowCheckoutSuccess(true);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [searchParams, setSearchParams]);
 
   if (authLoading || (loading && user)) {
@@ -215,7 +253,9 @@ export const Dashboard = () => {
             </div>
             <div>
               <p className="font-semibold text-green-900 text-base">
-                Payment confirmed — you're on the {planLabel(checkoutPlan ?? "ship")} plan!
+                {checkoutPlan
+                  ? `Payment confirmed — you're on the ${planLabel(checkoutPlan)} plan!`
+                  : "Payment confirmed! Your plan is being activated — it can take a minute."}
               </p>
               <p className="text-sm text-green-700 mt-1">
                 You now have access to auto-fix, AI store page writing, screenshot framing, and one-click publishing.
@@ -252,8 +292,17 @@ export const Dashboard = () => {
         )}
       </div>
 
+      {/* Load error — don't show a false "No apps yet" when the query failed */}
+      {loadError && (
+        <Card className="text-center py-10 px-6 mb-6 border-red-200">
+          <h2 className="text-lg font-semibold text-surface-900 mb-2">Something went wrong</h2>
+          <p className="text-sm text-surface-500 mb-6">{loadError}</p>
+          <Button onClick={() => { setLoading(true); loadProjects(); }}>Try again</Button>
+        </Card>
+      )}
+
       {/* Empty state */}
-      {!hasApps && (
+      {!hasApps && !loadError && (
         <Card className="text-center py-14 px-6">
           <div className="h-14 w-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-5">
             <Rocket className="h-7 w-7 text-green-600" />

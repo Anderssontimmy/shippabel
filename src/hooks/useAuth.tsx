@@ -13,9 +13,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signInWithEmail: (email: string) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
-  signInWithGitHub: () => Promise<{ error: Error | null }>;
+  signInWithEmail: (email: string, redirectTo?: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: (redirectTo?: string) => Promise<{ error: Error | null }>;
+  signInWithGitHub: (redirectTo?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   githubToken: string | null;
 }
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // avoiding the race condition between getSession() and onAuthStateChange.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, s) => {
+    } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
 
@@ -65,8 +65,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
 
-      // Auto-save GitHub token to user_credentials for Edge Functions
-      if (s) saveGitHubToken(s);
+      // Auto-save GitHub token to user_credentials for Edge Functions.
+      // Only on SIGNED_IN (fresh OAuth) — not on every TOKEN_REFRESHED — and
+      // deferred out of the auth callback (supabase calls inside it can deadlock).
+      if (s && event === "SIGNED_IN") {
+        setTimeout(() => {
+          saveGitHubToken(s).catch(() => {
+            // Non-fatal: the user can still connect GitHub manually in Settings.
+          });
+        }, 0);
+      }
     });
 
     // Safety timeout — if INITIAL_SESSION never fires (e.g. network issue)
@@ -83,27 +91,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const signInWithEmail = async (email: string) => {
+  const signInWithEmail = async (email: string, redirectTo?: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: redirectTo ?? window.location.origin },
     });
     return { error: error as Error | null };
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (redirectTo?: string) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: redirectTo ?? window.location.origin },
     });
     return { error: error as Error | null };
   };
 
-  const signInWithGitHub = async () => {
+  const signInWithGitHub = async (redirectTo?: string) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: redirectTo ?? window.location.origin,
         scopes: "repo read:user workflow",
       },
     });
@@ -135,6 +143,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Provider + hook intentionally co-located; hook export only breaks fast refresh, not builds.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/invokeEdge";
 
 export interface StoreCopyVariant {
   app_name: string;
@@ -66,13 +67,14 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
       setLoading(false);
       return;
     }
-    const { data } = await supabase
+    const { data, error: loadError } = await supabase
       .from("store_listings")
       .select("*")
       .eq("project_id", projectId)
       .eq("platform", platform)
       .maybeSingle();
 
+    if (loadError) setError(loadError.message);
     setListing(data ? (data as StoreListing) : null);
     setLoading(false);
   };
@@ -100,11 +102,11 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
     }
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("generate-copy", {
-        body: { project_id: projectId, platform, app_context: _appContext },
+      const { data, error: fnError } = await invokeEdge<{ variants: StoreCopyVariant[] }>("generate-copy", {
+        project_id: projectId, platform, app_context: _appContext,
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError || !data) throw new Error(fnError ?? "Generation failed");
       setVariants(data.variants ?? []);
 
       // Auto-select first variant
@@ -140,14 +142,15 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
     setListing((prev) => prev ? { ...prev, [field]: value } : null);
   };
 
-  const save = async () => {
-    if (!listing) return;
+  const save = async (): Promise<boolean> => {
+    if (!listing) return false;
     setSaving(true);
+    setError(null);
 
     if (isDemo) {
       await new Promise((r) => setTimeout(r, 800));
       setSaving(false);
-      return;
+      return true;
     }
 
     const payload = {
@@ -183,6 +186,7 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
 
     if (saveError) setError(saveError.message);
     setSaving(false);
+    return !saveError;
   };
 
   const generatePrivacy = async (appName: string, _devName?: string, _devEmail?: string) => {
@@ -195,16 +199,14 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
     }
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("generate-privacy", {
-        body: {
-          project_id: projectId,
-          app_name: appName,
-          developer_name: _devName,
-          developer_email: _devEmail,
-        },
+      const { data, error: fnError } = await invokeEdge<{ hosted_url?: string }>("generate-privacy", {
+        project_id: projectId,
+        app_name: appName,
+        developer_name: _devName,
+        developer_email: _devEmail,
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError || !data) throw new Error(fnError ?? "Failed to generate privacy policy");
       if (data.hosted_url) {
         updateField("privacy_policy_url", data.hosted_url);
       }

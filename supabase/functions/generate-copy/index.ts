@@ -1,3 +1,4 @@
+import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -26,7 +27,7 @@ interface StoreCopyVariant {
   keywords: string;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("generate-copy", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
@@ -118,7 +119,9 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Claude API error: ${errText}`);
+      // Never leak provider/billing internals to customers
+      console.error("Claude API error:", response.status, errText.slice(0, 300));
+      throw new Error("Our AI writer is temporarily unavailable. Please try again in a little while. If it keeps happening, email us and we'll fix it.");
     }
 
     const result = await response.json();
@@ -158,7 +161,7 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
-});
+}));
 
 function buildCopyPrompt(
   platform: string,

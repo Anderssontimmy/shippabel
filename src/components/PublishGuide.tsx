@@ -87,7 +87,7 @@ export const PublishGuide = ({
 }: PublishGuideProps) => {
   const steps = platform === "android" ? androidSteps : iosSteps;
   const [completedSteps, setCompletedSteps] = useState<Set<StepId>>(new Set());
-  const [expandedStep, setExpandedStep] = useState<StepId>(steps[0]!.id);
+  const [expandedStep, setExpandedStep] = useState<StepId | null>(steps[0]!.id);
   const [showManualGuide, setShowManualGuide] = useState(!hasCredentials);
   const { toast } = useToast();
 
@@ -286,7 +286,8 @@ export const PublishGuide = ({
             <Card key={step.id} className={`transition-all ${done ? "opacity-60" : ""}`}>
               {/* Step header — always visible */}
               <button
-                onClick={() => setExpandedStep(isExpanded ? step.id : step.id)}
+                onClick={() => setExpandedStep(isExpanded ? null : step.id)}
+                aria-expanded={isExpanded}
                 className="w-full flex items-center gap-3 cursor-pointer"
               >
                 {/* Number / check */}
@@ -807,7 +808,7 @@ const FieldGuide = ({
       <p className="text-sm font-medium text-surface-900">{value}</p>
     </div>
     {onCopy && (
-      <button onClick={onCopy} className="text-surface-400 hover:text-surface-700 cursor-pointer p-1">
+      <button onClick={onCopy} aria-label={`Copy ${label}`} className="text-surface-400 hover:text-surface-700 cursor-pointer p-1">
         <Copy className="h-3.5 w-3.5" />
       </button>
     )}

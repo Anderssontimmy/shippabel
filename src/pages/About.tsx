@@ -1,7 +1,12 @@
 import { Link } from "react-router-dom";
 import { Rocket, Scan, Wrench, Globe, Layers, Shield, ArrowRight } from "lucide-react";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 export const About = () => {
+  useDocumentHead({
+    title: "About",
+    description: "Shippabel was built for the new generation of app creators — people who build with AI tools and need help getting their app onto Google Play.",
+  });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24">
       <div className="mb-12">

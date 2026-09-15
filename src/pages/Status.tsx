@@ -46,6 +46,14 @@ export const Status = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // The publish guide promises this page updates automatically — poll while open
+  useEffect(() => {
+    if (!id || id === "demo") return;
+    const interval = setInterval(() => reload(), 30_000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -60,7 +68,7 @@ export const Status = () => {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 sm:py-16">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <Link to={`/scan/${id}`} className="text-surface-500 hover:text-surface-700 transition-colors">
+          <Link to={`/scan/${id}`} aria-label="Back to scan results" className="text-surface-500 hover:text-surface-700 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
@@ -117,14 +125,14 @@ export const Status = () => {
                     </div>
                   </div>
 
-                  {submission.eas_build_id && (
+                  {submission.eas_build_id?.startsWith("http") && (
                     <a
-                      href={`https://expo.dev/builds/${submission.eas_build_id}`}
+                      href={submission.eas_build_id}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-xs text-surface-400 hover:text-surface-700"
                     >
-                      EAS Build
+                      Build logs
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}

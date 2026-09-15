@@ -1,3 +1,4 @@
+import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { decryptCreds } from "../_shared/crypto.ts";
@@ -24,7 +25,7 @@ interface StatusResult {
   rejection_reason?: string;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(instrument("check-review", async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
   }
@@ -61,8 +62,12 @@ Deno.serve(async (req) => {
       review_status: submission.review_status,
     };
 
-    // Check EAS build status if build is in progress
-    if (submission.build_status === "in_progress" && submission.eas_build_id) {
+    // Check EAS build status if build is in progress.
+    // Note: builds triggered via GitHub Actions store the Actions run URL in
+    // eas_build_id — those resolve via the build-complete callback instead,
+    // so don't feed the URL to the EAS API.
+    const isRealEasBuildId = !!submission.eas_build_id && !String(submission.eas_build_id).startsWith("http");
+    if (submission.build_status === "in_progress" && isRealEasBuildId) {
       const easStatus = await checkEasBuildStatus(submission.eas_build_id);
 
       if (easStatus !== submission.build_status) {
@@ -88,6 +93,8 @@ Deno.serve(async (req) => {
       }
 
       result.eas_build_url = `https://expo.dev/builds/${submission.eas_build_id}`;
+    } else if (submission.eas_build_id && String(submission.eas_build_id).startsWith("http")) {
+      result.eas_build_url = submission.eas_build_id;
     }
 
     // Check store review status if submitted
@@ -162,7 +169,7 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
-});
+}));
 
 // --- App Store Connect review status ---
 
@@ -272,48 +279,53 @@ async function checkGooglePlayReview(
   try {
     const accessToken = await getGoogleAccessToken(clientEmail, privateKey);
     const packageName = storeSubmissionId;
+    const base = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}`;
 
-    // Check the latest track release status
-    const res = await fetch(
-      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/edits`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      }
-    );
+    // The Play API requires an edit session to read track status. Always
+    // delete it afterwards so abandoned edits don't pile up on the app.
+    const res = await fetch(`${base}/edits`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
 
     if (!res.ok) return null;
 
     const edit = await res.json();
     const editId = edit.id;
 
-    // Check production track
-    const trackRes = await fetch(
-      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/edits/${editId}/tracks/production`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    try {
+      // submit-store publishes to the internal track — read the same track
+      const trackRes = await fetch(`${base}/edits/${editId}/tracks/internal`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
-    if (!trackRes.ok) return null;
+      if (!trackRes.ok) return null;
 
-    const trackData = await trackRes.json();
-    const release = trackData.releases?.[0];
-    if (!release) return null;
+      const trackData = await trackRes.json();
+      const release = trackData.releases?.[0];
+      if (!release) return null;
 
-    const statusMap: Record<string, string> = {
-      draft: "waiting_for_review",
-      inProgress: "in_review",
-      halted: "rejected",
-      completed: "approved",
-    };
+      const statusMap: Record<string, string> = {
+        draft: "waiting_for_review",
+        inProgress: "in_review",
+        halted: "rejected",
+        completed: "approved",
+      };
 
-    const mapped = statusMap[release.status];
-    if (!mapped) return null;
+      const mapped = statusMap[release.status];
+      if (!mapped) return null;
 
-    return { status: mapped };
+      return { status: mapped };
+    } finally {
+      await fetch(`${base}/edits/${editId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }).catch(() => {});
+    }
   } catch {
     return null;
   }

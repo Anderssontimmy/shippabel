@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build",
+  "buildCommand": "node scripts/deploy-gate.mjs && npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
   "redirects": [
@@ -14,12 +14,16 @@
     { "source": "/blog/bolt-app-to-app-store", "destination": "/blog/publish-bolt-app-to-google-play", "permanent": true },
     { "source": "/blog/app-store-screenshots-guide", "destination": "/blog/google-play-screenshots-guide", "permanent": true },
     { "source": "/blog/apple-review-what-they-check", "destination": "/blog/google-play-review-what-they-check", "permanent": true },
-    { "source": "/og-image.png", "destination": "/og-image.svg", "permanent": true }
+    { "source": "/og-image.svg", "destination": "/og-image.png", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|version\\.json$).*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/version.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
     {
       "source": "/assets/(.*)",
       "headers": [
@@ -33,13 +37,7 @@
       ]
     },
     {
-      "source": "/og-image.svg",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/iphone-frame.png",
+      "source": "/og-image.png",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
