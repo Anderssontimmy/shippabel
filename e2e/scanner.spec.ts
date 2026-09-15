@@ -36,6 +36,7 @@ test("scan passes guest proof, omits GitHub credentials and opens saved report",
   await page.route("**/functions/v1/scan-project", async (route) => {
     const body = route.request().postDataJSON();
     expect(body.github_token).toBeUndefined();
+    expect(route.request().headers()["authorization"]).toBeUndefined();
     expect(body.project_id).toBe(projectId);
     expect(route.request().headers()["x-guest-token"]).toMatch(/^[a-f0-9]{64}$/);
     await route.fulfill({ json: { success: true, scan_result: scan } });
