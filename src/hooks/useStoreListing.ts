@@ -165,28 +165,23 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
       privacy_policy_url: listing.privacy_policy_url,
     };
 
-    let saveError;
-    if (listing.id && listing.id !== "") {
-      // Update existing
-      const res = await supabase
+    try {
+      // Generation can create the row before this hook knows its id. Match the
+      // project's platform so the first Save also updates that generated row.
+      const { data, error: saveError } = await supabase
         .from("store_listings")
-        .update(payload)
-        .eq("id", listing.id);
-      saveError = res.error;
-    } else {
-      // Insert new
-      const res = await supabase
-        .from("store_listings")
-        .insert(payload)
+        .upsert(payload, { onConflict: "project_id,platform" })
         .select()
         .single();
-      saveError = res.error;
-      if (res.data) setListing(res.data as StoreListing);
+      if (saveError) throw saveError;
+      setListing(data as StoreListing);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save your store page. Please try again.");
+      return false;
+    } finally {
+      setSaving(false);
     }
-
-    if (saveError) setError(saveError.message);
-    setSaving(false);
-    return !saveError;
   };
 
   const generatePrivacy = async (appName: string, _devName?: string, _devEmail?: string) => {

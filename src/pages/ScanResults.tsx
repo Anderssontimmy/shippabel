@@ -46,7 +46,7 @@ const demoScanResult: ScanResult = {
       id: "2", project_id: "demo", severity: "critical", category: "security",
       title: "Hardcoded API key in source code",
       description: "Found a hardcoded API key in src/config.ts (line 12). This key will be visible in your published app bundle.",
-      auto_fixable: true, fix_description: "Move the API key to environment variables using expo-constants.", fixed: false,
+      auto_fixable: false, fix_description: "Revoke the exposed key and move privileged API calls to your backend. Secrets in a mobile app remain visible, including those read from environment variables.", fixed: false,
     },
     {
       id: "3", project_id: "demo", severity: "warning", category: "config",
