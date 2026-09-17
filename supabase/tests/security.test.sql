@@ -25,12 +25,21 @@ SELECT throws_ok($$INSERT INTO public.projects(name) VALUES('unscoped')$$,'42501
 SELECT set_config('request.headers', jsonb_build_object('x-guest-token',repeat('a',64))::text,true);
 SELECT is((SELECT count(*)::int FROM public.issues),1,'Guest A can read its own issues');
 SELECT lives_ok($$INSERT INTO storage.objects(bucket_id,name) VALUES('project-archives','scans/20000000-0000-4000-8000-000000000003/source.zip')$$,'Guest A can upload to its own private path');
+SELECT is((SELECT count(*)::int FROM storage.objects WHERE bucket_id='project-archives'),0,'Even the uploading guest cannot warm a shared archive download cache');
 SELECT throws_ok($$INSERT INTO storage.objects(bucket_id,name) VALUES('project-archives','scans/20000000-0000-4000-8000-000000000004/source.zip')$$,'42501',null,'Guest A cannot upload into guest B project');
 
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
 SELECT results_eq($$UPDATE public.projects SET user_id='10000000-0000-4000-8000-000000000002' WHERE id='20000000-0000-4000-8000-000000000004' RETURNING id$$,ARRAY[]::uuid[],'Login alone cannot claim another guest report');
 SELECT results_eq($$UPDATE public.projects SET user_id='10000000-0000-4000-8000-000000000002' WHERE id='20000000-0000-4000-8000-000000000003' RETURNING id$$,ARRAY['20000000-0000-4000-8000-000000000003'::uuid],'Valid guest proof can claim the report after login');
+SELECT is((SELECT count(*)::int FROM storage.objects WHERE bucket_id='project-archives'),0,'Authenticated project owners also use server-only archive reads');
+SELECT lives_ok($$INSERT INTO storage.objects(bucket_id,name) VALUES('projects','screenshots/20000000-0000-4000-8000-000000000003/page_1.png')$$,'Owner can upload screenshot');
+SELECT throws_ok($$INSERT INTO storage.objects(bucket_id,name) VALUES('projects','screenshots/20000000-0000-4000-8000-000000000001/page_1.png')$$,'42501',null,'Owner cannot upload screenshot to another project');
+SELECT is((SELECT count(*)::int FROM storage.objects WHERE bucket_id='projects'),1,'Owner can read own screenshot metadata for replacement');
+SELECT throws_ok($$UPDATE storage.objects SET name='screenshots/20000000-0000-4000-8000-000000000001/page_1.png' WHERE bucket_id='projects'$$,'42501',null,'Owner cannot move a screenshot into another project');
+SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+SELECT results_eq($$UPDATE storage.objects SET metadata='{"overwritten":true}' WHERE bucket_id='projects' RETURNING name$$,ARRAY[]::text[],'Foreign screenshot cannot be overwritten');
+SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
 SELECT throws_ok($$INSERT INTO public.submissions(project_id,platform,build_status) VALUES('20000000-0000-4000-8000-000000000003','android','completed')$$,'42501',null,'Clients cannot fabricate completed builds');
 SELECT throws_ok($$SELECT public.consume_scan_quota('ip','20000000-0000-4000-8000-000000000003',NULL)$$,'42501',null,'Clients cannot invoke privileged quotas');
 SELECT throws_ok($$SELECT public.apply_stripe_event('{}')$$,'42501',null,'Clients cannot grant payment entitlements');

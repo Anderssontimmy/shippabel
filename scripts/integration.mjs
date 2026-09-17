@@ -88,8 +88,11 @@ try {
   const zipScan = await edge("scan-project", { project_id: zipProject.id, file_path: path });
   assert.equal(zipScan.status, 200, JSON.stringify(zipScan.body));
   assert.ok(zipScan.body.scan_result.issues.some((issue) => issue.title.includes("Hardcoded Stripe")));
+  assert.ok((await guest.storage.from("project-archives").download(path)).error);
   assert.ok((await foreign.storage.from("project-archives").download(path)).error);
-  pass("Deflated ZIP is scanned and source archives cannot be downloaded by another guest");
+  assert.ifError((await admin.storage.from("project-archives").download(path)).error);
+  assert.ok((await foreign.storage.from("project-archives").download(path)).error);
+  pass("ZIP scans work while archives remain server-only, including after an authorized server read");
 
   const badProject = await project(guest);
   const badPath = `scans/${badProject.id}/source.zip`;

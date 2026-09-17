@@ -100,7 +100,7 @@ export const useScan = () => {
       const filePath = `scans/${project.id}/source.zip`;
       const { error: uploadError } = await supabase.storage
         .from("project-archives")
-        .upload(filePath, file, { contentType: "application/zip" });
+        .upload(filePath, file, { contentType: "application/zip", cacheControl: "0" });
 
       if (uploadError) {
         throw new Error(uploadError.message ?? "Upload failed");
