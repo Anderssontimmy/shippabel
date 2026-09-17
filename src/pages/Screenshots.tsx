@@ -18,7 +18,8 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
+import { reportError } from "@/lib/monitoring";
 
 interface PhoneData {
   id: string;
@@ -182,21 +183,25 @@ export const Screenshots = () => {
 
   const exportPage = useCallback(async (idx: number) => {
     const el = pageRefs.current[idx];
-    if (!el) return;
+    if (!el) return false;
     try {
       const canvas = await html2canvas(el, { scale: EXPORT_SCALE, backgroundColor: null, useCORS: true });
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a"); a.href = url; a.download = `screenshot_${idx + 1}.png`; a.click();
-        URL.revokeObjectURL(url);
-      });
-    } catch { toast("error", "Export failed"); }
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Screenshot image could not be created");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `screenshot_${idx + 1}.png`; a.click();
+      URL.revokeObjectURL(url);
+      return true;
+    } catch (error) {
+      reportError(error instanceof Error ? error : new Error("Screenshot export failed"), "screenshot_export");
+      toast("error", "Export failed. Please try again.");
+      return false;
+    }
   }, [toast]);
 
   const exportAll = useCallback(async () => {
     for (let i = 0; i < PAGE_COUNT; i++) {
-      if (pages[i]!.phones.length > 0 || pages[i]!.texts.length > 0) await exportPage(i);
+      if ((pages[i]!.phones.length > 0 || pages[i]!.texts.length > 0) && !await exportPage(i)) return;
     }
     toast("success", "Screenshots exported!");
   }, [pages, exportPage, toast]);
@@ -244,6 +249,7 @@ export const Screenshots = () => {
           urls.push(urlData.publicUrl);
         }
       } catch (err) {
+        reportError(err instanceof Error ? err : new Error("Screenshot rendering failed"), "screenshot_save");
         console.error(`Failed to render page ${i + 1}:`, err);
         // Continue with other pages
       }
