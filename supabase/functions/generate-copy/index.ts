@@ -1,3 +1,5 @@
+import { loadProjectSource, appContext } from "../_shared/projectContext.ts";
+import { generateText } from "../_shared/anthropic.ts";
 import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -67,11 +69,6 @@ Deno.serve(instrument("generate-copy", async (req) => {
     }
     await supabase.from("usage_events").insert({ user_id: user.id, action: "generate-copy" });
 
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!anthropicKey) {
-      throw new Error("ANTHROPIC_API_KEY not configured");
-    }
-
     const { project_id, platform, app_context } = (await req.json()) as GenerateCopyRequest;
 
     // Fetch project + scan data — must belong to the requesting user
@@ -83,49 +80,18 @@ Deno.serve(instrument("generate-copy", async (req) => {
       .single();
 
     if (projectError || !project) {
-      throw new Error("Project not found");
+      return Response.json({ error: "Project not found" }, { status: 404, headers: getCorsHeaders(req) });
     }
 
     const scanResult = project.scan_result;
-    const repoUrl = project.repo_url;
-
-    // Build context for Claude
-    let codeContext = "";
-    if (repoUrl) {
-      codeContext = await fetchAppContext(repoUrl);
-    }
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicKey) throw new Error("AI service not configured");
+    const source = await loadProjectSource(supabase, user.id, project);
+    const codeContext = appContext(source);
 
     const prompt = buildCopyPrompt(platform, project.name, codeContext, app_context ?? "", scanResult);
 
-    // Call Claude API
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      // Never leak provider/billing internals to customers
-      console.error("Claude API error:", response.status, errText.slice(0, 300));
-      throw new Error("Our AI writer is temporarily unavailable. Please try again in a little while. If it keeps happening, email us and we'll fix it.");
-    }
-
-    const result = await response.json();
-    const content = result.content?.[0]?.text ?? "";
+    const content = await generateText({ apiKey: anthropicKey, prompt, maxTokens: 6144 });
 
     // Parse the 3 variants from Claude's response
     const variants = parseCopyVariants(content);
@@ -136,7 +102,7 @@ Deno.serve(instrument("generate-copy", async (req) => {
     // Store the first variant as the default listing
     if (variants.length > 0) {
       const listing = variants[0]!;
-      await supabase.from("store_listings").upsert(
+      const { error: saveError } = await supabase.from("store_listings").upsert(
         {
           project_id,
           platform,
@@ -148,6 +114,7 @@ Deno.serve(instrument("generate-copy", async (req) => {
         },
         { onConflict: "project_id,platform" }
       );
+      if (saveError) throw new Error("Your store listing could not be saved. Please try again.");
     }
 
     return new Response(
@@ -209,32 +176,6 @@ KEYWORDS: [comma-separated keywords for iOS]
 ---END---
 
 Make the copy compelling, keyword-rich, and focused on user benefits. Avoid generic phrases. Be specific about what the app does.`;
-}
-
-async function fetchAppContext(repoUrl: string): Promise<string> {
-  try {
-    const urlObj = new URL(repoUrl);
-    const parts = urlObj.pathname.split("/").filter(Boolean);
-    if (parts.length < 2) return "";
-    const repoPath = `${parts[0]}/${parts[1]}`;
-
-    const contexts: string[] = [];
-
-    // Fetch package.json for dependencies/description
-    for (const file of ["package.json", "README.md", "app.json"]) {
-      const res = await fetch(
-        `https://raw.githubusercontent.com/${repoPath}/main/${file}`
-      );
-      if (res.ok) {
-        const text = await res.text();
-        contexts.push(`--- ${file} ---\n${text.slice(0, 2000)}`);
-      }
-    }
-
-    return contexts.join("\n\n");
-  } catch {
-    return "";
-  }
 }
 
 function parseCopyVariants(text: string): StoreCopyVariant[] {

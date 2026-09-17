@@ -1,3 +1,4 @@
+import { generateText } from "../_shared/anthropic.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { decryptCreds } from "../_shared/crypto.ts";
@@ -365,25 +366,7 @@ Respond in this exact JSON format:
 
 Be specific based on detected frameworks and features. If you see navigation libraries, mention multi-screen experience. If you see payment/stripe, mention monetization readiness. If you see Firebase/Supabase, mention backend capabilities. Never be generic.`;
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      signal: AbortSignal.timeout(25000),
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (!response.ok) return null;
-
-    const result = await response.json();
-    const text = (result.content?.[0]?.text ?? "").trim();
+    const text = await generateText({ apiKey: anthropicKey, prompt, maxTokens: 2048, timeoutMs: 25000 });
 
     // Strip any accidental markdown fences
     const jsonStr = text.replace(/^```json?\s*/, "").replace(/\s*```$/, "");
