@@ -1,3 +1,5 @@
+import { loadProjectSource, privacyContext } from "../_shared/projectContext.ts";
+import { generateText } from "../_shared/anthropic.ts";
 import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -59,11 +61,6 @@ Deno.serve(instrument("generate-privacy", async (req) => {
     }
     await supabase.from("usage_events").insert({ user_id: user.id, action: "generate-privacy" });
 
-    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!anthropicKey) {
-      throw new Error("ANTHROPIC_API_KEY not configured");
-    }
-
     const { project_id, app_name, developer_name, developer_email } =
       (await req.json()) as GeneratePrivacyRequest;
 
@@ -75,15 +72,11 @@ Deno.serve(instrument("generate-privacy", async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    // Detect permissions and services from scan
-    let detectedServices: string[] = [];
-    let detectedPermissions: string[] = [];
-
-    if (project?.repo_url) {
-      const analysis = await analyzeProjectPrivacy(project.repo_url);
-      detectedServices = analysis.services;
-      detectedPermissions = analysis.permissions;
-    }
+    if (!project) return Response.json({ error: "Project not found" }, { status: 404, headers: getCorsHeaders(req) });
+    const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicKey) throw new Error("AI service not configured");
+    const source = await loadProjectSource(supabase, user.id, project);
+    const { services: detectedServices, permissions: detectedPermissions } = privacyContext(source);
 
     const prompt = `You are a legal document writer specializing in mobile app privacy policies. Generate a comprehensive, legally appropriate privacy policy for a mobile app.
 
@@ -105,30 +98,7 @@ Requirements:
 
 Output ONLY the privacy policy text in Markdown format. No preamble or commentary.`;
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("Claude API error:", response.status, (await response.text()).slice(0, 300));
-      throw new Error("Our AI writer is temporarily unavailable. Please try again in a little while. If it keeps happening, email us and we'll fix it.");
-    }
-
-    const result = await response.json();
-    const privacyPolicy = result.content?.[0]?.text ?? "";
-    if (!privacyPolicy.trim()) {
-      throw new Error("The AI returned an empty privacy policy. Please try again.");
-    }
+    const privacyPolicy = await generateText({ apiKey: anthropicKey, prompt, maxTokens: 6144 });
 
     // Store the privacy policy and generate a hosted URL
     const policyUrl = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/privacy-policies/${project_id}.html`;
@@ -148,11 +118,12 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
       throw new Error(`Couldn't publish the privacy policy: ${uploadError.message}`);
     }
 
-    // Update the store listing with privacy policy URL
-    await supabase
-      .from("store_listings")
-      .update({ privacy_policy_url: policyUrl })
-      .eq("project_id", project_id);
+    // Save the URL even when the policy is generated before the listing copy.
+    const { error: saveError } = await supabase.from("store_listings").upsert(
+      { project_id, platform: "android", privacy_policy_url: policyUrl },
+      { onConflict: "project_id,platform" }
+    );
+    if (saveError) throw new Error("Your privacy policy was generated but could not be saved. Please try again.");
 
     return new Response(
       JSON.stringify({
@@ -171,92 +142,6 @@ Output ONLY the privacy policy text in Markdown format. No preamble or commentar
   }
 }));
 
-async function analyzeProjectPrivacy(repoUrl: string) {
-  const services: string[] = [];
-  const permissions: string[] = [];
-
-  try {
-    const urlObj = new URL(repoUrl);
-    const parts = urlObj.pathname.split("/").filter(Boolean);
-    if (parts.length < 2) return { services, permissions };
-    const repoPath = `${parts[0]}/${parts[1]}`;
-
-    // Check package.json for service SDKs
-    const pkgRes = await fetch(
-      `https://raw.githubusercontent.com/${repoPath}/main/package.json`
-    );
-    if (pkgRes.ok) {
-      const pkg = await pkgRes.json();
-      const allDeps = {
-        ...(pkg.dependencies ?? {}),
-        ...(pkg.devDependencies ?? {}),
-      };
-
-      const serviceMap: Record<string, string> = {
-        "@supabase/supabase-js": "Supabase (authentication, database)",
-        "firebase": "Firebase (Google analytics, authentication)",
-        "@react-native-firebase/app": "Firebase",
-        "@stripe/stripe-react-native": "Stripe (payment processing)",
-        "expo-ads-admob": "Google AdMob (advertising)",
-        "@sentry/react-native": "Sentry (error tracking)",
-        "expo-analytics": "Analytics",
-        "@segment/analytics-react-native": "Segment (analytics)",
-        "react-native-onesignal": "OneSignal (push notifications)",
-      };
-
-      for (const [dep, name] of Object.entries(serviceMap)) {
-        if (dep in allDeps) services.push(name);
-      }
-    }
-
-    // Check app.json for permissions
-    const appRes = await fetch(
-      `https://raw.githubusercontent.com/${repoPath}/main/app.json`
-    );
-    if (appRes.ok) {
-      const appJson = await appRes.json();
-      const expo = appJson.expo ?? appJson;
-
-      const iosInfoPlist = (expo.ios as Record<string, unknown>)?.infoPlist as Record<string, unknown> | undefined;
-      if (iosInfoPlist) {
-        const permMap: Record<string, string> = {
-          NSCameraUsageDescription: "Camera",
-          NSPhotoLibraryUsageDescription: "Photo Library",
-          NSLocationWhenInUseUsageDescription: "Location (while in use)",
-          NSLocationAlwaysUsageDescription: "Location (always)",
-          NSContactsUsageDescription: "Contacts",
-          NSMicrophoneUsageDescription: "Microphone",
-          NSCalendarsUsageDescription: "Calendar",
-        };
-        for (const [key, name] of Object.entries(permMap)) {
-          if (key in iosInfoPlist) permissions.push(name);
-        }
-      }
-
-      const androidPerms = (expo.android as Record<string, unknown>)?.permissions as string[] | undefined;
-      if (androidPerms) {
-        const permMap: Record<string, string> = {
-          CAMERA: "Camera",
-          READ_CONTACTS: "Contacts",
-          ACCESS_FINE_LOCATION: "Precise Location",
-          ACCESS_COARSE_LOCATION: "Approximate Location",
-          RECORD_AUDIO: "Microphone",
-          READ_CALENDAR: "Calendar",
-          READ_EXTERNAL_STORAGE: "Storage",
-        };
-        for (const perm of androidPerms) {
-          const name = permMap[perm];
-          if (name && !permissions.includes(name)) permissions.push(name);
-        }
-      }
-    }
-  } catch {
-    // Non-fatal
-  }
-
-  return { services, permissions };
-}
-
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -264,7 +149,7 @@ function escapeHtml(s: string): string {
 function generatePrivacyHtml(appName: string, markdown: string): string {
   const safeAppName = escapeHtml(appName);
   // Basic markdown to HTML
-  let html = markdown
+  const html = escapeHtml(markdown)
     .replace(/^### (.+)$/gm, "<h3>$1</h3>")
     .replace(/^## (.+)$/gm, "<h2>$1</h2>")
     .replace(/^# (.+)$/gm, "<h1>$1</h1>")

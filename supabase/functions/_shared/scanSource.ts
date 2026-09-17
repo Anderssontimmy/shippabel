@@ -51,7 +51,7 @@ function projectFromContents(fileList: string[], contents: Map<string, string>):
   };
 }
 
-export async function fetchGitHubProject(repoPath: string, token?: string, request: typeof fetch = fetch): Promise<ScanSource> {
+export async function fetchGitHubProject(repoPath: string, token?: string, request: typeof fetch = fetch, options: { includeSource?: boolean } = {}): Promise<ScanSource> {
   const headers: Record<string, string> = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
   if (token) headers.Authorization = `Bearer ${token}`;
   const get = async (path: string, raw = false) => {
@@ -80,7 +80,7 @@ export async function fetchGitHubProject(repoPath: string, token?: string, reque
   const entries = tree.tree.filter((entry: { type: string; path?: string }) => entry.type === "blob" && typeof entry.path === "string") as { path: string; size?: number }[];
   const fileList = entries.map((entry) => entry.path);
   const readme = fileList.find((f) => f.toLowerCase() === "readme.md");
-  const selected = new Set(["app.json", "package.json", readme, ...sourceFiles(fileList)]);
+  const selected = new Set(["app.json", "package.json", readme, ...(options.includeSource === false ? [] : sourceFiles(fileList))]);
   const contents = new Map<string, string>();
   // Resolve content against the exact tree snapshot, including private repositories.
   await Promise.all(entries.filter((entry) => selected.has(entry.path)).map(async (entry) => {

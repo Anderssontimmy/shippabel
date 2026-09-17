@@ -125,6 +125,10 @@ try {
   assert.equal((await admin.auth.admin.getUserById(owner.id)).data.user.app_metadata.plan, "ship");
   assert.equal((await edge("stripe-webhook", event)).status, 400);
   pass("Signed synthetic webhook grants once and rejects missing signatures (not a Stripe purchase)");
+  for (const name of ["generate-copy", "generate-privacy"]) {
+    assert.equal((await edge(name, { project_id: publicProject.id, platform: "android", app_name: "Foreign report" }, owner.token)).status, 404, name);
+  }
+  pass("Paid account cannot generate or overwrite documents for an unrelated guest report");
   await admin.from("stripe_events").delete().eq("id", event.id);
 
   const build = await admin.rpc("start_build", { p_project_id: own.id, p_platform: "android" });
