@@ -188,7 +188,7 @@ export const Status = () => {
                 {/* Status detail */}
                 {submission.rejection_reason && (
                   <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
-                    <p className="text-sm font-medium text-red-700 mb-1">Rejection Reason</p>
+                    <p className="text-sm font-medium text-red-700 mb-1">{submission.review_status === "pending_credentials" ? "Action needed" : "Rejection reason"}</p>
                     <p className="text-sm text-surface-400">{submission.rejection_reason}</p>
                   </div>
                 )}

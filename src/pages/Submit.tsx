@@ -548,7 +548,7 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
       <div className="flex items-center gap-3">
         {["approved", "internal_testing"].includes(submission.review_status) ? (
           <Check className={`h-5 w-5 ${status.color}`} />
-        ) : submission.review_status === "rejected" ? (
+        ) : ["rejected", "pending_credentials"].includes(submission.review_status) ? (
           <AlertCircle className={`h-5 w-5 ${status.color}`} />
         ) : (
           <Loader2 className={`h-5 w-5 ${status.color} animate-spin`} />

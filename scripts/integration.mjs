@@ -162,6 +162,7 @@ try {
   assert.equal(missingCredentials.status, 200);
   assert.equal(missingCredentials.body.success, false);
   assert.equal(missingCredentials.body.status, "pending_credentials");
+  assert.equal((await admin.from("submissions").select("submitted_at").eq("id", build.data).single()).data.submitted_at, null);
   assert.equal((await admin.from("projects").select("status").eq("id", own.id).single()).data.status, "ready");
   pass("Missing Play credentials return an incomplete submission without making the project live");
   console.log(`${passed} integration checks passed.`);

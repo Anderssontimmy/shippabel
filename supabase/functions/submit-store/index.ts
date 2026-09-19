@@ -108,7 +108,7 @@ Deno.serve(instrument("submit-store", async (req) => {
         review_status: result.status,
         store_submission_id: result.store_submission_id ?? null,
         rejection_reason: result.rejection_reason ?? null,
-        submitted_at: new Date().toISOString(),
+        submitted_at: ["waiting_for_review", "internal_testing"].includes(result.status) ? new Date().toISOString() : null,
       })
       .eq("id", submission.id);
 
