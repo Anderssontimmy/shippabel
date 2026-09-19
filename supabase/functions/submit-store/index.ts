@@ -102,17 +102,19 @@ Deno.serve(instrument("submit-store", async (req) => {
       );
     }
 
-    await supabase
+    const { error: saveError } = await supabase
       .from("submissions")
       .update({
         review_status: result.status,
         store_submission_id: result.store_submission_id ?? null,
         rejection_reason: result.rejection_reason ?? null,
-        submitted_at: new Date().toISOString(),
+        submitted_at: ["waiting_for_review", "internal_testing"].includes(result.status) ? new Date().toISOString() : null,
       })
       .eq("id", submission.id);
 
-    if (result.status === "waiting_for_review") {
+    if (saveError) throw new Error("Could not save the submission status. Check Play Console before retrying.");
+
+    if (["waiting_for_review", "internal_testing"].includes(result.status)) {
       await supabase
         .from("projects")
         .update({ status: "submitted", updated_at: new Date().toISOString() })
@@ -120,7 +122,7 @@ Deno.serve(instrument("submit-store", async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: result.status === "waiting_for_review", status: result.status, details: result.details }),
+      JSON.stringify({ success: ["waiting_for_review", "internal_testing"].includes(result.status), status: result.status, details: result.details }),
       { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -286,7 +288,7 @@ async function submitToGooglePlay(
   }
 
   return {
-    status: "waiting_for_review",
+    status: "internal_testing",
     details: `Uploaded version code ${versionCode} to the internal testing track for ${packageName}.`,
     store_submission_id: packageName,
   };

@@ -1,3 +1,4 @@
+import { internalTrackStatus } from "../_shared/playStatus.ts";
 import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -309,17 +310,7 @@ async function checkGooglePlayReview(
       const release = trackData.releases?.[0];
       if (!release) return null;
 
-      const statusMap: Record<string, string> = {
-        draft: "waiting_for_review",
-        inProgress: "in_review",
-        halted: "rejected",
-        completed: "approved",
-      };
-
-      const mapped = statusMap[release.status];
-      if (!mapped) return null;
-
-      return { status: mapped };
+      return internalTrackStatus(release.status);
     } finally {
       await fetch(`${base}/edits/${editId}`, {
         method: "DELETE",

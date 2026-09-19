@@ -33,6 +33,7 @@ const getTimelineState = (submission: Submission) => {
   if (review_status === "pending_credentials") return { active: 1, failed: true };
   if (review_status === "waiting_for_review" || review_status === "in_review") return { active: 2, failed: false };
   if (review_status === "rejected") return { active: 2, failed: true };
+  if (review_status === "internal_testing") return { active: 2, failed: false };
   if (review_status === "approved") return { active: 3, failed: false };
   return { active: 0, failed: false };
 };
@@ -149,7 +150,7 @@ export const Status = () => {
                       ? "bg-surface-900"
                       : "bg-surface-100";
 
-                    const StepIcon = i < timeline.active
+                    const StepIcon = i < timeline.active || (i === timeline.active && submission.review_status === "internal_testing")
                       ? CheckCircle2
                       : i === timeline.active && timeline.failed
                       ? AlertCircle
@@ -165,10 +166,10 @@ export const Status = () => {
                       <div key={step.key} className="flex sm:flex-1 items-center sm:items-center">
                         <div className="flex items-center sm:flex-col gap-3 sm:gap-1.5">
                           <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${stepColor}`}>
-                            <StepIcon className={`${iconClass} ${i === timeline.active && !timeline.failed ? "animate-spin" : ""}`} />
+                            <StepIcon className={`${iconClass} ${i === timeline.active && !timeline.failed && submission.review_status !== "internal_testing" ? "animate-spin" : ""}`} />
                           </div>
                           <span className={`text-xs font-medium ${i <= timeline.active ? "text-surface-700" : "text-surface-400"}`}>
-                            {step.label}
+                            {submission.review_status === "internal_testing" && step.key === "review" ? "Internal testing" : step.label}
                           </span>
                         </div>
                         {i < timelineSteps.length - 1 && (
@@ -187,11 +188,12 @@ export const Status = () => {
                 {/* Status detail */}
                 {submission.rejection_reason && (
                   <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
-                    <p className="text-sm font-medium text-red-700 mb-1">Rejection Reason</p>
+                    <p className="text-sm font-medium text-red-700 mb-1">{submission.review_status === "pending_credentials" ? "Action needed" : "Rejection reason"}</p>
                     <p className="text-sm text-surface-400">{submission.rejection_reason}</p>
                   </div>
                 )}
 
+                {submission.review_status === "internal_testing" && <p className="mt-4 text-sm text-green-700">Uploaded to internal testing. Check tester access in Play Console; a public release is still separate.</p>}
                 {submission.review_status === "approved" && (
                   <div className="mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-center">
                     <p className="text-sm font-semibold text-green-700">

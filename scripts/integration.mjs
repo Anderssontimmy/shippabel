@@ -158,6 +158,13 @@ try {
   assert.equal((await edge("build-complete", callback, anon, guestToken, { "x-callback-secret": secret })).body.duplicate, true);
   assert.equal((await admin.from("projects").select("status").eq("id", own.id).single()).data.status, "ready");
   pass("Real callback handler authenticates, updates exact build and ignores retries");
+  const missingCredentials = await edge("submit-store", { submission_id: build.data }, owner.token);
+  assert.equal(missingCredentials.status, 200);
+  assert.equal(missingCredentials.body.success, false);
+  assert.equal(missingCredentials.body.status, "pending_credentials");
+  assert.equal((await admin.from("submissions").select("submitted_at").eq("id", build.data).single()).data.submitted_at, null);
+  assert.equal((await admin.from("projects").select("status").eq("id", own.id).single()).data.status, "ready");
+  pass("Missing Play credentials return an incomplete submission without making the project live");
   console.log(`${passed} integration checks passed.`);
 } finally {
   for (const id of projectIds) {

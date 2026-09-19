@@ -31,7 +31,7 @@ const steps: { id: WizardStep; label: string; icon: typeof FileText }[] = [
   { id: "review", label: "Checklist", icon: FileText },
   { id: "configure", label: "Settings", icon: Wrench },
   { id: "build", label: "Build", icon: Package },
-  { id: "submit", label: "Go Live", icon: Send },
+  { id: "submit", label: "Test release", icon: Send },
 ];
 
 export const Submit = () => {
@@ -61,7 +61,7 @@ export const Submit = () => {
     if (!submission) return;
     const ok = await submitToStore(submission.id);
     if (ok) {
-      toast("success", "Submitted! We'll track your review status.");
+      toast("success", "Uploaded to the internal test track. Check tester access in Play Console.");
     } else {
       toast("error", "Submission failed. See the error above for details.");
     }
@@ -207,6 +207,7 @@ export const Submit = () => {
         </div>
       </div>
 
+      {id === "demo" && <p className="text-sm text-amber-700 mb-6">Demo preview: no real build or store submission is performed.</p>}
       {/* Step indicator */}
       <div className="flex items-center mb-10">
         {steps.map((step, i) => (
@@ -397,6 +398,7 @@ export const Submit = () => {
             <Card>
               <h3 className="font-semibold text-surface-900 mb-4">Submission Status</h3>
               <ReviewStatusDisplay submission={submission} />
+              {submission.review_status === "pending_credentials" && <div className="flex flex-wrap gap-3 mt-4"><Link to="/settings" className="text-sm underline">Check connected accounts</Link><Button size="sm" disabled={submitting} onClick={handleAutoSubmit}>{submitting ? "Retrying…" : "Retry submission"}</Button></div>}
             </Card>
           ) : (
             <PublishGuide
@@ -508,8 +510,8 @@ const BuildStatusDisplay = ({ submission }: { submission: Submission }) => {
 const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
   const statusMap: Record<string, { label: string; desc: string; color: string }> = {
     pending_credentials: {
-      label: "Credentials Needed",
-      desc: "Please connect your Google Play credentials in Settings.",
+      label: "Action Needed",
+      desc: submission.rejection_reason ?? "Please connect your Google Play credentials in Settings.",
       color: "text-amber-600",
     },
     waiting_for_review: {
@@ -521,6 +523,11 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
       label: "In Review",
       desc: "A reviewer is currently looking at your app.",
       color: "text-blue-600",
+    },
+    internal_testing: {
+      label: "Internal test uploaded",
+      desc: "Your build was sent to the internal test track. Check tester availability in Play Console. Public release is a separate step.",
+      color: "text-green-600",
     },
     approved: {
       label: "Approved!",
@@ -539,9 +546,9 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        {submission.review_status === "approved" ? (
+        {["approved", "internal_testing"].includes(submission.review_status) ? (
           <Check className={`h-5 w-5 ${status.color}`} />
-        ) : submission.review_status === "rejected" ? (
+        ) : ["rejected", "pending_credentials"].includes(submission.review_status) ? (
           <AlertCircle className={`h-5 w-5 ${status.color}`} />
         ) : (
           <Loader2 className={`h-5 w-5 ${status.color} animate-spin`} />
