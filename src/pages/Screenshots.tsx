@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ShipFlowBar } from "@/components/ShipFlowBar";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { supabase } from "@/lib/supabase";
+import { loadScreenshots, saveScreenshots, MIN_SCREENSHOTS } from "@/lib/screenshots";
 import {
   ArrowLeft,
   Smartphone,
@@ -42,6 +42,7 @@ interface TextData {
 }
 
 interface PageData {
+  savedImage?: string;
   phones: PhoneData[];
   texts: TextData[];
   bgColor: string;
@@ -51,6 +52,15 @@ interface PageData {
 type SelectedItem = { type: "phone" | "text"; id: string } | null;
 
 const PAGE_COUNT = 5;
+const emptyPage = (): PageData => ({ phones: [], texts: [], bgColor: "#f0f0ff", bgGradient: null });
+const hasContent = (page: PageData) => !!page.savedImage || page.phones.length > 0 || page.texts.length > 0;
+
+async function renderPage(el: HTMLDivElement) {
+  const canvas = await html2canvas(el, { scale: 4, backgroundColor: null, useCORS: true });
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("Screenshot image could not be created");
+  return blob;
+}
 
 const GRADIENT_PRESETS = [
   { label: "Purple", value: "linear-gradient(135deg, #667eea, #764ba2)" },
@@ -64,6 +74,12 @@ const GRADIENT_PRESETS = [
 export const Screenshots = () => {
   const { id } = useParams();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isPaid } = usePlan();
+  const [loadingSaved, setLoadingSaved] = useState(id !== "demo");
+  const [loadError, setLoadError] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   // Object URLs created for uploaded screenshots — revoked on unmount
   const objectUrlsRef = useRef<Set<string>>(new Set());
@@ -81,8 +97,22 @@ export const Screenshots = () => {
   }, []);
 
   const [pages, setPages] = useState<PageData[]>(() =>
-    Array.from({ length: PAGE_COUNT }, () => ({ phones: [], texts: [], bgColor: "#f0f0ff", bgGradient: null }))
+    Array.from({ length: PAGE_COUNT }, emptyPage)
   );
+  useEffect(() => {
+    let cancelled = false;
+    if (!id || id === "demo" || !isPaid) { setLoadingSaved(false); return; }
+    setLoadingSaved(true);
+    setLoadError(false);
+    loadScreenshots(id).then((urls) => {
+      if (cancelled) return;
+      setPages(Array.from({ length: PAGE_COUNT }, (_, index) => ({ ...emptyPage(), savedImage: urls[index] })));
+      setDirty(false);
+    }).catch(() => {
+      if (!cancelled) setLoadError(true);
+    }).finally(() => { if (!cancelled) setLoadingSaved(false); });
+    return () => { cancelled = true; };
+  }, [id, isPaid]);
   const [activePage, setActivePage] = useState(0);
   const [selected, setSelected] = useState<SelectedItem>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -94,6 +124,7 @@ export const Screenshots = () => {
   const selectedText = selected?.type === "text" ? page.texts.find((t) => t.id === selected.id) : null;
 
   const updatePage = useCallback((idx: number, fn: (p: PageData) => PageData) => {
+    setDirty(true);
     setPages((prev) => prev.map((p, i) => (i === idx ? fn(p) : p)));
   }, []);
 
@@ -106,14 +137,15 @@ export const Screenshots = () => {
   }, [activePage, updatePage]);
 
   // Add phone
-  const addPhone = useCallback((rotation = 0, scale = 45) => {
+  const addPhone = useCallback((rotation = 0, scale = 45, pageIdx = activePage) => {
     const input = document.createElement("input");
     input.type = "file"; input.accept = "image/*";
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      const url = file ? trackObjectUrl(file) : null;
+      if (!file) return;
+      const url = trackObjectUrl(file);
       const phone: PhoneData = { id: crypto.randomUUID(), screenshotUrl: url, rotation, scale, x: 25, y: 10, frameColor: "#1d1d1f" };
-      updatePage(activePage, (p) => ({ ...p, phones: [...p.phones, phone] }));
+      updatePage(pageIdx, (p) => ({ ...p, phones: [...p.phones, phone] }));
       setSelected({ type: "phone", id: phone.id });
     };
     input.click();
@@ -147,8 +179,9 @@ export const Screenshots = () => {
   }, [selected, selectedPhone, selectedText, activePage, updatePage]);
 
   // Drag
-  const startDrag = useCallback((e: React.MouseEvent, item: SelectedItem, pageIdx: number) => {
+  const startDrag = useCallback((e: React.PointerEvent, item: SelectedItem, pageIdx: number) => {
     e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
     if (!item) return;
     setActivePage(pageIdx);
     setSelected(item);
@@ -163,7 +196,7 @@ export const Screenshots = () => {
     setDragOffset({ x: e.clientX - rect.left - (obj.x / 100) * rect.width, y: e.clientY - rect.top - (obj.y / 100) * rect.height });
   }, [pages]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.PointerEvent) => {
     if (!isDragging || !selected) return;
     const pageEl = pageRefs.current[activePage];
     if (!pageEl) return;
@@ -179,15 +212,11 @@ export const Screenshots = () => {
   // Export for Google Play: 9:16 portrait (Play rejects screenshots taller than 2:1).
   // Display width is 323px, scale 4 = 1292px wide output — comfortably within
   // Play's 320–3840px range. Scale 5+ crashes some browsers (canvas memory limits).
-  const EXPORT_SCALE = 4;
-
   const exportPage = useCallback(async (idx: number) => {
     const el = pageRefs.current[idx];
     if (!el) return false;
     try {
-      const canvas = await html2canvas(el, { scale: EXPORT_SCALE, backgroundColor: null, useCORS: true });
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!blob) throw new Error("Screenshot image could not be created");
+      const blob = await renderPage(el);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = `screenshot_${idx + 1}.png`; a.click();
       URL.revokeObjectURL(url);
@@ -201,110 +230,52 @@ export const Screenshots = () => {
 
   const exportAll = useCallback(async () => {
     for (let i = 0; i < PAGE_COUNT; i++) {
-      if ((pages[i]!.phones.length > 0 || pages[i]!.texts.length > 0) && !await exportPage(i)) return;
+      if (hasContent(pages[i]!) && !await exportPage(i)) return;
     }
     toast("success", "Screenshots exported!");
   }, [pages, exportPage, toast]);
 
-  const [saving, setSaving] = useState(false);
-
   const saveToSupabase = useCallback(async () => {
-    if (!id) return;
+    if (!id || saving || loadingSaved || loadError) return false;
     if (id === "demo") {
       toast("info", "This is the demo — your work isn't saved. Scan your own app to save screenshots.");
-      return;
+      return true;
     }
+    if (!dirty) return true;
     setSaving(true);
-
-    const urls: string[] = [];
-
-    for (let i = 0; i < PAGE_COUNT; i++) {
-      const pg = pages[i]!;
-      if (pg.phones.length === 0 && pg.texts.length === 0) continue;
-
-      const el = pageRefs.current[i];
-      if (!el) continue;
-
-      try {
-        const canvas = await html2canvas(el, { scale: EXPORT_SCALE, backgroundColor: null, useCORS: true });
-        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-        if (!blob) continue;
-
-        const filePath = `screenshots/${id}/page_${i + 1}.png`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("projects")
-          .upload(filePath, blob, { upsert: true, contentType: "image/png" });
-
-        if (uploadError) {
-          console.error(`Upload error page ${i + 1}:`, uploadError);
-          continue;
-        }
-
-        const { data: urlData } = supabase.storage
-          .from("projects")
-          .getPublicUrl(filePath);
-
-        if (urlData?.publicUrl) {
-          urls.push(urlData.publicUrl);
-        }
-      } catch (err) {
-        reportError(err instanceof Error ? err : new Error("Screenshot rendering failed"), "screenshot_save");
-        console.error(`Failed to render page ${i + 1}:`, err);
-        // Continue with other pages
-      }
-    }
-
-    if (urls.length === 0) {
-      toast("error", "Could not save any screenshots. Try again or use fewer pages.");
-      setSaving(false);
-      return;
-    }
-
-    // Save URLs to store_listings
     try {
-      const { data: existing } = await supabase
-        .from("store_listings")
-        .select("id")
-        .eq("project_id", id)
-        .limit(1)
-        .maybeSingle();
-
-      if (existing) {
-        const { error: updateError } = await supabase
-          .from("store_listings")
-          .update({ screenshots: urls })
-          .eq("id", existing.id);
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from("store_listings")
-          .insert({ project_id: id, platform: "android", screenshots: urls });
-        if (insertError) throw insertError;
+      const images: (Blob | string)[] = [];
+      for (const [index, pg] of pages.entries()) {
+        if (!hasContent(pg)) continue;
+        if (pg.savedImage && !pg.phones.length && !pg.texts.length) { images.push(pg.savedImage); continue; }
+        const el = pageRefs.current[index];
+        if (!el) throw new Error("Screenshot page is unavailable");
+        images.push(await renderPage(el));
       }
-
+      const urls = await saveScreenshots(id, images);
+      setDirty(false);
       toast("success", `${urls.length} screenshot${urls.length > 1 ? "s" : ""} saved!`);
+      return true;
     } catch (err) {
-      console.error("DB save error:", err);
-      toast("error", `Uploaded ${urls.length} images but failed to save to database.`);
+      reportError(err instanceof Error ? err : new Error("Screenshot save failed"), "screenshot_save");
+      toast("error", "Couldn't save all screenshots. Your previous save is unchanged. Please try again.");
+      return false;
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
-  }, [id, pages, toast]);
+  }, [id, pages, toast, saving, loadingSaved, loadError, dirty]);
 
   const pageBg = (pg: PageData) => pg.bgGradient ?? pg.bgColor;
-  const { isPaid } = usePlan();
-  const allEmpty = pages.every((pg) => pg.phones.length === 0 && pg.texts.length === 0);
+  const allEmpty = !pages.some(hasContent);
 
   // Editor state lives only in memory — warn before the browser discards it
   useEffect(() => {
-    if (allEmpty) return;
+    if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [allEmpty]);
-  const filledPages = pages.filter((pg) => pg.phones.length > 0 || pg.texts.length > 0).length;
-  const MIN_SCREENSHOTS = 2; // Google Play's minimum
+  }, [dirty]);
+  const filledPages = pages.filter(hasContent).length;
   const canContinue = filledPages >= MIN_SCREENSHOTS;
 
   if (!isPaid && id !== "demo") {
@@ -329,34 +300,32 @@ export const Screenshots = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-[calc(100dvh-4rem)] md:h-[calc(100dvh-4rem)]">
       {id && <ShipFlowBar projectId={id} />}
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-surface-200 bg-white">
+      <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-surface-200 bg-white shrink-0">
         <Link to={`/scan/${id}`} aria-label="Back to scan results" className="text-surface-500 hover:text-surface-900"><ArrowLeft className="h-4 w-4" /></Link>
         <h1 className="text-sm font-bold text-surface-900">Screenshot Editor</h1>
         <div className="flex-1" />
         <span className={`text-xs font-medium ${canContinue ? "text-green-600" : "text-surface-400"}`}>
           {filledPages}/{MIN_SCREENSHOTS} screenshots
         </span>
-        <Button size="sm" variant="secondary" onClick={exportAll} disabled={allEmpty} className="gap-1.5 text-xs ml-2"><Download className="h-3 w-3" /> Download</Button>
-        <Button size="sm" onClick={saveToSupabase} disabled={saving || allEmpty} className="gap-1.5 text-xs ml-2">
+        <Button size="sm" variant="secondary" onClick={exportAll} disabled={allEmpty || saving || loadingSaved || loadError} className="gap-1.5 text-xs"><Download className="h-3 w-3" /> Download</Button>
+        <Button size="sm" onClick={saveToSupabase} disabled={saving || allEmpty || loadingSaved || loadError} className="gap-1.5 text-xs">
           {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
           {saving ? "Saving..." : "Save"}
         </Button>
-        {canContinue ? (
-          <Link to={`/app/${id}/submit`} className="text-xs text-green-600 hover:text-green-700 font-medium ml-3">Continue →</Link>
-        ) : (
-          <span className="text-xs text-surface-400 ml-3" title={`Add at least ${MIN_SCREENSHOTS} screenshots to continue`}>Continue →</span>
-        )}
+        <Button size="sm" variant="secondary" disabled={!canContinue || saving || loadingSaved || loadError}
+          onClick={async () => { if (await saveToSupabase()) navigate(`/app/${id}/submit`); }} className="text-xs">Continue →</Button>
       </div>
-
-      <div className="flex flex-1 overflow-hidden">
+      {loadingSaved && <p role="status" className="p-6 text-sm">Loading saved screenshots…</p>}
+      {loadError && <div role="alert" className="p-6 text-sm text-red-700">Couldn't load your saved screenshots. <button className="underline" onClick={() => window.location.reload()}>Reload to try again</button></div>}
+      <div className="relative flex flex-col md:flex-row flex-1 min-h-0" inert={saving || loadingSaved || loadError}>
 
         {/* Onboarding — shows when editor is empty */}
-        {allEmpty && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/95 backdrop-blur-sm" style={{ top: "auto", bottom: 0, height: "calc(100% - 105px)" }}>
+        {allEmpty && !loadingSaved && !loadError && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/95 backdrop-blur-sm min-h-[520px]">
             <div className="max-w-lg px-6 text-center">
               <div className="h-14 w-14 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-5">
                 <Smartphone className="h-7 w-7 text-green-600" />
@@ -391,7 +360,7 @@ export const Screenshots = () => {
         )}
 
         {/* Sidebar */}
-        <div className="w-56 border-r border-gray-200 bg-white overflow-y-auto shrink-0">
+        <div className="w-full md:w-56 border-b md:border-r border-gray-200 bg-white overflow-y-auto max-h-64 md:max-h-none shrink-0">
           {/* Tabs */}
           <div className="flex border-b border-gray-100">
             {[
@@ -410,6 +379,7 @@ export const Screenshots = () => {
           </div>
 
           <div className="p-3 space-y-4">
+            {page.savedImage && <div className="text-xs text-gray-500 space-y-2"><p>Saved image. Add new elements or replace this page to start again.</p><button className="text-red-600 underline" onClick={() => { updatePage(activePage, emptyPage); setSelected(null); }}>Replace page {activePage + 1}</button></div>}
             {/* Device tab */}
             {activeTab === "device" && (
               <>
@@ -533,8 +503,8 @@ export const Screenshots = () => {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 bg-gray-100 overflow-auto" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-          <div className="flex gap-3 p-6 min-w-max">
+        <div className="flex-1 min-w-0 min-h-[650px] md:min-h-0 bg-gray-100 overflow-auto" onPointerMove={handleMouseMove} onPointerUp={handleMouseUp} onPointerCancel={handleMouseUp}>
+          <div className="flex gap-3 p-4 md:p-6 w-max">
             {pages.map((pg, pageIdx) => (
               <div key={pageIdx} className="relative shrink-0">
                 <div className="text-[10px] text-gray-400 font-medium mb-1">Page {pageIdx + 1}</div>
@@ -542,31 +512,32 @@ export const Screenshots = () => {
                   ref={(el) => { pageRefs.current[pageIdx] = el; }}
                   className={`relative select-none overflow-visible ${pageIdx === activePage ? "ring-2 ring-indigo-400 ring-offset-2" : ""}`}
                   style={{ width: 323, aspectRatio: "9 / 16", background: pageBg(pg), boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
-                  onMouseDown={() => setActivePage(pageIdx)}
+                  onPointerDown={() => setActivePage(pageIdx)}
                   onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
                 >
+                  {pg.savedImage && <img src={pg.savedImage} alt={`Saved screenshot ${pageIdx + 1}`} crossOrigin="anonymous" className="absolute inset-0 w-full h-full pointer-events-none" />}
                   {/* Phones */}
                   {pg.phones.map((phone) => (
                     <div key={phone.id}
-                      className={`absolute ${isDragging && selected?.id === phone.id ? "cursor-grabbing" : "cursor-grab"}`}
+                      className={`absolute touch-none ${isDragging && selected?.id === phone.id ? "cursor-grabbing" : "cursor-grab"}`}
                       style={{
                         left: `${phone.x}%`, top: `${phone.y}%`, width: `${phone.scale}%`,
                         transform: `rotate(${phone.rotation}deg)`,
                         filter: "drop-shadow(0 6px 15px rgba(0,0,0,0.2))",
                         zIndex: selected?.id === phone.id ? 10 : 1,
                       }}
-                      onMouseDown={(e) => startDrag(e, { type: "phone", id: phone.id }, pageIdx)}>
+                      onPointerDown={(e) => startDrag(e, { type: "phone", id: phone.id }, pageIdx)}>
                       <PhoneFrame frameColor={phone.frameColor}>
                         {phone.screenshotUrl ? <img src={phone.screenshotUrl} alt="" className="w-full h-full object-cover" draggable={false} /> : undefined}
                       </PhoneFrame>
-                      {selected?.id === phone.id && <div className="absolute inset-0 border-2 border-blue-500 rounded-[15.5%/7.6%] pointer-events-none" />}
+                      {selected?.id === phone.id && <div data-html2canvas-ignore className="absolute inset-0 border-2 border-blue-500 rounded-[15.5%/7.6%] pointer-events-none" />}
                     </div>
                   ))}
 
                   {/* Texts */}
                   {pg.texts.map((t) => (
                     <div key={t.id}
-                      className={`absolute ${isDragging && selected?.id === t.id ? "cursor-grabbing" : "cursor-grab"}`}
+                      className={`absolute touch-none ${isDragging && selected?.id === t.id ? "cursor-grabbing" : "cursor-grab"}`}
                       style={{
                         left: `${t.x}%`, top: `${t.y}%`,
                         fontSize: `${t.size * 2.5}px`, fontWeight: t.fontWeight, color: t.color,
@@ -574,15 +545,15 @@ export const Screenshots = () => {
                         lineHeight: 1.2, textAlign: "center", whiteSpace: "nowrap",
                         zIndex: selected?.id === t.id ? 10 : 2,
                       }}
-                      onMouseDown={(e) => startDrag(e, { type: "text", id: t.id }, pageIdx)}>
+                      onPointerDown={(e) => startDrag(e, { type: "text", id: t.id }, pageIdx)}>
                       {t.text}
-                      {selected?.id === t.id && <div className="absolute -inset-1 border border-blue-500 rounded pointer-events-none" />}
+                      {selected?.id === t.id && <div data-html2canvas-ignore className="absolute -inset-1 border border-blue-500 rounded pointer-events-none" />}
                     </div>
                   ))}
 
                   {/* Empty state */}
-                  {pg.phones.length === 0 && pg.texts.length === 0 && (
-                    <button onClick={() => { setActivePage(pageIdx); addPhone(0, 45); }}
+                  {!hasContent(pg) && (
+                    <button onClick={() => { setActivePage(pageIdx); addPhone(0, 45, pageIdx); }}
                       className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 hover:text-gray-400 cursor-pointer">
                       <Smartphone className="h-6 w-6 mb-1" /><span className="text-[9px]">Add device</span>
                     </button>
@@ -597,7 +568,7 @@ export const Screenshots = () => {
       {/* Bottom */}
       <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-2">
         <span className="text-xs text-gray-400">Page {activePage + 1} — {page.phones.length} device{page.phones.length !== 1 ? "s" : ""}, {page.texts.length} text{page.texts.length !== 1 ? "s" : ""}</span>
-        <Button size="sm" variant="secondary" onClick={() => exportPage(activePage)} className="gap-1.5 text-xs"><Download className="h-3 w-3" /> Export page {activePage + 1}</Button>
+        <Button size="sm" variant="secondary" disabled={saving || loadingSaved || loadError || !hasContent(page)} onClick={() => exportPage(activePage)} className="gap-1.5 text-xs"><Download className="h-3 w-3" /> Export page {activePage + 1}</Button>
       </div>
     </div>
   );

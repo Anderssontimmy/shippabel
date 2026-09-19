@@ -40,6 +40,7 @@ export const Listing = () => {
   const [privacyModal, setPrivacyModal] = useState(false);
   const [devName, setDevName] = useState("");
   const [devEmail, setDevEmail] = useState("");
+  const [generatingPrivacy, setGeneratingPrivacy] = useState(false);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ export const Listing = () => {
     variants,
     generating,
     saving,
+    loading,
     error,
     load,
     generateCopy,
@@ -105,6 +107,10 @@ export const Listing = () => {
   const limits = charLimits[platform]!;
   const lim = (key: string) => limits[key] ?? 100;
 
+  const hasText = !!listing && [listing.app_name, listing.short_description, listing.full_description].some(Boolean);
+  const validListing = !!listing && !!listing.app_name?.trim() && !!listing.short_description?.trim() && !!listing.full_description?.trim()
+    && Object.entries(limits).every(([field, max]) => String(listing[field as keyof typeof listing] ?? "").length <= max);
+
   return (
     <div>
     {id && <ShipFlowBar projectId={id} />}
@@ -125,8 +131,9 @@ export const Listing = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Editor */}
         <div className="lg:col-span-2 space-y-6">
+          {loading && <p role="status" className="text-sm text-surface-500">Loading store page…</p>}
           {/* Generate CTA */}
-          {!listing?.app_name && !generating && (
+          {!hasText && !generating && !loading && (
             isPaid || isDemo ? (
             <Card className="border-surface-200">
               <div className="text-center py-4">
@@ -136,13 +143,14 @@ export const Listing = () => {
                   Describe your app in a few sentences and we'll write everything the {platform === "ios" ? "App Store" : "Google Play Store"} needs: name, description, keywords, and more.
                 </p>
                 <textarea
+                  aria-label="Describe your app"
                   value={appContext}
                   onChange={(e) => setAppContext(e.target.value)}
                   placeholder={"Example: A fitness app that helps new parents do quick 10-minute workouts at home. It has workout videos, a progress tracker, and sends daily reminders."}
                   className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 mb-2 resize-none h-28"
                 />
                 <p className="text-xs text-surface-400 mb-4">Tip: Mention what your app does, who it's for, and what makes it special.</p>
-                <Button onClick={() => generateCopy(appContext)} className="gap-2">
+                <Button onClick={() => generateCopy(appContext)} disabled={saving} className="gap-2">
                   <Sparkles className="h-4 w-4" />
                   Write my store page
                 </Button>
@@ -190,7 +198,7 @@ export const Listing = () => {
                     key={label}
                     onClick={() => selectVariant(i)}
                     className={`rounded-lg border px-3 py-2 text-sm font-medium transition-all cursor-pointer ${
-                      listing?.app_name === variants[i]?.app_name
+                      listing?.full_description === variants[i]?.full_description
                         ? "border-surface-900 bg-surface-50 text-surface-900"
                         : "border-surface-200 text-surface-500 hover:border-surface-300"
                     }`}
@@ -203,7 +211,7 @@ export const Listing = () => {
           )}
 
           {/* Fields */}
-          {listing?.app_name && !generating && (
+          {hasText && !generating && (
             <div className="space-y-5">
               {/* App name */}
               <div>
@@ -212,6 +220,7 @@ export const Listing = () => {
                   <CharCount current={listing?.app_name?.length ?? 0} max={lim("app_name")} />
                 </div>
                 <input
+                  aria-label="App Name"
                   value={listing?.app_name ?? ""}
                   onChange={(e) => updateField("app_name", e.target.value)}
                   className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 outline-none focus:border-surface-400 transition-colors"
@@ -226,6 +235,7 @@ export const Listing = () => {
                     <CharCount current={listing?.subtitle?.length ?? 0} max={lim("subtitle")} />
                   </div>
                   <input
+                    aria-label="Subtitle"
                     value={listing?.subtitle ?? ""}
                     onChange={(e) => updateField("subtitle", e.target.value)}
                     className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 outline-none focus:border-surface-400 transition-colors"
@@ -238,6 +248,7 @@ export const Listing = () => {
                     <CharCount current={listing?.short_description?.length ?? 0} max={lim("short_description")} />
                   </div>
                   <input
+                    aria-label="Short Description"
                     value={listing?.short_description ?? ""}
                     onChange={(e) => updateField("short_description", e.target.value)}
                     className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 outline-none focus:border-surface-400 transition-colors"
@@ -252,6 +263,7 @@ export const Listing = () => {
                   <CharCount current={listing?.full_description?.length ?? 0} max={lim("full_description")} />
                 </div>
                 <textarea
+                  aria-label="Full Description"
                   value={listing?.full_description ?? ""}
                   onChange={(e) => updateField("full_description", e.target.value)}
                   rows={10}
@@ -267,6 +279,7 @@ export const Listing = () => {
                     <CharCount current={listing?.keywords?.length ?? 0} max={lim("keywords")} />
                   </div>
                   <input
+                    aria-label="Keywords"
                     value={listing?.keywords ?? ""}
                     onChange={(e) => updateField("keywords", e.target.value)}
                     placeholder="keyword1, keyword2, keyword3"
@@ -315,12 +328,13 @@ export const Listing = () => {
               </Card>
 
               {/* Save */}
+              {!validListing && <p role="status" className="text-sm text-red-600">Add an app name and both descriptions, within the character limits, to continue.</p>}
               <div className="flex gap-3">
-                <Button onClick={handleSave} disabled={saving} className="gap-2">
+                <Button onClick={handleSave} disabled={saving || !validListing} className="gap-2">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   {saving ? "Saving..." : "Save & continue →"}
                 </Button>
-                <Button variant="secondary" onClick={() => generateCopy(appContext)} className="gap-2">
+                <Button variant="secondary" onClick={() => generateCopy(appContext)} disabled={saving} className="gap-2">
                   <Sparkles className="h-4 w-4" />
                   Regenerate
                 </Button>
@@ -393,6 +407,7 @@ export const Listing = () => {
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             <h3 id="privacy-modal-title" className="text-lg font-semibold text-surface-900 mb-4">Generate Privacy Policy</h3>
+            {error && <p role="alert" className="text-sm text-red-600 mb-3">{error}</p>}
             <div className="space-y-3">
               <div>
                 <label htmlFor="privacy-dev-name" className="block text-sm font-medium text-surface-700 mb-1">Developer / Company Name</label>
@@ -409,6 +424,7 @@ export const Listing = () => {
                 <label htmlFor="privacy-dev-email" className="block text-sm font-medium text-surface-700 mb-1">Contact Email</label>
                 <input
                   id="privacy-dev-email"
+                  type="email"
                   value={devEmail}
                   onChange={(e) => setDevEmail(e.target.value)}
                   placeholder="privacy@yourapp.com"
@@ -419,15 +435,18 @@ export const Listing = () => {
             <div className="flex gap-3 mt-6">
               <Button
                 onClick={async () => {
-                  await generatePrivacy(listing?.app_name ?? "My App", devName, devEmail);
-                  setPrivacyModal(false);
+                  setGeneratingPrivacy(true);
+                  const result = await generatePrivacy(listing?.app_name ?? "My App", devName, devEmail);
+                  setGeneratingPrivacy(false);
+                  if (result) setPrivacyModal(false);
                 }}
+                disabled={generatingPrivacy || !devName.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(devEmail)}
                 className="gap-2"
               >
-                <Sparkles className="h-4 w-4" />
-                Generate
+                {generatingPrivacy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {generatingPrivacy ? "Generating…" : "Generate"}
               </Button>
-              <Button variant="ghost" onClick={() => setPrivacyModal(false)}>
+              <Button variant="ghost" disabled={generatingPrivacy} onClick={() => setPrivacyModal(false)}>
                 Cancel
               </Button>
             </div>

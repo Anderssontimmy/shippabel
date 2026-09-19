@@ -1,6 +1,9 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET search_path = public, extensions;
+-- This transaction contains only test metadata and rolls back. Match Storage's
+-- own session flag so direct pgTAP DELETE statements can exercise the RLS rule.
+SET LOCAL storage.allow_delete_query = 'true';
 SELECT no_plan();
 
 INSERT INTO auth.users(id, email, raw_app_meta_data) VALUES
@@ -39,7 +42,9 @@ SELECT is((SELECT count(*)::int FROM storage.objects WHERE bucket_id='projects')
 SELECT throws_ok($$UPDATE storage.objects SET name='screenshots/20000000-0000-4000-8000-000000000001/page_1.png' WHERE bucket_id='projects'$$,'42501',null,'Owner cannot move a screenshot into another project');
 SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 SELECT results_eq($$UPDATE storage.objects SET metadata='{"overwritten":true}' WHERE bucket_id='projects' RETURNING name$$,ARRAY[]::text[],'Foreign screenshot cannot be overwritten');
+SELECT results_eq($$DELETE FROM storage.objects WHERE bucket_id='projects' RETURNING name$$,ARRAY[]::text[],'Foreign screenshot cannot be deleted');
 SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
+SELECT results_eq($$DELETE FROM storage.objects WHERE bucket_id='projects' RETURNING name$$,ARRAY['screenshots/20000000-0000-4000-8000-000000000003/page_1.png']::text[],'Owner can clean up a failed screenshot upload');
 SELECT throws_ok($$INSERT INTO public.submissions(project_id,platform,build_status) VALUES('20000000-0000-4000-8000-000000000003','android','completed')$$,'42501',null,'Clients cannot fabricate completed builds');
 SELECT throws_ok($$SELECT public.consume_scan_quota('ip','20000000-0000-4000-8000-000000000003',NULL)$$,'42501',null,'Clients cannot invoke privileged quotas');
 SELECT throws_ok($$SELECT public.apply_stripe_event('{}')$$,'42501',null,'Clients cannot grant payment entitlements');

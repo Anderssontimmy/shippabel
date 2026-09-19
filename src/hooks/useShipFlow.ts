@@ -1,3 +1,4 @@
+import { hasEnoughScreenshots } from "@/lib/screenshots";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -102,11 +103,11 @@ export const useShipFlow = (projectId?: string) => {
     // Listings + screenshots
     const { data: listings } = await supabase
       .from("store_listings")
-      .select("id, platform, app_name, screenshots")
+      .select("id, platform, app_name, screenshots").eq("platform", "android")
       .eq("project_id", projectId);
 
     const hasListing = (listings ?? []).some((l) => l.app_name && l.app_name.trim() !== "");
-    const hasScreenshots = (listings ?? []).some((l) => Array.isArray(l.screenshots) && l.screenshots.length > 0);
+    const hasScreenshots = (listings ?? []).some((l) => hasEnoughScreenshots(l.screenshots));
 
     // Credentials
     let hasEas = false;
@@ -115,7 +116,7 @@ export const useShipFlow = (projectId?: string) => {
     if (user) {
       const { data: creds } = await supabase
         .from("user_credentials")
-        .select("provider")
+        .select("provider").eq("is_valid", true)
         .eq("user_id", user.id);
       const providers = (creds ?? []).map((c) => c.provider);
       hasEas = providers.includes("eas");

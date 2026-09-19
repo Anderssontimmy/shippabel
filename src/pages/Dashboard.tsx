@@ -1,3 +1,4 @@
+import { hasEnoughScreenshots } from "@/lib/screenshots";
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -133,7 +134,7 @@ export const Dashboard = () => {
         // Fetch listings with screenshots info
         const { data: listings } = await supabase
           .from("store_listings")
-          .select("project_id, app_name, screenshots")
+          .select("project_id, app_name, screenshots").eq("platform", "android")
           .in("project_id", ids);
 
         // Fetch submissions (latest per project = first match in this desc order)
@@ -146,7 +147,7 @@ export const Dashboard = () => {
         // Fetch credentials
         const { data: creds } = await supabase
           .from("user_credentials")
-          .select("provider")
+          .select("provider").eq("is_valid", true)
           .eq("user_id", user.id);
         const hasEas = (creds ?? []).some((c) => c.provider === "eas");
 
@@ -154,7 +155,7 @@ export const Dashboard = () => {
         for (const p of projs) {
           const projListings = (listings ?? []).filter((l) => l.project_id === p.id);
           const hasListing = projListings.some((l) => l.app_name && l.app_name.trim() !== "");
-          const hasScreenshots = projListings.some((l) => Array.isArray(l.screenshots) && l.screenshots.length > 0);
+          const hasScreenshots = projListings.some((l) => hasEnoughScreenshots(l.screenshots));
           const latestSub = (subs ?? []).find((s) => s.project_id === p.id);
           const hasBuild = latestSub?.build_status === "completed";
           const isSubmitted = !!latestSub && ["waiting_for_review", "in_review", "approved"].includes(latestSub.review_status);
