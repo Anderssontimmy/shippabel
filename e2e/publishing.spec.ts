@@ -5,7 +5,7 @@ const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR
 const variant = { app_name: "Fixture", short_description: "A test app", full_description: "An app used for testing the publishing journey.", subtitle: "Test", keywords: "test" };
 type Listing = Record<string, unknown> | null;
 
-async function setup(page: Page, initial: Listing = null, failSecondUpload = false) {
+async function setup(page: Page, initial: Listing = null, failSecondUpload = false, submissions: Record<string, unknown>[] = []) {
   let listing = initial;
   let uploads = 0;
   let writes = 0;
@@ -27,6 +27,7 @@ async function setup(page: Page, initial: Listing = null, failSecondUpload = fal
     if (url.pathname.endsWith("/projects")) {
       await route.fulfill({ json: { id: projectId, name: "Fixture", repo_url: "https://github.com/qa/app", scan_result: { score: 100, issues: [], summary: { critical: 0 }, needs_conversion: false } } }); return;
     }
+    if (url.pathname.endsWith("/submissions")) { await route.fulfill({ json: submissions }); return; }
     await route.fulfill({ json: [] });
   });
   await page.route("**/functions/v1/generate-copy", async route => {
@@ -108,4 +109,13 @@ test("one screenshot does not complete the publishing checklist", async ({ page 
   await page.goto(`/app/${projectId}/submit`);
   await expect(page.getByRole("link", { name: "Upload screenshots" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Next", exact: true })).toBeDisabled();
+});
+
+test("internal testing status does not claim a public release", async ({ page }) => {
+  await setup(page, { ...variant, screenshots: ["https://example.test/one.png", "https://example.test/two.png"] }, false, [
+    { id: "build", project_id: projectId, platform: "android", build_status: "completed", review_status: "internal_testing", created_at: "2026-09-19T00:00:00Z" },
+  ]);
+  await page.goto(`/app/${projectId}/status`);
+  await expect(page.getByText(/Uploaded to internal testing/)).toBeVisible();
+  await expect(page.getByText(/Your app is live/)).toHaveCount(0);
 });

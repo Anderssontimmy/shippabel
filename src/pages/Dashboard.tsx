@@ -38,6 +38,7 @@ interface ProjectExtra {
   hasBuildConnection: boolean;
   hasBuild: boolean;
   isSubmitted: boolean;
+  isInternalTesting?: boolean;
 }
 
 // Same facts + rules as the in-app flow (see src/lib/shipFlow.ts).
@@ -72,7 +73,7 @@ const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
     publish: {
       label: "Publish", icon: Send,
       href: extra.hasBuildConnection ? `/app/${id}/submit` : "/settings",
-      actionLabel: extra.hasBuildConnection ? (isBuilt ? "Track review" : "Publish app") : "Connect accounts",
+      actionLabel: extra.hasBuildConnection ? (extra.isInternalTesting ? "View test release" : isBuilt ? "Track review" : "Publish app") : "Connect accounts",
     },
   };
 
@@ -92,7 +93,7 @@ const getPublishSubSteps = (project: Project, extra: ProjectExtra) => {
   const subs = [
     { key: "connect", label: "Connect your store accounts", done: extra.hasBuildConnection, href: "/settings" },
     { key: "build", label: "Build a signed app (about 10-20 min)", done: extra.hasBuild, href: `/app/${id}/submit` },
-    { key: "review", label: submitted ? "In review by Google" : "Submit for review", done: submitted, href: `/app/${id}/submit` },
+    { key: "review", label: extra.isInternalTesting ? "Internal test uploaded" : submitted ? "In review by Google" : "Upload to internal testing", done: submitted, href: `/app/${id}/submit` },
   ];
   const firstPending = subs.find((s) => !s.done);
   return subs.map((s) => ({ ...s, active: firstPending ? s.key === firstPending.key : false }));
@@ -160,8 +161,8 @@ export const Dashboard = () => {
           const hasScreenshots = projListings.some((l) => hasEnoughScreenshots(l.screenshots));
           const latestSub = (subs ?? []).find((s) => s.project_id === p.id);
           const hasBuild = latestSub?.build_status === "completed";
-          const isSubmitted = !!latestSub && ["waiting_for_review", "in_review", "approved"].includes(latestSub.review_status);
-          extraMap[p.id] = { hasListing, hasScreenshots, hasBuildConnection, hasBuild, isSubmitted };
+          const isSubmitted = !!latestSub && ["waiting_for_review", "in_review", "internal_testing", "approved"].includes(latestSub.review_status);
+          extraMap[p.id] = { hasListing, hasScreenshots, hasBuildConnection, hasBuild, isSubmitted, isInternalTesting: latestSub?.review_status === "internal_testing" };
         }
         setExtras(extraMap);
       }
@@ -406,7 +407,7 @@ export const Dashboard = () => {
                   {activeStep && project.status !== "live" && activeStep.key === "publish" ? (
                     <div className="rounded-xl bg-surface-50 border border-surface-200 px-4 py-4">
                       <p className="text-xs text-surface-500 mb-3 leading-relaxed">
-                        Almost there. Publishing takes a few steps: connect your store accounts, we build a signed app (about 10-20 minutes), then submit it for Google's review.
+                        Almost there. Connect your accounts, build your app, and upload it to Google Play's internal testing track. You can then prepare the public release in Play Console.
                       </p>
                       <div className="space-y-1.5">
                         {getPublishSubSteps(project, extra).map((sub) => (

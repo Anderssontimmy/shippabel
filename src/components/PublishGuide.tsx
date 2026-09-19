@@ -117,14 +117,16 @@ export const PublishGuide = ({
         <div className="h-14 w-14 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-4">
           {submissionStatus === "waiting_for_review" || submissionStatus === "in_review" ? (
             <Loader2 className="h-7 w-7 text-green-600 animate-spin" />
-          ) : submissionStatus === "approved" ? (
+          ) : ["approved", "internal_testing"].includes(submissionStatus) ? (
             <Check className="h-7 w-7 text-green-600" />
           ) : (
             <Zap className="h-7 w-7 text-green-600" />
           )}
         </div>
         <h3 className="text-xl font-semibold text-surface-900 mb-2">
-          {submissionStatus === "approved"
+          {submissionStatus === "internal_testing"
+            ? "Internal test uploaded"
+            : submissionStatus === "approved"
             ? "Your app is live!"
             : submissionStatus === "waiting_for_review"
             ? "Submitted for review"
@@ -133,7 +135,9 @@ export const PublishGuide = ({
             : "Submitted"}
         </h3>
         <p className="text-sm text-surface-500 max-w-md mx-auto">
-          {submissionStatus === "approved"
+          {submissionStatus === "internal_testing"
+            ? "Check tester availability in Play Console. Publishing to the public store is a separate step."
+            : submissionStatus === "approved"
             ? `Your app is live on the ${platform === "ios" ? "App Store" : "Google Play Store"}!`
             : platform === "android"
             ? "Google usually reviews new apps in a few hours to a few days. We'll update this page automatically."
@@ -155,7 +159,7 @@ export const PublishGuide = ({
             <div className="flex-1">
               <h3 className="font-semibold text-surface-900 mb-1">We'll submit it for you</h3>
               <p className="text-xs text-surface-600 mb-3">
-                Your {platform === "ios" ? "Apple" : "Google Play"} account is connected. The first time, there's a
+                Your {platform === "ios" ? "Apple" : "Google Play"} account is connected. {platform === "android" && "Automatic upload sends the build to internal testing; public release is managed in Play Console."} The first time, there's a
                 quick one-time setup (about 5 minutes). After that, submitting is just one click.
               </p>
 

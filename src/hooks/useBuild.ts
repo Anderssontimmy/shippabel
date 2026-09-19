@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
 export type BuildStatus = "idle" | "queued" | "in_progress" | "completed" | "failed";
 export type ReviewStatus =
   | "not_submitted"
   | "pending_credentials"
+  | "internal_testing"
   | "waiting_for_review"
   | "in_review"
   | "approved"
@@ -30,7 +31,6 @@ export const useBuild = (projectId: string) => {
   const [building, setBuilding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadSubmissions = useCallback(async () => {
     if (isDemo) {
@@ -44,15 +44,12 @@ export const useBuild = (projectId: string) => {
       .order("created_at", { ascending: false });
 
     if (loadError) setError(loadError.message);
-    setSubmissions((data ?? []) as Submission[]);
+    else setSubmissions((data ?? []) as Submission[]);
     setLoading(false);
   }, [projectId, isDemo]);
 
   useEffect(() => {
     if (projectId) loadSubmissions();
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
   }, [projectId, loadSubmissions]);
 
   const triggerBuild = async (platform: "ios" | "android") => {
@@ -122,7 +119,6 @@ export const useBuild = (projectId: string) => {
       }
 
       const submissionId = data.submission_id as string;
-      startPolling(submissionId);
 
       await loadSubmissions();
       return submissionId;
@@ -144,7 +140,7 @@ export const useBuild = (projectId: string) => {
       await new Promise((r) => setTimeout(r, 2000));
       setSubmissions([{ ...base, review_status: "in_review", submitted_at: new Date().toISOString() }]);
       await new Promise((r) => setTimeout(r, 3000));
-      setSubmissions([{ ...base, review_status: "approved", submitted_at: new Date().toISOString(), reviewed_at: new Date().toISOString() }]);
+      setSubmissions([{ ...base, review_status: base.platform === "android" ? "internal_testing" : "approved", submitted_at: new Date().toISOString(), reviewed_at: new Date().toISOString() }]);
       setSubmitting(false);
       return true;
     }
@@ -156,8 +152,8 @@ export const useBuild = (projectId: string) => {
 
       if (fnError) throw new Error(data?.error ?? fnError.message);
 
-      startPolling(submissionId);
       await loadSubmissions();
+      if (!data?.success) throw new Error(data?.details ?? "Submission could not be completed. Check your connected accounts.");
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submission failed");
@@ -167,42 +163,32 @@ export const useBuild = (projectId: string) => {
     }
   };
 
-  const checkStatus = async (submissionId: string) => {
+  const checkStatus = useCallback(async (submissionId: string) => {
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("check-review", {
-        body: { submission_id: submissionId },
-      });
-
-      if (fnError) return;
-
-      // Reload submissions to get updated status
-      await loadSubmissions();
-
-      const status = data.status;
-      // Stop polling if build is done and review is complete
-      if (
-        (status.build_status === "completed" || status.build_status === "failed") &&
-        status.review_status !== "waiting_for_review" &&
-        status.review_status !== "in_review"
-      ) {
-        stopPolling();
-      }
+      await supabase.functions.invoke("check-review", { body: { submission_id: submissionId }, timeout: 15000 });
     } catch {
-      // Silent fail on polling
+      // The build callback can still have updated the database.
+    } finally {
+      await loadSubmissions();
     }
-  };
+  }, [loadSubmissions]);
 
-  const startPolling = (submissionId: string) => {
-    stopPolling();
-    pollRef.current = setInterval(() => checkStatus(submissionId), 15000);
-  };
-
-  const stopPolling = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  };
+  // Resume a pending build when the user reopens the page. Database callbacks
+  // remain visible even when a status-provider request temporarily fails.
+  const pendingId = submissions.find(s => ["queued", "in_progress"].includes(s.build_status)
+    || ["waiting_for_review", "in_review"].includes(s.review_status))?.id;
+  useEffect(() => {
+    if (isDemo || !pendingId) return;
+    let busy = false;
+    const poll = async () => {
+      if (busy) return;
+      busy = true;
+      try { await checkStatus(pendingId); } finally { busy = false; }
+    };
+    void poll();
+    const timer = setInterval(poll, 15000);
+    return () => clearInterval(timer);
+  }, [pendingId, isDemo, checkStatus]);
 
   const latestByPlatform = (platform: "ios" | "android") =>
     submissions.find((s) => s.platform === platform) ?? null;

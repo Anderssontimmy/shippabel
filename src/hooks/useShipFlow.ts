@@ -139,7 +139,7 @@ export const useShipFlow = (projectId?: string) => {
     if (subs && subs.length > 0) {
       const latest = subs[0]!;
       hasBuild = latest.build_status === "completed";
-      isSubmitted = ["waiting_for_review", "in_review", "approved"].includes(latest.review_status);
+      isSubmitted = ["waiting_for_review", "in_review", "internal_testing", "approved"].includes(latest.review_status);
     }
 
     const facts: ShipFacts = {
