@@ -7,7 +7,7 @@ const base: ShipFacts = {
   loggedIn: false,
   hasListing: false,
   hasScreenshots: false,
-  hasEas: false,
+  hasBuildConnection: false,
   hasBuild: false,
   isSubmitted: false,
   isLive: false,
@@ -15,6 +15,14 @@ const base: ShipFacts = {
 const facts = (o: Partial<ShipFacts>): ShipFacts => ({ ...base, ...o });
 
 describe("shipFlow", () => {
+  it("only unlocks a build after fixes, account connection and both store assets", () => {
+    const ready = facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasBuildConnection: true });
+    const canBuild = (f: ShipFacts) => deriveSteps(f).find(step => step.id === "build")!.available;
+    expect(canBuild(ready)).toBe(true);
+    for (const missing of [{ criticalIssues: 1 }, { loggedIn: false }, { hasListing: false }, { hasScreenshots: false }, { hasBuildConnection: false }]) {
+      expect(canBuild({ ...ready, ...missing })).toBe(false);
+    }
+  });
   it("starts at scan when nothing is done", () => {
     expect(getCurrentStep(base)).toBe("scan");
   });
@@ -25,12 +33,12 @@ describe("shipFlow", () => {
     expect(getCurrentStep(facts({ scanned: true, loggedIn: true }))).toBe("listing");
     expect(getCurrentStep(facts({ scanned: true, loggedIn: true, hasListing: true }))).toBe("screenshots");
     expect(getCurrentStep(facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true }))).toBe("connect");
-    expect(getCurrentStep(facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasEas: true }))).toBe("build");
-    expect(getCurrentStep(facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasEas: true, hasBuild: true }))).toBe("submit");
+    expect(getCurrentStep(facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasBuildConnection: true }))).toBe("build");
+    expect(getCurrentStep(facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasBuildConnection: true, hasBuild: true }))).toBe("submit");
   });
 
   it("matches the in-review dashboard state (publish active, everything before it done)", () => {
-    const f = facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasEas: true, hasBuild: true, isSubmitted: true });
+    const f = facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasBuildConnection: true, hasBuild: true, isSubmitted: true });
     const byKey = Object.fromEntries(deriveDashboardSteps(f).map((s) => [s.key, s]));
     expect(byKey.check!.done && byKey.fix!.done && byKey.listing!.done && byKey.screenshots!.done).toBe(true);
     expect(byKey.publish!.done).toBe(false); // not done until live
@@ -44,7 +52,7 @@ describe("shipFlow", () => {
     expect(progressPercent(f)).toBe(63); // 5 of 8 steps
     expect(progressPercent(f)).toBeLessThan(80);
     expect(progressPercent(base)).toBe(0);
-    expect(progressPercent(facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasEas: true, hasBuild: true, isSubmitted: true }))).toBe(100);
+    expect(progressPercent(facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasBuildConnection: true, hasBuild: true, isSubmitted: true }))).toBe(100);
   });
 
   // The whole point of the shared module: the card and the in-app flow can never
@@ -55,7 +63,7 @@ describe("shipFlow", () => {
       facts({ scanned: true }),
       facts({ scanned: true, criticalIssues: 1 }),
       facts({ scanned: true, loggedIn: true, hasListing: true }),
-      facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasEas: true, hasBuild: true, isLive: true }),
+      facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasBuildConnection: true, hasBuild: true, isLive: true }),
     ];
     for (const f of samples) {
       const full = Object.fromEntries(deriveSteps(f).map((s) => [s.id, s.completed]));

@@ -21,7 +21,7 @@ export interface ShipFacts {
   loggedIn: boolean;
   hasListing: boolean;
   hasScreenshots: boolean;
-  hasEas: boolean;
+  hasBuildConnection: boolean;
   hasBuild: boolean; // a build has completed
   isSubmitted: boolean; // submitted / in review / approved
   isLive: boolean; // published live on the store
@@ -45,8 +45,8 @@ export function deriveSteps(f: ShipFacts): FlowStepState[] {
     { id: "signup", label: "Sign Up", description: "Create a free account to continue", completed: f.loggedIn, available: f.scanned },
     { id: "listing", label: "Store Page", description: "Write your app's name, description, and more", completed: f.hasListing, available: f.scanned && f.loggedIn },
     { id: "screenshots", label: "Screenshots", description: "Add screenshots of your app", completed: f.hasScreenshots, available: f.scanned && f.loggedIn && f.hasListing },
-    { id: "connect", label: "Connect", description: "Link your Expo and Google accounts", completed: f.hasEas, available: f.loggedIn && f.hasListing },
-    { id: "build", label: "Build", description: "Prepare your app for the stores", completed: f.hasBuild, available: f.hasEas && f.hasListing },
+    { id: "connect", label: "Connect", description: "Connect the accounts needed to build your app", completed: f.hasBuildConnection, available: f.loggedIn && f.hasListing },
+    { id: "build", label: "Build", description: "Prepare your app for the stores", completed: f.hasBuild, available: isFixed(f) && f.loggedIn && f.hasBuildConnection && f.hasListing && f.hasScreenshots },
     { id: "submit", label: "Go Live", description: "Send your app to Google Play", completed: f.isSubmitted || f.isLive, available: f.hasBuild },
   ];
 }
@@ -66,7 +66,7 @@ export function getCurrentStep(f: ShipFacts): FlowStep {
   if (!f.loggedIn) return "signup";
   if (!f.hasListing) return "listing";
   if (!f.hasScreenshots) return "screenshots";
-  if (!f.hasEas) return "connect";
+  if (!f.hasBuildConnection) return "connect";
   if (!f.hasBuild) return "build";
   return "submit";
 }

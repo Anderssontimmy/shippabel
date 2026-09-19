@@ -5,6 +5,7 @@ import { decryptCreds } from "../_shared/crypto.ts";
 import { analyzeZip, extractGitHubPath, fetchGitHubProject, findSecrets, ScanError, type ScanSource } from "../_shared/scanSource.ts";
 import { canScanProject, validateScanRequest } from "../_shared/scanAccess.ts";
 import { instrument } from "../_shared/monitoring.ts";
+import { capacitorIssues } from "../_shared/capacitor.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 
@@ -88,11 +89,11 @@ Deno.serve(instrument("scan-project", async (req) => {
     const needsConversion = projectType !== "expo" && projectType !== "capacitor";
     const conversionMessages: Record<string, string> = {
       "react-web": "Your app is a web app built with React. We can wrap it as a mobile app and publish it to Google Play.",
-      "nextjs": "Your app is built with Next.js. We can convert it to a mobile app and publish it to both stores.",
+      "nextjs": "Your Next.js app needs a static export and mobile configuration. Server routes must stay on a hosted backend.",
       "vue": "Your app is built with Vue. We can convert it to a mobile app and publish it to Google Play.",
-      "react-native": "Your app uses React Native but isn't set up with Expo. We can add Expo to make it ready for the stores.",
-      "static": "Your app is a static website. We can wrap it as a mobile app and publish it to both stores.",
-      "unknown": "We detected a project but couldn't identify the framework. We can still try to convert it for Google Play.",
+      "react-native": "Your React Native app needs an Expo setup that matches its native dependencies before building through Shippabel.",
+      "static": "Your website needs a static build and mobile configuration before it can be published to Google Play.",
+      "unknown": "We couldn't identify the framework. Automatic conversion supports Vite web apps; other projects need mobile configuration first.",
     };
     const conversionMessage = needsConversion ? (conversionMessages[projectType] ?? conversionMessages["unknown"]!) : null;
 
@@ -100,7 +101,9 @@ Deno.serve(instrument("scan-project", async (req) => {
     const issues: Issue[] = [];
 
     // --- Config validation ---
-    if (!appConfig) {
+    if (projectType === "capacitor") {
+      issues.push(...capacitorIssues(source));
+    } else if (!appConfig) {
       issues.push({
         severity: needsConversion ? "warning" : "critical",
         category: "config",
