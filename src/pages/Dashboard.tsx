@@ -35,7 +35,7 @@ interface AppStep {
 interface ProjectExtra {
   hasListing: boolean;
   hasScreenshots: boolean;
-  hasEas: boolean;
+  hasBuildConnection: boolean;
   hasBuild: boolean;
   isSubmitted: boolean;
 }
@@ -49,7 +49,7 @@ const dashFacts = (project: Project, extra: ProjectExtra): ShipFacts => {
     loggedIn: true, // the dashboard is only reachable when signed in
     hasListing: extra.hasListing,
     hasScreenshots: extra.hasScreenshots,
-    hasEas: extra.hasEas,
+    hasBuildConnection: extra.hasBuildConnection,
     hasBuild: extra.hasBuild,
     isSubmitted: extra.isSubmitted,
     isLive: project.status === "live",
@@ -71,8 +71,8 @@ const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
     screenshots: { label: "Screenshots", icon: Image, href: `/app/${id}/screenshots`, actionLabel: "Add screenshots" },
     publish: {
       label: "Publish", icon: Send,
-      href: extra.hasEas ? `/app/${id}/submit` : "/settings",
-      actionLabel: extra.hasEas ? (isBuilt ? "Track review" : "Publish app") : "Connect accounts",
+      href: extra.hasBuildConnection ? `/app/${id}/submit` : "/settings",
+      actionLabel: extra.hasBuildConnection ? (isBuilt ? "Track review" : "Publish app") : "Connect accounts",
     },
   };
 
@@ -90,7 +90,7 @@ const getPublishSubSteps = (project: Project, extra: ProjectExtra) => {
   const id = project.id;
   const submitted = extra.isSubmitted || project.status === "live";
   const subs = [
-    { key: "connect", label: "Connect your store accounts", done: extra.hasEas, href: "/settings" },
+    { key: "connect", label: "Connect your store accounts", done: extra.hasBuildConnection, href: "/settings" },
     { key: "build", label: "Build a signed app (about 10-20 min)", done: extra.hasBuild, href: `/app/${id}/submit` },
     { key: "review", label: submitted ? "In review by Google" : "Submit for review", done: submitted, href: `/app/${id}/submit` },
   ];
@@ -150,16 +150,18 @@ export const Dashboard = () => {
           .select("provider").eq("is_valid", true)
           .eq("user_id", user.id);
         const hasEas = (creds ?? []).some((c) => c.provider === "eas");
+        const hasGitHub = (creds ?? []).some((c) => c.provider === "github");
 
         const extraMap: Record<string, ProjectExtra> = {};
         for (const p of projs) {
+          const hasBuildConnection = hasGitHub && (p.scan_result?.project_type === "capacitor" || hasEas);
           const projListings = (listings ?? []).filter((l) => l.project_id === p.id);
           const hasListing = projListings.some((l) => l.app_name && l.app_name.trim() !== "");
           const hasScreenshots = projListings.some((l) => hasEnoughScreenshots(l.screenshots));
           const latestSub = (subs ?? []).find((s) => s.project_id === p.id);
           const hasBuild = latestSub?.build_status === "completed";
           const isSubmitted = !!latestSub && ["waiting_for_review", "in_review", "approved"].includes(latestSub.review_status);
-          extraMap[p.id] = { hasListing, hasScreenshots, hasEas, hasBuild, isSubmitted };
+          extraMap[p.id] = { hasListing, hasScreenshots, hasBuildConnection, hasBuild, isSubmitted };
         }
         setExtras(extraMap);
       }
@@ -325,7 +327,7 @@ export const Dashboard = () => {
       {hasApps && (
         <div className="space-y-4">
           {projects.map((project) => {
-            const extra = extras[project.id] ?? { hasListing: false, hasScreenshots: false, hasEas: false, hasBuild: false, isSubmitted: false };
+            const extra = extras[project.id] ?? { hasListing: false, hasScreenshots: false, hasBuildConnection: false, hasBuild: false, isSubmitted: false };
             const steps = getSteps(project, extra);
             const score = project.scan_result?.score;
             const activeStep = steps.find((s) => s.active);

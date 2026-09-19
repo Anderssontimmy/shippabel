@@ -39,6 +39,8 @@ export interface ScanSource {
   fileList: string[];
   contents: Map<string, string>;
   branch?: string;
+  commitSha?: string;
+  treeSha?: string;
 }
 
 function projectFromContents(fileList: string[], contents: Map<string, string>): ScanSource {
@@ -80,7 +82,7 @@ export async function fetchGitHubProject(repoPath: string, token?: string, reque
   const entries = tree.tree.filter((entry: { type: string; path?: string }) => entry.type === "blob" && typeof entry.path === "string") as { path: string; size?: number }[];
   const fileList = entries.map((entry) => entry.path);
   const readme = fileList.find((f) => f.toLowerCase() === "readme.md");
-  const selected = new Set(["app.json", "package.json", readme, ...(options.includeSource === false ? [] : sourceFiles(fileList))]);
+  const selected = new Set(["app.json", "package.json", "capacitor.config.json", readme, ...(options.includeSource === false ? [] : sourceFiles(fileList))]);
   const contents = new Map<string, string>();
   // Resolve content against the exact tree snapshot, including private repositories.
   await Promise.all(entries.filter((entry) => selected.has(entry.path)).map(async (entry) => {
@@ -90,7 +92,7 @@ export async function fetchGitHubProject(repoPath: string, token?: string, reque
     if (new TextEncoder().encode(text).length > MAX_FILE) throw new ScanError(`${entry.path} is too large to scan.`);
     contents.set(entry.path, text);
   }));
-  return { ...projectFromContents(fileList, contents), branch: metadata.default_branch };
+  return { ...projectFromContents(fileList, contents), branch: metadata.default_branch, commitSha: commit.sha, treeSha: tree.sha };
 }
 
 export function analyzeZip(bytes: Uint8Array): ScanSource {
@@ -107,7 +109,7 @@ export function analyzeZip(bytes: Uint8Array): ScanSource {
       if (expanded > MAX_EXPANDED) throw new ScanError("The extracted ZIP is too large (maximum 100 MB).");
       if (entry.name.endsWith("/")) return false;
       names.push(entry.name);
-      const selected = /(^|\/)(app\.json|package\.json|readme\.md)$/i.test(entry.name) || sourcePattern.test(entry.name);
+      const selected = /(^|\/)(app\.json|package\.json|capacitor\.config\.json|readme\.md)$/i.test(entry.name) || sourcePattern.test(entry.name);
       if (!selected || /(^|\/)(node_modules|vendor|dist|\.git)\//.test(entry.name)) return false;
       if (entry.originalSize > MAX_FILE) throw new ScanError(`${entry.name} is too large to scan (maximum 512 KB).`);
       selectedSize += entry.originalSize;

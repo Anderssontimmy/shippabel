@@ -56,6 +56,21 @@ try {
   assert.deepEqual(new Set(issueRows.data.map((row) => row.id)), new Set(publicScan.body.scan_result.issues.map((issue) => issue.id)));
   pass("Guest ZIP scan persists a real report with matching issue IDs");
 
+  const capacitorProject = await project(guest);
+  const capacitorPath = `scans/${capacitorProject.id}/source.zip`;
+  assert.ifError((await guest.storage.from("project-archives").upload(capacitorPath, zipSync({
+    "package.json": strToU8('{"dependencies":{"@capacitor/core":"^8.0.0"}}'),
+    "capacitor.config.json": strToU8('{"appId":"com.test.capacitor","webDir":"dist"}'),
+    "index.html": strToU8("<!doctype html><title>Fixture</title>"),
+  }), { contentType: "application/zip" })).error);
+  const capacitorScan = await edge("scan-project", { project_id: capacitorProject.id, file_path: capacitorPath });
+  assert.equal(capacitorScan.status, 200, JSON.stringify(capacitorScan.body));
+  assert.equal(capacitorScan.body.scan_result.project_type, "capacitor");
+  assert.equal(capacitorScan.body.scan_result.needs_conversion, false);
+  assert.equal(capacitorScan.body.scan_result.summary.critical, 0);
+  assert.ok(!capacitorScan.body.scan_result.issues.some(issue => issue.title.includes("app.json")));
+  pass("Capacitor ZIP uses Capacitor settings without an Expo configuration false positive");
+
   const foreignRead = await foreign.from("projects").select("id").eq("id", publicProject.id);
   assert.ifError(foreignRead.error); assert.equal(foreignRead.data.length, 0);
   assert.equal((await edge("scan-project", guestRequest, anon, "b".repeat(64))).status, 404);

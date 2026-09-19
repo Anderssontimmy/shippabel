@@ -30,7 +30,7 @@ const EMPTY_FACTS: ShipFacts = {
   loggedIn: false,
   hasListing: false,
   hasScreenshots: false,
-  hasEas: false,
+  hasBuildConnection: false,
   hasBuild: false,
   isSubmitted: false,
   isLive: false,
@@ -61,7 +61,7 @@ export const useShipFlow = (projectId?: string) => {
         loggedIn: true,
         hasListing: true,
         hasScreenshots: true,
-        hasEas: true,
+        hasBuildConnection: true,
         hasBuild: false,
         isSubmitted: false,
         isLive: false,
@@ -111,6 +111,7 @@ export const useShipFlow = (projectId?: string) => {
 
     // Credentials
     let hasEas = false;
+    let hasGitHub = false;
     let hasApple = false;
     let hasGoogle = false;
     if (user) {
@@ -120,6 +121,7 @@ export const useShipFlow = (projectId?: string) => {
         .eq("user_id", user.id);
       const providers = (creds ?? []).map((c) => c.provider);
       hasEas = providers.includes("eas");
+      hasGitHub = providers.includes("github");
       hasApple = providers.includes("apple");
       hasGoogle = providers.includes("google");
     }
@@ -146,7 +148,7 @@ export const useShipFlow = (projectId?: string) => {
       loggedIn: !!user,
       hasListing,
       hasScreenshots,
-      hasEas,
+      hasBuildConnection: hasGitHub && (project?.scan_result?.project_type === "capacitor" || hasEas),
       hasBuild,
       isSubmitted,
       isLive,

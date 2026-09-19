@@ -41,13 +41,15 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
       - name: Install dependencies
         run: npm install
       - name: Build web app
         run: npm run build
-      - name: Sync Capacitor
-        run: npx cap sync android
+      - name: Prepare Android project
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+          npx cap sync android
       - name: Decode signing keystore
         env:
           KS_B64: \${{ secrets.ANDROID_KEYSTORE_BASE64 }}
