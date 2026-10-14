@@ -139,7 +139,10 @@ export const Scan = () => {
               disabled={scanning}
               className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-400 transition-colors disabled:opacity-50"
             />
-            <p className="mt-2 text-xs text-surface-400">
+            <p className="mt-2 text-sm text-surface-500">
+              The free check only reads your code. Nothing in your repository is changed.
+            </p>
+            <p className="mt-1 text-sm text-surface-500">
               {hasGitHub ? (
                 <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-green-600" /> Works with all your apps — private and public</span>
               ) : (
