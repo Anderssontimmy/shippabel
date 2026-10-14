@@ -157,6 +157,12 @@ const pages = [
     canonical: "https://shippabel.com/privacy",
   },
   {
+    path: "/terms",
+    title: "Terms of Service — Shippabel",
+    description: "Shippabel terms of service: plans, payment, our money-back promise and your rights.",
+    canonical: "https://shippabel.com/terms",
+  },
+  {
     path: "/blog",
     title: "Blog — Learn how to publish your AI-built app | Shippabel",
     description:

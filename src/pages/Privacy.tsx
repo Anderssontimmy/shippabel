@@ -2,33 +2,42 @@ export const Privacy = () => {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24 prose prose-sm max-w-none">
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
-      <p className="text-surface-500 text-sm mb-8">Last updated: March 2026</p>
+      <p className="text-surface-500 text-sm mb-8">Last updated: October 2026</p>
 
       <div className="space-y-6 text-surface-600 text-sm leading-relaxed">
         <section>
           <h2 className="text-lg font-semibold text-surface-900 mb-2">What we collect</h2>
           <p>
             When you use Shippabel, we collect your email address (for authentication),
-            the GitHub URLs or zip files you submit for scanning, and basic usage analytics.
+            the GitHub links or zip files you submit for scanning, your scan results, the store
+            content you create (text, screenshots, privacy policy), your payment status, and basic
+            usage analytics. If you connect them, we also store your GitHub access token and your
+            Google Play or Expo credentials, encrypted. Stripe handles your card details; we never
+            see them.
           </p>
         </section>
 
         <section>
           <h2 className="text-lg font-semibold text-surface-900 mb-2">How we use your data</h2>
           <p>
-            We use your project files solely to perform the readiness scan and generate
-            store assets. Your code is processed in memory and{" "}
-            <strong className="text-surface-900">never stored permanently</strong> on our servers.
-            Scan results are stored to display your report.
+            We use your project files solely to scan your app, generate store assets and, when you
+            ask, build and submit it. GitHub repositories are read when needed. Zip files you
+            upload are kept in private storage that only our servers can read, so we can generate
+            store content for that project, and they are removed if you ask us to delete your
+            account. Scan results are stored to display your report. To write store content, parts
+            of your project (such as file names, configuration and code excerpts) are sent to
+            Anthropic's Claude API.
           </p>
         </section>
 
         <section>
           <h2 className="text-lg font-semibold text-surface-900 mb-2">Third-party services</h2>
           <p>
-            We use Supabase for authentication and data storage, Stripe for payment processing,
-            Anthropic Claude API for AI-powered analysis, and Expo EAS for build services.
-            Each service has its own privacy policy.
+            We use Supabase for authentication, data and file storage, Stripe for payment
+            processing, Anthropic's Claude API for AI-written content, GitHub for your repository
+            (builds run in your own GitHub Actions), Google Play when you submit, Expo for Expo
+            apps, and Vercel and Cloudflare to host and deliver the site. Each service has its own
+            privacy policy.
           </p>
         </section>
 

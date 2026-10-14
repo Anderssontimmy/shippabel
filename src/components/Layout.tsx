@@ -139,6 +139,7 @@ export const Layout = () => {
             <Link to="/blog" className="hover:text-surface-600 transition-colors">Guides</Link>
             <Link to="/pricing" className="hover:text-surface-600 transition-colors">Pricing</Link>
             <Link to="/privacy" className="hover:text-surface-600 transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-surface-600 transition-colors">Terms</Link>
             <a href="mailto:hello@shippabel.com" className="hover:text-surface-600 transition-colors">hello@shippabel.com</a>
           </div>
         </div>
