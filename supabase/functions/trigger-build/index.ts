@@ -49,7 +49,12 @@ jobs:
         run: npm run build
       - name: Prepare Android project
         run: |
-          if [ ! -d android ]; then npx cap add android; fi
+          if [ ! -d android ]; then
+            npx cap add android
+            # Google Play refuses a version code it has already seen, and the generated project always starts at 1.
+            sed -i -E "s/versionCode [0-9]+/versionCode \${{ github.run_number }}/" android/app/build.gradle
+          fi
+          grep -n versionCode android/app/build.gradle
           npx cap sync android
       - name: Decode signing keystore
         env:
