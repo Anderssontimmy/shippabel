@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Rocket, Menu, X, LogOut, ArrowRight } from "lucide-react";
+import { Rocket, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -12,7 +12,7 @@ export const Layout = () => {
   const navLinks = [
     ...(user ? [{ to: "/dashboard", label: "My Apps" }] : []),
     { to: "/about", label: "About" },
-    { to: "/scan", label: "Check App" },
+    ...(user ? [{ to: "/scan", label: "Check App" }] : []),
     { to: "/pricing", label: "Pricing" },
     ...(user ? [{ to: "/settings", label: "Settings" }] : []),
     ...(!user ? [{ to: "/login", label: "Log in" }] : []),
@@ -22,8 +22,6 @@ export const Layout = () => {
     await signOut();
     navigate("/");
   };
-
-  const isLanding = location.pathname === "/";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -61,9 +59,9 @@ export const Layout = () => {
             {!user && (
               <Link
                 to="/scan"
-                className="rounded-lg bg-surface-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-800"
+                className="rounded-lg border border-surface-300 bg-white px-4 py-2 text-sm font-medium text-surface-900 transition-colors hover:bg-surface-50"
               >
-                Get started
+                Check your app
               </Link>
             )}
           </div>
@@ -103,9 +101,9 @@ export const Layout = () => {
               <Link
                 to="/scan"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg bg-surface-900 px-5 py-3 text-center text-sm font-medium text-white"
+                className="block rounded-lg bg-green-700 px-5 py-3 text-center text-sm font-medium text-white hover:bg-green-800"
               >
-                Get started
+                Check your app
               </Link>
             )}
           </div>
@@ -115,19 +113,6 @@ export const Layout = () => {
       <main className="flex-1 pt-16">
         <Outlet />
       </main>
-
-      {/* Sticky mobile CTA — only on landing page */}
-      {isLanding && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden border-t border-surface-200 bg-white/95 backdrop-blur-xl px-4 py-3">
-          <Link
-            to="/scan"
-            className="flex items-center justify-center gap-2 rounded-lg bg-surface-900 px-6 py-3.5 text-sm font-medium text-white w-full"
-          >
-            Check my app now
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      )}
 
       <footer className="border-t border-surface-200/60">
         <div className="mx-auto max-w-6xl px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-surface-400">
