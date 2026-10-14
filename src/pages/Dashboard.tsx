@@ -1,5 +1,5 @@
 import { hasEnoughScreenshots } from "@/lib/screenshots";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Rocket,
@@ -115,6 +115,7 @@ export const Dashboard = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
+  const checkoutHandled = useRef(false);
 
   const loadProjects = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -199,18 +200,19 @@ export const Dashboard = () => {
   // Handle post-checkout redirect — refresh session so plan metadata is current
   useEffect(() => {
     const checkoutStatus = searchParams.get("checkout");
-    if (checkoutStatus !== "success") return;
+    if (checkoutStatus !== "success" || checkoutHandled.current) return;
+    checkoutHandled.current = true;
 
+    // Clearing the param re-runs this effect, so the refresh below must not be
+    // cancelled by cleanup — that is what used to drop the confirmation.
     setSearchParams({}, { replace: true });
 
     // The Stripe webhook that writes app_metadata.plan may lag behind the
     // redirect — retry a few times until the plan shows up.
-    let cancelled = false;
     (async () => {
       for (let attempt = 0; attempt < 5; attempt++) {
         const { data } = await supabase.auth.refreshSession();
         const plan = data?.user?.app_metadata?.plan as string | undefined;
-        if (cancelled) return;
         if (plan) {
           setCheckoutPlan(plan);
           setShowCheckoutSuccess(true);
@@ -218,13 +220,10 @@ export const Dashboard = () => {
         }
         await new Promise((r) => setTimeout(r, 2000));
       }
-      if (!cancelled) {
-        // Webhook still hasn't landed — show a generic success rather than a wrong plan.
-        setCheckoutPlan(null);
-        setShowCheckoutSuccess(true);
-      }
+      // Webhook still hasn't landed — show a generic success rather than a wrong plan.
+      setCheckoutPlan(null);
+      setShowCheckoutSuccess(true);
     })();
-    return () => { cancelled = true; };
   }, [searchParams, setSearchParams]);
 
   if (authLoading || (loading && user)) {
