@@ -404,8 +404,8 @@ export const Settings = () => {
             { label: "Scan & Fix", ready: true, note: "Always available" },
             { label: "Generate Store Listing", ready: true, note: "AI-powered" },
             { label: "Generate Screenshots", ready: true, note: "Client-side" },
-            { label: "Build (EAS)", ready: hasCredential("eas"), note: hasCredential("eas") ? "Connected" : "Needs EAS token" },
-            { label: "Submit to Google Play", ready: hasCredential("google") && hasCredential("eas"), note: hasCredential("google") ? "Connected" : "Needs Google credentials" },
+            { label: "Build", ready: hasCredential("github") || hasCredential("eas"), note: hasCredential("github") || hasCredential("eas") ? "Connected" : "Connect GitHub" },
+            { label: "Submit to Google Play", ready: hasCredential("google") && (hasCredential("github") || hasCredential("eas")), note: hasCredential("google") ? "Connected" : "Needs Google credentials" },
           ].map((step) => (
             <div key={step.label} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
