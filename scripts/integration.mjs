@@ -142,7 +142,11 @@ try {
   assert.equal((await edge("stripe-webhook", event, anon, guestToken, headers)).body.duplicate, true);
   assert.equal((await admin.auth.admin.getUserById(owner.id)).data.user.app_metadata.plan, "ship");
   assert.equal((await edge("stripe-webhook", event)).status, 400);
+  const otherProductEvent = { ...event, id: `evt_local_${randomUUID()}`, data: { object: { ...event.data.object, metadata: { scope: "occupation" } } } };
+  const otherProductSignature = createHmac("sha256", process.env.STRIPE_WEBHOOK_SECRET).update(`${timestamp}.${JSON.stringify(otherProductEvent)}`).digest("hex");
+  assert.equal((await edge("stripe-webhook", otherProductEvent, anon, guestToken, { "stripe-signature": `t=${timestamp},v1=${otherProductSignature}` })).body.ignored, true);
   pass("Signed synthetic webhook grants once and rejects missing signatures (not a Stripe purchase)");
+  pass("Checkouts from other products on the shared Stripe account are acknowledged, not retried");
   for (const name of ["generate-copy", "generate-privacy"]) {
     assert.equal((await edge(name, { project_id: publicProject.id, platform: "android", app_name: "Foreign report" }, owner.token)).status, 404, name);
   }

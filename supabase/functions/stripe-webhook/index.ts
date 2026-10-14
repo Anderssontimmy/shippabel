@@ -18,6 +18,10 @@ Deno.serve(instrument("stripe-webhook", async (req) => {
       typeof event.livemode !== "boolean" || event.livemode !== stripeKey.startsWith("sk_live_")) {
     return Response.json({ error: "Invalid event or payment mode" }, { status: 400 });
   }
+  // The Stripe account is shared with other products whose checkouts also arrive here.
+  // Acknowledge them, otherwise Stripe keeps retrying and eventually disables this endpoint.
+  const plan = event.data.object.metadata?.plan;
+  if (plan !== "ship" && plan !== "unlimited") return Response.json({ received: true, ignored: true });
   const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
   // Deduplication and the entitlement update commit in the same transaction.
   const { data, error } = await supabase.rpc("apply_stripe_event", { p_event: event });
