@@ -5,7 +5,7 @@ const sections: { title: string; body: string }[] = [
   },
   {
     title: "What Shippabel does",
-    body: "Shippabel checks whether your app is ready for Google Play. Checking is free. On a paid plan we also help you fix issues, write your store page, prepare screenshots and a privacy policy, build your app and send it to Google Play. We provide the tools. You publish your own app from your own Google Play developer account.",
+    body: "Shippabel checks whether your app is ready for Google Play. Checking is free. On a paid plan we also help you fix issues, write your store page, prepare screenshots and a privacy policy, and build and sign your app and upload it to a Google Play testing track in your own Play Console. We provide the tools. You publish your own app from your own Google Play developer account, and Google sets its own requirements for releasing it publicly.",
   },
   {
     title: "Your account",
@@ -25,7 +25,7 @@ const sections: { title: string; body: string }[] = [
   },
   {
     title: "Our money-back promise",
-    body: "If we can't get your app onto Google Play because of a limitation in our service, we refund the full amount you paid. Email hello@shippabel.com within 30 days of your purchase and tell us which app it concerns. We can't refund when Google rejects an app for breaking its policies, or when the delay comes from accounts or information that only you can provide.",
+    body: "If we can't get your app onto a Google Play testing track in your Play Console because of a limitation in our service, we refund the full amount you paid. Email hello@shippabel.com within 30 days of your purchase and tell us which app it concerns. We can't refund when Google rejects an app for breaking its policies, when Google's own requirements for a public release are not met yet (for example the closed-testing requirement for new personal developer accounts), or when the delay comes from accounts or information that only you can provide.",
   },
   {
     title: "Acceptable use",
