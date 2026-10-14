@@ -266,7 +266,7 @@ export const Dashboard = () => {
               </p>
               <p className="text-sm text-green-700 mt-2">
                 Need help getting started?{" "}
-                <a href="mailto:anderssontimmy@outlook.com" className="underline font-medium">
+                <a href="mailto:hello@shippabel.com" className="underline font-medium">
                   Email us
                 </a>{" "}
                 — we reply fast.
