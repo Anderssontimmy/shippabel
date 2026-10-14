@@ -285,8 +285,8 @@ export const Scan = () => {
 
       {/* Reassurance */}
       <div className="mt-12 text-center">
-        <p className="text-xs text-surface-400">
-          We never store your code. Your app is only analyzed, not copied or shared.
+        <p className="text-sm text-surface-500">
+          Your code is analyzed, not shared. If you upload a zip, we keep it in private storage so we can write your store page.
         </p>
       </div>
     </div>
