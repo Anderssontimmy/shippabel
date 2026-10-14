@@ -200,9 +200,9 @@ Deno.serve(instrument("trigger-build", async (req) => {
       const workflowFile = ".github/workflows/capacitor-build.yml";
       const hasWorkflow = await checkFileExists(repoPath, workflowFile, ghHeaders, defaultBranch);
       if (!await pushFile(repoPath, workflowFile, CAPACITOR_WORKFLOW, hasWorkflow ? "Update Capacitor workflow" : "Add Capacitor workflow", ghHeaders, defaultBranch)) throw new Error("Could not update the build workflow.");
-      // GitHub indexes a new workflow a few seconds after it is pushed; wait for it
-      // instead of making the customer retry their first build.
-      if (!hasWorkflow) await waitForWorkflow(repoPath, workflowFile, ghHeaders);
+      // GitHub lists a pushed workflow some seconds later (a minute at worst); dispatching before that
+      // fails, so wait instead of making the customer retry.
+      await waitForWorkflow(repoPath, workflowFile, ghHeaders);
 
       // Set project ID (public) + per-project callback token (secret) for the callback
       await setGitHubVariable(repoPath, "SHIPPABEL_PROJECT_ID", project_id, ghHeaders);
@@ -349,7 +349,7 @@ async function ensureUploadKey(supabase: SupabaseClient, projectId: string): Pro
 }
 
 async function waitForWorkflow(repoPath: string, workflowFile: string, headers: Record<string, string>): Promise<void> {
-  for (let attempt = 0; attempt < 12; attempt++) {
+  for (let attempt = 0; attempt < 25; attempt++) {
     try {
       const response = await fetch(`https://api.github.com/repos/${repoPath}/actions/workflows`, { headers });
       if (response.ok && ((await response.json()).workflows ?? []).some((w: { path: string }) => w.path === workflowFile)) return;
@@ -383,7 +383,12 @@ async function pushFile(repoPath: string, path: string, content: string, message
   try {
     let sha: string | undefined;
     const cr = await fetch(`https://api.github.com/repos/${repoPath}/contents/${path}`, { headers: { ...headers, Accept: "application/vnd.github.v3+json" } });
-    if (cr.ok) sha = (await cr.json()).sha;
+    if (cr.ok) {
+      const existing = await cr.json();
+      sha = existing.sha;
+      // An identical re-push still makes a commit in the customer's repo (and makes GitHub re-index a workflow).
+      if (existing.encoding === "base64" && new TextDecoder().decode(Uint8Array.from(atob(String(existing.content).replace(/\s/g, "")), (c) => c.charCodeAt(0))) === content) return true;
+    }
     const body: Record<string, unknown> = { message, content: btoa(unescape(encodeURIComponent(content))), branch };
     if (sha) body.sha = sha;
     return (await fetch(`https://api.github.com/repos/${repoPath}/contents/${path}`, {
