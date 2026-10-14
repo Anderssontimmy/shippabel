@@ -1,4 +1,5 @@
 import { instrument } from "../_shared/monitoring.ts";
+import { capacitorAppId } from "../_shared/packageName.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { decryptCreds } from "../_shared/crypto.ts";
@@ -320,11 +321,10 @@ async function detectPackageName(repoPath: string, token: string): Promise<strin
     if (r.ok) branch = (await r.json()).default_branch ?? "main";
   } catch { /* default main */ }
 
-  // Capacitor: appId: 'com.x.y'
+  // Capacitor: appId in capacitor.config.json (written by Shippabel) or .ts
   for (const f of ["capacitor.config.ts", "capacitor.config.json"]) {
-    const c = await ghRaw(repoPath, branch, f, token);
-    const m = c?.match(/appId\s*[:=]\s*['"]([^'"]+)['"]/);
-    if (m) return m[1];
+    const appId = capacitorAppId(await ghRaw(repoPath, branch, f, token));
+    if (appId) return appId;
   }
   // Expo: app.json -> expo.android.package | android.package
   const appJson = await ghRaw(repoPath, branch, "app.json", token);
