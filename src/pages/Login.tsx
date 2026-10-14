@@ -4,6 +4,7 @@ import { Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
+import { signInEmailError } from "@/lib/authErrors";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export const Login = () => {
     setLoading(false);
 
     if (authError) {
-      setError(authError.message);
+      setError(signInEmailError(authError));
     } else {
       setSent(true);
     }

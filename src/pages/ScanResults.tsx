@@ -23,6 +23,7 @@ import { AppPotentialCard } from "@/components/AppPotentialCard";
 import { useFix } from "@/hooks/useFix";
 import { useConvert } from "@/hooks/useConvert";
 import { useAuth } from "@/hooks/useAuth";
+import { signInEmailError } from "@/lib/authErrors";
 import { usePlan } from "@/hooks/usePlan";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -210,7 +211,7 @@ const SaveReportCard = ({ projectId }: { projectId: string }) => {
       `${window.location.origin}/login?next=${encodeURIComponent(`/scan/${projectId}`)}`,
     );
     setSending(false);
-    if (err) setError(err.message);
+    if (err) setError(signInEmailError(err));
     else setSent(true);
   };
 
