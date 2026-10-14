@@ -157,6 +157,31 @@ export const Pricing = () => {
         ))}
       </div>
 
+      {/* What you need */}
+      <div className="mt-14 max-w-3xl mx-auto rounded-2xl border border-surface-200 bg-white px-6 py-6">
+        <h2 className="text-base font-semibold text-surface-900">What you'll need for a paid plan</h2>
+        <ul className="mt-4 space-y-3 text-sm text-surface-600">
+          <li className="flex items-start gap-2">
+            <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+            A Google Play developer account. Google charges a one-time $25 fee, paid to Google.
+          </li>
+          <li className="flex items-start gap-2">
+            <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+            Your app's code on GitHub, so we can build it.
+          </li>
+          <li className="flex items-start gap-2">
+            <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+            A Google service account that lets us upload to your Play Console. Settings walks you through it step by step.
+          </li>
+        </ul>
+        <p className="mt-4 text-sm text-surface-500">
+          We build and sign your app and upload it to Google Play's internal testing track. Google requires
+          developer accounts created as personal accounts after November 2023 to run a closed test with at
+          least 12 testers for 14 days before an app can be released publicly
+          {" "}(<a href="https://support.google.com/googleplay/android-developer/answer/14151465" target="_blank" rel="noopener noreferrer" className="underline hover:text-surface-700">Google's rules</a>).
+        </p>
+      </div>
+
       {/* Guarantee */}
       <div className="mt-14 max-w-xl mx-auto rounded-2xl border border-green-200 bg-green-50 px-6 py-5 text-center">
         <p className="text-sm font-semibold text-green-900">Our promise: your app goes live, or you get your money back.</p>
