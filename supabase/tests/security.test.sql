@@ -83,5 +83,13 @@ SELECT public.consume_scan_quota('fixture-ip','20000000-0000-4000-8000-000000000
 SELECT is(public.consume_scan_quota('fixture-ip','20000000-0000-4000-8000-000000000001',NULL),false,'Guest quota blocks attempt 11');
 SELECT throws_ok($$SELECT public.save_scan_result('20000000-0000-4000-8000-000000000003','{"issues":[{"severity":"invalid","category":"security","title":"bad","description":"bad","auto_fixable":false}]}','ready')$$,'23514',null,'Bad issue aborts scan transaction');
 SELECT is((SELECT title FROM public.issues WHERE project_id='20000000-0000-4000-8000-000000000003'),'guest a issue','Previous issues survive failed scan save');
+-- Upload keys belong to the server and go with their project.
+SELECT is((SELECT relrowsecurity FROM pg_class WHERE oid='public.project_signing_keys'::regclass),true,'Upload keys have row level security');
+SELECT is(has_table_privilege('anon','public.project_signing_keys','SELECT') OR has_table_privilege('authenticated','public.project_signing_keys','SELECT'),false,'Clients cannot read upload keys');
+SELECT is(has_table_privilege('anon','public.project_signing_keys','INSERT') OR has_table_privilege('authenticated','public.project_signing_keys','INSERT'),false,'Clients cannot write upload keys');
+INSERT INTO public.projects(id,name,user_id) VALUES('20000000-0000-4000-8000-000000000009','key owner','10000000-0000-4000-8000-000000000001');
+INSERT INTO public.project_signing_keys(project_id,keystore) VALUES('20000000-0000-4000-8000-000000000009','{"enc":"fixture"}');
+DELETE FROM public.projects WHERE id='20000000-0000-4000-8000-000000000009';
+SELECT is((SELECT count(*)::int FROM public.project_signing_keys),0,'Upload key is removed with its project');
 SELECT * FROM finish();
 ROLLBACK;
