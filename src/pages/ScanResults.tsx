@@ -509,7 +509,7 @@ export const ScanResults = () => {
 
       {/* Conversion CTA — for non-Expo projects */}
       {scan.needs_conversion && (
-        <div className="mb-8 rounded-2xl border border-green-200 bg-green-50 p-5 sm:p-8">
+        <div id="conversion-section" className="mb-8 rounded-2xl border border-green-200 bg-green-50 p-5 sm:p-8">
           <div className="flex items-start gap-4">
             <div className="hidden sm:flex h-12 w-12 rounded-2xl bg-green-100 items-center justify-center shrink-0">
               <Rocket className="h-6 w-6 text-green-700" />

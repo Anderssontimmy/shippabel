@@ -18,6 +18,7 @@ export type FlowStep =
 export interface ShipFacts {
   scanned: boolean;
   criticalIssues: number;
+  needsConversion: boolean; // a web app that must be wrapped as a mobile app before it can be built
   loggedIn: boolean;
   hasListing: boolean;
   hasScreenshots: boolean;
@@ -35,13 +36,13 @@ export interface FlowStepState {
   available: boolean;
 }
 
-const isFixed = (f: ShipFacts) => f.scanned && f.criticalIssues === 0;
+const isFixed = (f: ShipFacts) => f.scanned && f.criticalIssues === 0 && !f.needsConversion;
 
 // Full 8-step model — used by the in-app flow bar and guide.
 export function deriveSteps(f: ShipFacts): FlowStepState[] {
   return [
     { id: "scan", label: "Check", description: "See if your app is ready for the stores", completed: f.scanned, available: true },
-    { id: "fix", label: "Fix", description: "Fix the problems we found", completed: isFixed(f), available: f.scanned },
+    { id: "fix", label: "Fix", description: f.criticalIssues === 0 && f.needsConversion ? "Make your app ready for Google Play" : "Fix the problems we found", completed: isFixed(f), available: f.scanned },
     { id: "signup", label: "Sign Up", description: "Create a free account to continue", completed: f.loggedIn, available: f.scanned },
     { id: "listing", label: "Store Page", description: "Write your app's name, description, and more", completed: f.hasListing, available: f.scanned && f.loggedIn },
     { id: "screenshots", label: "Screenshots", description: "Add screenshots of your app", completed: f.hasScreenshots, available: f.scanned && f.loggedIn && f.hasListing },
@@ -62,7 +63,7 @@ export function progressPercent(f: ShipFacts): number {
 // First incomplete step in sequence — the user's current focus.
 export function getCurrentStep(f: ShipFacts): FlowStep {
   if (!f.scanned) return "scan";
-  if (f.criticalIssues > 0) return "fix";
+  if (f.criticalIssues > 0 || f.needsConversion) return "fix";
   if (!f.loggedIn) return "signup";
   if (!f.hasListing) return "listing";
   if (!f.hasScreenshots) return "screenshots";

@@ -4,6 +4,7 @@ import { deriveSteps, getCurrentStep, deriveDashboardSteps, progressPercent, typ
 const base: ShipFacts = {
   scanned: false,
   criticalIssues: 0,
+  needsConversion: false,
   loggedIn: false,
   hasListing: false,
   hasScreenshots: false,
@@ -19,10 +20,19 @@ describe("shipFlow", () => {
     const ready = facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasBuildConnection: true });
     const canBuild = (f: ShipFacts) => deriveSteps(f).find(step => step.id === "build")!.available;
     expect(canBuild(ready)).toBe(true);
-    for (const missing of [{ criticalIssues: 1 }, { loggedIn: false }, { hasListing: false }, { hasScreenshots: false }, { hasBuildConnection: false }]) {
+    for (const missing of [{ criticalIssues: 1 }, { needsConversion: true }, { loggedIn: false }, { hasListing: false }, { hasScreenshots: false }, { hasBuildConnection: false }]) {
       expect(canBuild({ ...ready, ...missing })).toBe(false);
     }
   });
+  it("does not call a web app fixed before it has been made into a mobile app", () => {
+    const web = facts({ scanned: true, needsConversion: true, loggedIn: true });
+    expect(getCurrentStep(web)).toBe("fix");
+    expect(deriveSteps(web).find((step) => step.id === "fix")!.completed).toBe(false);
+    expect(deriveSteps(web).find((step) => step.id === "fix")!.description).toBe("Make your app ready for Google Play");
+    expect(deriveDashboardSteps(web).find((step) => step.key === "fix")).toMatchObject({ done: false, active: true });
+    expect(getCurrentStep({ ...web, needsConversion: false })).toBe("listing");
+  });
+
   it("starts at scan when nothing is done", () => {
     expect(getCurrentStep(base)).toBe("scan");
   });
@@ -62,6 +72,7 @@ describe("shipFlow", () => {
       base,
       facts({ scanned: true }),
       facts({ scanned: true, criticalIssues: 1 }),
+      facts({ scanned: true, needsConversion: true }),
       facts({ scanned: true, loggedIn: true, hasListing: true }),
       facts({ scanned: true, loggedIn: true, hasListing: true, hasScreenshots: true, hasBuildConnection: true, hasBuild: true, isLive: true }),
     ];
