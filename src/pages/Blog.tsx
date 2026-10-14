@@ -109,10 +109,11 @@ export const BlogPost = () => {
       <div className="mt-16 rounded-2xl bg-green-50 border border-green-200 p-8 text-center">
         <h2 className="text-xl font-semibold text-surface-900 mb-2">Ready to try it yourself?</h2>
         <p className="text-surface-500 text-sm mb-6">Shippabel handles everything mentioned in this guide — automatically.</p>
-        <Link to="/scan">
-          <button className="inline-flex items-center gap-2 rounded-xl bg-green-600 text-white px-7 py-3.5 text-sm font-medium hover:bg-green-700 transition-colors">
-            Check my app for free <ArrowRight className="h-4 w-4" />
-          </button>
+        <Link
+          to="/scan"
+          className="inline-flex items-center gap-2 rounded-xl bg-green-700 text-white px-7 py-3.5 text-sm font-medium hover:bg-green-800 transition-colors"
+        >
+          Check my app for free <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </Link>
       </div>
 

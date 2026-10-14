@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { invokeEdge } from "@/lib/invokeEdge";
+import { toPlainText } from "@/lib/plainText";
 
 export interface StoreCopyVariant {
   app_name: string;
@@ -49,6 +50,8 @@ const demoVariants: StoreCopyVariant[] = [
   },
 ];
 
+const plainVariant = (variant: StoreCopyVariant): StoreCopyVariant => ({ ...variant, full_description: toPlainText(variant.full_description) });
+
 export const useStoreListing = (projectId: string, platform: "ios" | "android") => {
   const isDemo = projectId === "demo";
   const [listing, setListing] = useState<StoreListing | null>(null);
@@ -75,7 +78,8 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
       .maybeSingle();
 
     if (loadError) setError(loadError.message);
-    setListing(data ? (data as StoreListing) : null);
+    const saved = data as StoreListing | null;
+    setListing(saved?.full_description ? { ...saved, full_description: toPlainText(saved.full_description) } : saved);
     setLoading(false);
   };
 
@@ -107,13 +111,14 @@ export const useStoreListing = (projectId: string, platform: "ios" | "android") 
       });
 
       if (fnError || !data) throw new Error(fnError ?? "Generation failed");
-      setVariants(data.variants ?? []);
+      const written = (data.variants ?? []).map(plainVariant);
+      setVariants(written);
 
       // Auto-select first variant
-      if (data.variants?.[0]) {
+      if (written[0]) {
         setListing((prev) => ({
           ...prev!,
-          ...data.variants[0],
+          ...written[0],
           project_id: projectId,
           platform,
         }));
