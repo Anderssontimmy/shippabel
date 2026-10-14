@@ -1,9 +1,10 @@
 import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
-import { decryptCreds } from "../_shared/crypto.ts";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { decryptCreds, encryptCreds } from "../_shared/crypto.ts";
 import { projectCallbackToken } from "../_shared/callback.ts";
 import { setGitHubSecret } from "../_shared/githubSecrets.ts";
+import { generateUploadKeystore, type UploadKeystore } from "../_shared/signingKey.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 function getCorsHeaders(req: Request) {
@@ -194,7 +195,9 @@ Deno.serve(instrument("trigger-build", async (req) => {
       const workflowFile = ".github/workflows/capacitor-build.yml";
       const hasWorkflow = await checkFileExists(repoPath, workflowFile, ghHeaders, defaultBranch);
       if (!await pushFile(repoPath, workflowFile, CAPACITOR_WORKFLOW, hasWorkflow ? "Update Capacitor workflow" : "Add Capacitor workflow", ghHeaders, defaultBranch)) throw new Error("Could not update the build workflow.");
-      if (!hasWorkflow) throw new Error("We just added the build workflow. Please click Retry in 15 seconds.");
+      // GitHub indexes a new workflow a few seconds after it is pushed; wait for it
+      // instead of making the customer retry their first build.
+      if (!hasWorkflow) await waitForWorkflow(repoPath, workflowFile, ghHeaders);
 
       // Set project ID (public) + per-project callback token (secret) for the callback
       await setGitHubVariable(repoPath, "SHIPPABEL_PROJECT_ID", project_id, ghHeaders);
@@ -203,6 +206,18 @@ Deno.serve(instrument("trigger-build", async (req) => {
         throw new Error("Couldn't configure the build callback. Check that your GitHub token has repo access.");
       // Clean up the plaintext variable older builds wrote
       await deleteGitHubVariable(repoPath, "SHIPPABEL_CALLBACK_SECRET", ghHeaders);
+
+      // Google Play needs every update signed with the same upload key, so create it once
+      // per app, keep it, and hand it to the workflow as repository secrets.
+      const signing = await ensureUploadKey(supabase, project_id);
+      for (const [name, value] of [
+        ["ANDROID_KEYSTORE_BASE64", signing.keystoreBase64],
+        ["ANDROID_KEYSTORE_PASSWORD", signing.password],
+        ["ANDROID_KEY_ALIAS", signing.alias],
+      ] as const) {
+        if (!await setGitHubSecret(repoPath, name, value, ghHeaders))
+          throw new Error("Couldn't store the app signing key in your repo. Check that your GitHub token has repo access.");
+      }
 
       // Trigger Capacitor workflow
       const { data: submissionId, error: startError } = await supabase.rpc("start_build", { p_project_id: project_id, p_platform: platform });
@@ -305,6 +320,38 @@ Deno.serve(instrument("trigger-build", async (req) => {
 }));
 
 // --- Helpers ---
+
+// The upload key is created on the first build and reused by every later one. Concurrent first
+// builds race on the insert; the loser reads the winner's row, so both sign with the same key.
+async function ensureUploadKey(supabase: SupabaseClient, projectId: string): Promise<UploadKeystore> {
+  const encKey = Deno.env.get("CREDENTIALS_ENC_KEY") ?? "";
+  const load = async (): Promise<UploadKeystore | null> => {
+    const { data, error } = await supabase.from("project_signing_keys").select("keystore").eq("project_id", projectId).maybeSingle();
+    if (error) throw new Error("Could not load the app signing key.");
+    return data ? (await decryptCreds(data.keystore as Record<string, unknown>, encKey)) as unknown as UploadKeystore : null;
+  };
+  const existing = await load();
+  if (existing) return existing;
+  const created = await generateUploadKeystore();
+  const { error } = await supabase.from("project_signing_keys").upsert(
+    { project_id: projectId, keystore: await encryptCreds({ ...created }, encKey) },
+    { onConflict: "project_id", ignoreDuplicates: true },
+  );
+  if (error) throw new Error("Could not save the app signing key.");
+  const stored = await load();
+  if (!stored) throw new Error("Could not save the app signing key.");
+  return stored;
+}
+
+async function waitForWorkflow(repoPath: string, workflowFile: string, headers: Record<string, string>): Promise<void> {
+  for (let attempt = 0; attempt < 12; attempt++) {
+    try {
+      const response = await fetch(`https://api.github.com/repos/${repoPath}/actions/workflows`, { headers });
+      if (response.ok && ((await response.json()).workflows ?? []).some((w: { path: string }) => w.path === workflowFile)) return;
+    } catch { /* keep waiting */ }
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+}
 
 function extractGitHubPath(url: string): string | null {
   try {
