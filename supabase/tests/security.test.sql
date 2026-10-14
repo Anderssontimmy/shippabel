@@ -91,5 +91,14 @@ INSERT INTO public.projects(id,name,user_id) VALUES('20000000-0000-4000-8000-000
 INSERT INTO public.project_signing_keys(project_id,keystore) VALUES('20000000-0000-4000-8000-000000000009','{"enc":"fixture"}');
 DELETE FROM public.projects WHERE id='20000000-0000-4000-8000-000000000009';
 SELECT is((SELECT count(*)::int FROM public.project_signing_keys),0,'Upload key is removed with its project');
+-- An account can be deleted together with its projects and everything that hangs off them.
+INSERT INTO auth.users(id, email, raw_app_meta_data) VALUES('10000000-0000-4000-8000-000000000009','leaving@example.test','{}');
+INSERT INTO public.projects(id,name,user_id) VALUES('20000000-0000-4000-8000-000000000010','leaving project','10000000-0000-4000-8000-000000000009');
+INSERT INTO public.submissions(project_id,platform,build_status) VALUES('20000000-0000-4000-8000-000000000010','android','failed');
+INSERT INTO public.project_signing_keys(project_id,keystore) VALUES('20000000-0000-4000-8000-000000000010','{"enc":"fixture"}');
+DELETE FROM auth.users WHERE id='10000000-0000-4000-8000-000000000009';
+SELECT is((SELECT count(*)::int FROM public.projects WHERE user_id='10000000-0000-4000-8000-000000000009'),0,'Deleting an account removes its projects');
+SELECT is((SELECT count(*)::int FROM public.submissions WHERE project_id='20000000-0000-4000-8000-000000000010'),0,'...and their builds');
+SELECT is((SELECT count(*)::int FROM public.project_signing_keys WHERE project_id='20000000-0000-4000-8000-000000000010'),0,'...and their upload keys');
 SELECT * FROM finish();
 ROLLBACK;
