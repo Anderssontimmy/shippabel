@@ -6,7 +6,7 @@ interface AppPotentialCardProps {
 }
 
 const BulletList = ({ items }: { items: string[] }) => (
-  <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-surface-600 marker:text-surface-400">
+  <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-surface-600 marker:text-surface-500">
     {items.map((item) => (
       <li key={item}>{item}</li>
     ))}

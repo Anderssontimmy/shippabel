@@ -100,7 +100,7 @@ const HeroScanField = () => {
 
   return (
     <form onSubmit={handleSubmit} className="animate-fade-up-delay-3 mt-8">
-      <div className="flex max-w-md rounded-full border border-surface-300 bg-white p-1 focus-within:ring-2 focus-within:ring-green-700 focus-within:ring-offset-2">
+      <div className="flex max-w-md rounded-full border border-surface-300 bg-white p-1 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-green-700 has-[input:focus-visible]:ring-offset-2">
         <input
           type="text"
           inputMode="url"

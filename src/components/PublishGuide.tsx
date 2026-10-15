@@ -168,7 +168,7 @@ export const PublishGuide = ({
                   <p className="text-xs font-semibold text-surface-800 mb-3">Do this once, before your first submit:</p>
                   <ol className="space-y-3">
                     <li className="flex gap-2.5">
-                      <span className="h-5 w-5 rounded-full bg-surface-900 text-white flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
+                      <span className="h-5 w-5 rounded-full bg-surface-900 text-white flex items-center justify-center text-xs font-bold shrink-0">1</span>
                       <div className="text-xs text-surface-700 leading-relaxed">
                         <span className="font-semibold text-surface-900">Create your app in Google Play.</span> Click the
                         blue "Create app" button. Use the name <CodeChip>{displayName}</CodeChip>. If it asks for a
@@ -177,7 +177,7 @@ export const PublishGuide = ({
                       </div>
                     </li>
                     <li className="flex gap-2.5">
-                      <span className="h-5 w-5 rounded-full bg-surface-900 text-white flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
+                      <span className="h-5 w-5 rounded-full bg-surface-900 text-white flex items-center justify-center text-xs font-bold shrink-0">2</span>
                       <div className="text-xs text-surface-700 leading-relaxed">
                         <span className="font-semibold text-surface-900">Let us upload for you.</span> Open this page, make
                         sure your project is selected at the top, and click the blue <span className="font-semibold">Enable</span> button.
@@ -220,7 +220,7 @@ export const PublishGuide = ({
                 </button>
               </div>
               {platform === "android" && (
-                <p className="text-[11px] text-surface-400 mt-2">Already did the two steps above? Just click Submit — it's one click from now on.</p>
+                <p className="text-xs text-surface-500 mt-2">Already did the two steps above? Just click Submit — it's one click from now on.</p>
               )}
             </div>
           </div>
@@ -267,7 +267,7 @@ export const PublishGuide = ({
         </div>
         <div className="text-right">
           <p className="text-sm font-medium text-surface-700">{completedSteps.size}/{steps.length} done</p>
-          <p className="text-xs text-surface-400">~{platform === "android" ? "9" : "6"} min total</p>
+          <p className="text-xs text-surface-500">~{platform === "android" ? "9" : "6"} min total</p>
         </div>
       </div>
 
@@ -311,14 +311,14 @@ export const PublishGuide = ({
                   <p className={`text-sm font-medium ${done ? "text-surface-500 line-through" : "text-surface-900"}`}>
                     {step.title}
                   </p>
-                  <p className="text-xs text-surface-400">{step.timeEstimate}</p>
+                  <p className="text-xs text-surface-500">{step.timeEstimate}</p>
                 </div>
 
-                <Icon className="h-4 w-4 text-surface-400 shrink-0 mr-1" />
+                <Icon className="h-4 w-4 text-surface-500 shrink-0 mr-1" />
                 {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-surface-400 shrink-0" />
+                  <ChevronUp className="h-4 w-4 text-surface-500 shrink-0" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-surface-400 shrink-0" />
+                  <ChevronDown className="h-4 w-4 text-surface-500 shrink-0" />
                 )}
               </button>
 
@@ -561,7 +561,7 @@ const AndroidStepContent = ({
             {buildUrl ? (
               <ExternalButton href={buildUrl} label="Open GitHub Actions" />
             ) : (
-              <p className="text-xs text-surface-400 mt-1">
+              <p className="text-xs text-surface-500 mt-1">
                 The link to your build will appear here once the build is complete.
               </p>
             )}
@@ -572,7 +572,7 @@ const AndroidStepContent = ({
               Scroll down to <Strong>"Artifacts"</Strong> at the bottom of the build page.
               Download the file called <Strong>app-release-aab</Strong> (or app-release-apk).
             </p>
-            <p className="text-xs text-surface-400 mt-1">
+            <p className="text-xs text-surface-500 mt-1">
               The .aab file is what Google Play needs. It's a zip — don't unzip it.
             </p>
           </Instruction>
@@ -705,7 +705,7 @@ const IosStepContent = ({
             {buildUrl ? (
               <ExternalButton href={buildUrl} label="Open GitHub Actions" />
             ) : (
-              <p className="text-xs text-surface-400 mt-1">
+              <p className="text-xs text-surface-500 mt-1">
                 The link to your build will appear here once the build is complete.
               </p>
             )}
@@ -750,7 +750,7 @@ const IosStepContent = ({
               Go back to App Store Connect. Under your app, go to the <Strong>"Build"</Strong> section.
               Your build will appear after ~10 minutes of processing.
             </p>
-            <p className="text-xs text-surface-400 mt-1">
+            <p className="text-xs text-surface-500 mt-1">
               If you don't see it right away, wait 10-15 minutes and refresh.
             </p>
           </Instruction>
@@ -788,7 +788,7 @@ const Strong = ({ children }: { children: React.ReactNode }) => (
 );
 
 const CodeChip = ({ children }: { children: React.ReactNode }) => (
-  <span className="font-mono text-[11px] bg-surface-100 text-surface-900 rounded px-1.5 py-0.5 break-all">{children}</span>
+  <span className="font-mono text-xs bg-surface-100 text-surface-900 rounded px-1.5 py-0.5 break-all">{children}</span>
 );
 
 const HelpBox = ({ children }: { children: React.ReactNode }) => (
@@ -808,11 +808,11 @@ const FieldGuide = ({
 }) => (
   <div className="flex items-center justify-between rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 mt-1.5">
     <div>
-      <p className="text-xs text-surface-400">{label}</p>
+      <p className="text-xs text-surface-500">{label}</p>
       <p className="text-sm font-medium text-surface-900">{value}</p>
     </div>
     {onCopy && (
-      <button onClick={onCopy} aria-label={`Copy ${label}`} className="text-surface-400 hover:text-surface-700 cursor-pointer p-1">
+      <button onClick={onCopy} aria-label={`Copy ${label}`} className="text-surface-500 hover:text-surface-700 cursor-pointer p-1">
         <Copy className="h-3.5 w-3.5" />
       </button>
     )}

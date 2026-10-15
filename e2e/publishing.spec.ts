@@ -61,7 +61,7 @@ async function uploadTwo(page: Page) {
   await page.getByRole("button", { name: "Add my first screenshot" }).click();
   await (await chooser).setFiles({ name: "one.png", mimeType: "image/png", buffer: png });
   chooser = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: "Add device", exact: true }).first().click();
+  await page.getByRole("button", { name: "Add screenshot", exact: true }).first().click();
   await (await chooser).setFiles({ name: "two.png", mimeType: "image/png", buffer: png });
   await expect(page.getByText("2/2 screenshots", { exact: true })).toBeVisible();
 }

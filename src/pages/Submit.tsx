@@ -35,6 +35,7 @@ const steps: { id: WizardStep; label: string; icon: typeof FileText }[] = [
 ];
 
 export const Submit = () => {
+  useDocumentHead({ title: "Test release" });
   const { id } = useParams();
   const [currentStep, setCurrentStep] = useState<WizardStep>("review");
   const [platform] = useState<"ios" | "android">("android");
@@ -136,7 +137,7 @@ export const Submit = () => {
   if (loadingProject) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 className="h-8 w-8 text-surface-400 animate-spin" />
+        <Loader2 className="h-8 w-8 text-surface-500 animate-spin" />
       </div>
     );
   }
@@ -174,7 +175,7 @@ export const Submit = () => {
           <div className="h-14 w-14 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-5">
             <AlertCircle className="h-7 w-7 text-amber-600" />
           </div>
-          <h2 className="text-xl font-semibold text-surface-900 mb-2">One more step before building</h2>
+          <h1 className="text-xl font-semibold text-surface-900 mb-2">One more step before building</h1>
           <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
             Your app needs to be converted to a mobile format before we can build it for Google Play. This is quick and automatic, just click the button below.
           </p>
@@ -184,7 +185,7 @@ export const Submit = () => {
               Go to scan results to convert
             </Button>
           </Link>
-          <p className="text-xs text-surface-400 mt-3">Look for the "Make it Google Play ready" button</p>
+          <p className="text-xs text-surface-500 mt-3">Look for the "Make it Google Play ready" button</p>
         </Card>
       </div>
     );
@@ -201,7 +202,7 @@ export const Submit = () => {
         </Link>
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">Publish Your App</h1>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="text-surface-500 text-sm mt-1">
             We'll prepare your app and send it to Google Play for you
           </p>
         </div>
@@ -217,7 +218,7 @@ export const Submit = () => {
               aria-label={`Step ${i + 1}: ${step.label}`}
               aria-current={i === currentStepIndex ? "step" : undefined}
               className={`flex items-center gap-2 ${
-                i <= currentStepIndex ? "text-surface-900 cursor-pointer" : "text-surface-400 cursor-default"
+                i <= currentStepIndex ? "text-surface-900 cursor-pointer" : "text-surface-500 cursor-default"
               }`}
             >
               <div
@@ -251,7 +252,7 @@ export const Submit = () => {
       {currentStep === "review" && (
         <div className="space-y-6">
           <Card>
-            <h3 className="font-semibold text-surface-900 mb-1">Ready to publish?</h3>
+            <h2 className="font-semibold text-surface-900 mb-1">Ready to publish?</h2>
             <p className="text-sm text-surface-500 mb-4">Let's make sure everything is in order before we build your app.</p>
             <div className="space-y-3">
               <CheckItem
@@ -295,22 +296,22 @@ export const Submit = () => {
       {currentStep === "configure" && (
         <div className="space-y-6">
           <Card>
-            <h3 className="font-semibold text-surface-900 mb-4">Build Configuration</h3>
+            <h2 className="font-semibold text-surface-900 mb-4">Build Configuration</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Platform</label>
+                <label className="block text-sm font-medium text-surface-500 mb-1">Platform</label>
                 <p className="text-sm text-surface-900">{platform === "ios" ? "iOS (App Store)" : "Android (Google Play)"}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Build Type</label>
+                <label className="block text-sm font-medium text-surface-500 mb-1">Build Type</label>
                 <p className="text-sm text-surface-900">Ready for the store</p>
                 <p className="text-xs text-surface-500 mt-1">
                   We'll create the final version of your app that can be published
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-surface-400 mb-1">Repository</label>
-                <p className="text-sm text-surface-400">{project?.repo_url ?? "No repo linked"}</p>
+                <label className="block text-sm font-medium text-surface-500 mb-1">Repository</label>
+                <p className="text-sm text-surface-500">{project?.repo_url ?? "No repo linked"}</p>
               </div>
             </div>
           </Card>
@@ -325,7 +326,7 @@ export const Submit = () => {
                 <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                 <div>
                   <h4 className="text-sm font-semibold mb-1">Apple Developer Account Required</h4>
-                  <p className="text-xs text-surface-400">
+                  <p className="text-xs text-surface-500">
                     You need an Apple Developer account ($99/year) to build and submit iOS apps.
                     EAS will guide you through certificate setup during the first build.
                   </p>
@@ -340,7 +341,7 @@ export const Submit = () => {
         <div className="space-y-6">
           {submission && submission.build_status !== "idle" ? (
             <Card>
-              <h3 className="font-semibold text-surface-900 mb-4">Build Status</h3>
+              <h2 className="font-semibold text-surface-900 mb-4">Build Status</h2>
               <BuildStatusDisplay submission={submission} />
 
               {submission.build_status === "failed" && (
@@ -356,9 +357,9 @@ export const Submit = () => {
             </Card>
           ) : (
             <Card className="text-center py-10">
-              <Package className="h-12 w-12 text-surface-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-surface-900 mb-2">Ready to build</h3>
-              <p className="text-sm text-surface-400 mb-6 max-w-md mx-auto">
+              <Package className="h-12 w-12 text-surface-500 mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-surface-900 mb-2">Ready to build</h2>
+              <p className="text-sm text-surface-500 mb-6 max-w-md mx-auto">
                 We'll build your app for{" "}
                 {platform === "ios" ? "iOS" : "Android"}. This usually takes 10-20 minutes. You can close this page and come back later.
               </p>
@@ -388,15 +389,15 @@ export const Submit = () => {
         <div className="space-y-6">
           {submission?.build_status !== "completed" ? (
             <Card className="text-center py-10">
-              <AlertCircle className="h-12 w-12 text-surface-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-surface-900 mb-2">Build not ready</h3>
-              <p className="text-sm text-surface-400">
+              <AlertCircle className="h-12 w-12 text-surface-500 mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-surface-900 mb-2">Build not ready</h2>
+              <p className="text-sm text-surface-500">
                 Complete the build step first before submitting to the store.
               </p>
             </Card>
           ) : submission.review_status !== "not_submitted" ? (
             <Card>
-              <h3 className="font-semibold text-surface-900 mb-4">Submission Status</h3>
+              <h2 className="font-semibold text-surface-900 mb-4">Submission Status</h2>
               <ReviewStatusDisplay submission={submission} />
               {submission.review_status === "pending_credentials" && <div className="flex flex-wrap gap-3 mt-4"><Link to="/settings" className="text-sm underline">Check connected accounts</Link><Button size="sm" disabled={submitting} onClick={handleAutoSubmit}>{submitting ? "Retrying…" : "Retry submission"}</Button></div>}
             </Card>
@@ -467,7 +468,7 @@ const CheckItem = ({
       </span>
     </div>
     {!checked && link && (
-      <Link to={link} className="text-xs text-surface-400 hover:text-surface-700">
+      <Link to={link} className="text-xs text-surface-500 hover:text-surface-700">
         {linkText}
       </Link>
     )}
@@ -478,7 +479,7 @@ const BuildStatusDisplay = ({ submission }: { submission: Submission }) => {
   const statusMap: Record<string, { label: string; color: string; animate?: boolean }> = {
     queued: { label: "Queued", color: "text-surface-500" },
     in_progress: { label: "Building...", color: "text-blue-600", animate: true },
-    completed: { label: "Build Complete", color: "text-green-600" },
+    completed: { label: "Build Complete", color: "text-green-700" },
     failed: { label: "Build Failed", color: "text-red-600" },
   };
 
@@ -527,12 +528,12 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
     internal_testing: {
       label: "Internal test uploaded",
       desc: "Your build was sent to the internal test track. Check tester availability in Play Console. Public release is a separate step.",
-      color: "text-green-600",
+      color: "text-green-700",
     },
     approved: {
       label: "Approved!",
       desc: "Your app has been approved and is live on the store.",
-      color: "text-green-600",
+      color: "text-green-700",
     },
     rejected: {
       label: "Rejected",
@@ -555,7 +556,7 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
         )}
         <div>
           <p className={`text-sm font-medium ${status.color}`}>{status.label}</p>
-          <p className="text-xs text-surface-400 mt-0.5">{status.desc}</p>
+          <p className="text-xs text-surface-500 mt-0.5">{status.desc}</p>
         </div>
       </div>
 
@@ -570,4 +571,5 @@ const ReviewStatusDisplay = ({ submission }: { submission: Submission }) => {
 
 // Re-export Submission type for sub-components
 import type { Submission as _Submission } from "@/hooks/useBuild";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 type Submission = _Submission;

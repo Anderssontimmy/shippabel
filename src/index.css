@@ -34,6 +34,21 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Every focusable thing gets a visible ring in the one accent color. It sits in the base layer,
+   so a deliberate outline-none (the landing search field draws its own ring) still wins. */
+@layer base {
+  /* The color is set up front so it does not slide from the text color to green on elements that
+     transition colors. */
+  *, ::before, ::after {
+    outline-color: var(--color-green-700, #15803d);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-green-700, #15803d);
+    outline-offset: 2px;
+  }
+}
+
 body {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -66,6 +81,19 @@ body {
 .animate-fade-up-delay-2 { animation: fade-up 0.5s ease-out 0.2s both; }
 .animate-fade-up-delay-3 { animation: fade-up 0.5s ease-out 0.3s both; }
 .animate-score-fill { animation: score-fill 1.2s ease-out both; }
+
+/* People who ask for less motion get the finished state: no entrance, no pulsing dots.
+   Spinners stay, they show real waiting. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-slide-in,
+  .animate-fade-up,
+  .animate-fade-up-delay-1,
+  .animate-fade-up-delay-2,
+  .animate-fade-up-delay-3,
+  .animate-score-fill,
+  .animate-pulse { animation: none; }
+}
 
 /* Hide scrollbar but keep scroll functionality */
 .scrollbar-hide {

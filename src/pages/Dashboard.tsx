@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { type ShipFacts, type DashStepKey, deriveDashboardSteps, progressPercent } from "@/lib/shipFlow";
 import type { Project, ScanResult } from "@/lib/types";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 interface AppStep {
   key: DashStepKey;
@@ -107,6 +108,7 @@ const planLabel = (plan: string) =>
   plan === "unlimited" ? "Unlimited" : "Ship";
 
 export const Dashboard = () => {
+  useDocumentHead({ title: "My apps" });
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -228,7 +230,7 @@ export const Dashboard = () => {
   }, [searchParams, setSearchParams]);
 
   if (authLoading || (loading && user)) {
-    return <div className="flex items-center justify-center py-32"><Loader2 className="h-6 w-6 text-surface-400 animate-spin" /></div>;
+    return <div className="flex items-center justify-center py-32"><Loader2 className="h-6 w-6 text-surface-500 animate-spin" /></div>;
   }
 
   const firstName = user?.user_metadata?.full_name?.split(" ")[0]
@@ -359,12 +361,12 @@ export const Dashboard = () => {
                           : "bg-red-50 text-red-700"
                         }`}>
                           <span className="text-base font-bold">{score}</span>
-                          <span className="text-[9px] font-medium opacity-70 mt-0.5">/ 100</span>
+                          <span className="text-xs font-medium mt-0.5">/ 100</span>
                         </div>
                       )}
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-surface-900 truncate text-lg capitalize">{displayName}</h3>
-                        <p className="text-xs text-surface-400 mt-0.5">
+                        <h2 className="font-semibold text-surface-900 truncate text-lg capitalize">{displayName}</h2>
+                        <p className="text-xs text-surface-500 mt-0.5">
                           {score != null ? `${score}/100 ready · ` : ""}{completedCount} of {steps.length} steps
                         </p>
                       </div>
@@ -383,16 +385,16 @@ export const Dashboard = () => {
                       const StepIcon = step.icon;
                       return (
                         <div key={step.key} className="flex items-center flex-1">
-                          <Link to={step.href} aria-label={`${step.label}${step.done ? " (done)" : step.active ? " (current step)" : ""}`} className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                          <Link to={step.href} aria-label={`${step.label}${step.done ? " (done)" : step.active ? " (current step)" : ""}`} className="-m-1.5 flex items-center gap-1.5 p-1.5 sm:gap-2 shrink-0">
                             <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                               step.done ? "bg-green-100 text-green-600"
                               : step.active ? "bg-surface-900 text-white ring-2 ring-surface-900/20"
-                              : "bg-surface-100 text-surface-400"
+                              : "bg-surface-100 text-surface-500"
                             }`}>
                               {step.done ? <CheckCircle2 className="h-4 w-4" /> : <StepIcon className="h-3.5 w-3.5" />}
                             </div>
                             <span className={`text-xs font-medium hidden sm:block ${
-                              step.done ? "text-green-600" : step.active ? "text-surface-900" : "text-surface-400"
+                              step.done ? "text-green-700" : step.active ? "text-surface-900" : "text-surface-500"
                             }`}>{step.label}</span>
                           </Link>
                           {i < steps.length - 1 && (
@@ -425,11 +427,11 @@ export const Dashboard = () => {
                               ) : (
                                 <span className={`h-4 w-4 rounded-full border-2 shrink-0 ${sub.active ? "border-surface-900" : "border-surface-300"}`} />
                               )}
-                              <span className={sub.done ? "text-surface-400" : sub.active ? "font-medium text-surface-900" : "text-surface-500"}>
+                              <span className={sub.done ? "text-surface-500" : sub.active ? "font-medium text-surface-900" : "text-surface-500"}>
                                 {sub.label}
                               </span>
                             </span>
-                            {sub.active && <ArrowRight className="h-4 w-4 text-surface-400 shrink-0" />}
+                            {sub.active && <ArrowRight className="h-4 w-4 text-surface-500 shrink-0" />}
                           </Link>
                         ))}
                       </div>
@@ -438,7 +440,7 @@ export const Dashboard = () => {
                     <Link to={activeStep.href}>
                       <div className="flex items-center justify-between rounded-xl bg-surface-50 border border-surface-200 px-4 py-3.5 hover:bg-white hover:border-surface-300 hover:shadow-sm transition-all group">
                         <span className="text-sm font-medium text-surface-700">{activeStep.actionLabel}</span>
-                        <ArrowRight className="h-4 w-4 text-surface-400 group-hover:text-surface-600 group-hover:translate-x-0.5 transition-all" />
+                        <ArrowRight className="h-4 w-4 text-surface-500 group-hover:text-surface-600 group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </Link>
                   ) : null}
@@ -458,7 +460,7 @@ export const Dashboard = () => {
 
           {/* Add another app */}
           <Link to="/scan">
-            <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-surface-200 py-5 text-sm font-medium text-surface-400 hover:border-surface-300 hover:text-surface-600 transition-colors cursor-pointer">
+            <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-surface-200 py-5 text-sm font-medium text-surface-500 hover:border-surface-300 hover:text-surface-600 transition-colors cursor-pointer">
               <Plus className="h-4 w-4" />
               Check another app
             </div>

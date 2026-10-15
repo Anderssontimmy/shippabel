@@ -15,7 +15,7 @@ const plans = [
     period: "forever",
     description: "See exactly what's stopping your app from going live",
     icon: Zap,
-    color: "text-surface-300",
+    color: "text-surface-500",
     features: [
       "Check unlimited apps",
       "See every problem explained in plain language",
@@ -90,7 +90,7 @@ export const Pricing = () => {
         <h1 className="text-3xl sm:text-4xl font-bold">
           Pay once. Get your app live.
         </h1>
-        <p className="mt-4 text-surface-400 text-lg">
+        <p className="mt-4 text-surface-500 text-lg">
           No subscriptions. No monthly fees. Just a one-time payment.
         </p>
       </div>
@@ -108,7 +108,7 @@ export const Pricing = () => {
             className={`relative flex flex-col ${plan.popular ? "border-green-500/30 bg-green-500/5" : ""}`}
           >
             {plan.popular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-green-600 px-3 py-0.5 text-xs font-semibold text-white">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-green-700 px-3 py-0.5 text-xs font-semibold text-white">
                 Best for one app
               </div>
             )}
@@ -116,7 +116,7 @@ export const Pricing = () => {
             <div className="mb-6">
               <plan.icon className={`h-6 w-6 ${plan.color} mb-3`} />
               <h2 className="text-xl font-bold">{plan.name}</h2>
-              <p className="text-sm text-surface-400 mt-1">{plan.description}</p>
+              <p className="text-sm text-surface-500 mt-1">{plan.description}</p>
             </div>
 
             <div className="mb-6">

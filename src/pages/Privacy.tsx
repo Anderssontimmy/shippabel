@@ -1,4 +1,6 @@
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 export const Privacy = () => {
+  useDocumentHead({ title: "Privacy policy" });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24 prose prose-sm max-w-none">
       <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
