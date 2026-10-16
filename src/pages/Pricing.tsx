@@ -109,13 +109,13 @@ export const Pricing = () => {
           >
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-green-600 px-3 py-0.5 text-xs font-semibold text-white">
-                Most popular
+                Best for one app
               </div>
             )}
 
             <div className="mb-6">
               <plan.icon className={`h-6 w-6 ${plan.color} mb-3`} />
-              <h3 className="text-xl font-bold">{plan.name}</h3>
+              <h2 className="text-xl font-bold">{plan.name}</h2>
               <p className="text-sm text-surface-400 mt-1">{plan.description}</p>
             </div>
 
@@ -167,7 +167,9 @@ export const Pricing = () => {
           </li>
           <li className="flex items-start gap-2">
             <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-            Your app's code on GitHub, so we can build it.
+            Your app's code on GitHub, so we can build it. We only change your repository when you press Fix,
+            Make it Google Play ready or Build. File changes are normal commits you can review and undo in GitHub,
+            and a build adds your app's signing key to the repository's secrets.
           </li>
           <li className="flex items-start gap-2">
             <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
