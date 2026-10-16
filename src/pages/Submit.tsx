@@ -184,7 +184,7 @@ export const Submit = () => {
               Go to scan results to convert
             </Button>
           </Link>
-          <p className="text-xs text-surface-400 mt-3">Look for the green "Make it Google Play ready" button</p>
+          <p className="text-xs text-surface-400 mt-3">Look for the "Make it Google Play ready" button</p>
         </Card>
       </div>
     );

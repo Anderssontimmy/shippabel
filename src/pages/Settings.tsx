@@ -39,7 +39,7 @@ const providers: ProviderConfig[] = [
     id: "github" as Provider,
     name: "GitHub",
     icon: Github,
-    description: "Connect to scan private apps. If you signed in with GitHub, this is already connected.",
+    description: "Needed to scan private apps and to fix and build your app. If you signed in with GitHub, this is already connected.",
     setupSteps: [
       "Go to github.com and sign in",
       "Click your profile picture → Settings",
@@ -65,7 +65,7 @@ const providers: ProviderConfig[] = [
     id: "eas",
     name: "Expo (EAS)",
     icon: Rocket,
-    description: "Required for building your app. Free to create — you just need an Expo account.",
+    description: "Only needed if your app is built with Expo or React Native. Web apps from Lovable, Cursor, Bolt or v0 don't need it.",
     setupSteps: [
       "Go to expo.dev and create a free account (or sign in)",
       "Click your profile picture → Account settings",
@@ -398,12 +398,12 @@ export const Settings = () => {
 
       {/* Status summary */}
       <Card className="mt-8">
-        <h3 className="text-sm font-semibold mb-3">Pipeline Status</h3>
+        <h3 className="text-sm font-semibold mb-3">What's ready</h3>
         <div className="space-y-2">
           {[
             { label: "Scan & Fix", ready: true, note: "Always available" },
             { label: "Generate Store Listing", ready: true, note: "AI-powered" },
-            { label: "Generate Screenshots", ready: true, note: "Client-side" },
+            { label: "Generate Screenshots", ready: true, note: "Works in your browser" },
             { label: "Build", ready: hasCredential("github") || hasCredential("eas"), note: hasCredential("github") || hasCredential("eas") ? "Connected" : "Connect GitHub" },
             { label: "Submit to Google Play", ready: hasCredential("google") && (hasCredential("github") || hasCredential("eas")), note: hasCredential("google") ? "Connected" : "Needs Google credentials" },
           ].map((step) => (

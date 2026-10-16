@@ -47,6 +47,7 @@ const dashFacts = (project: Project, extra: ProjectExtra): ShipFacts => {
   return {
     scanned: !!scan,
     criticalIssues: scan?.summary?.critical ?? 0,
+    needsConversion: scan?.needs_conversion === true,
     loggedIn: true, // the dashboard is only reachable when signed in
     hasListing: extra.hasListing,
     hasScreenshots: extra.hasScreenshots,
@@ -67,7 +68,7 @@ const getSteps = (project: Project, extra: ProjectExtra): AppStep[] => {
 
   const present: Record<DashStepKey, Pick<AppStep, "label" | "icon" | "href" | "actionLabel">> = {
     check: { label: "Check", icon: Scan, href: `/scan/${id}`, actionLabel: "See results" },
-    fix: { label: "Fix", icon: Wrench, href: `/scan/${id}`, actionLabel: critical > 0 ? `Fix ${critical} problems` : "All fixed" },
+    fix: { label: "Fix", icon: Wrench, href: `/scan/${id}`, actionLabel: critical > 0 ? `Fix ${critical} problems` : scan?.needs_conversion ? "Make it Google Play ready" : "All fixed" },
     listing: { label: "Store page", icon: FileText, href: `/app/${id}/listing`, actionLabel: "Write store page" },
     screenshots: { label: "Screenshots", icon: Image, href: `/app/${id}/screenshots`, actionLabel: "Add screenshots" },
     publish: {

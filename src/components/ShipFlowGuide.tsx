@@ -55,9 +55,9 @@ const stepGuides: Record<FlowStep, { title: string; body: string; cta: string; h
     cta: "Go to scanner",
   },
   fix: {
-    title: "Fix the issues we found",
-    body: "Your scan found critical issues that will block your submission. Click 'Auto-fix' above to let us fix what we can automatically, then handle the rest manually (like creating an app icon).",
-    cta: "Scroll to issues",
+    title: "Fix the problems we found",
+    body: "Your scan found problems that would make Google reject the app. Open each one below: many have a one-click fix, and the rest tell you exactly what to do.",
+    cta: "Show the problems",
   },
   signup: {
     title: "Create your account",
@@ -76,11 +76,10 @@ const stepGuides: Record<FlowStep, { title: string; body: string; cta: string; h
   },
   connect: {
     title: "Connect your developer accounts",
-    body: "To build and submit, we need access to your build and Google Play credentials. Follow the guides below to connect them.",
+    body: "To build and upload your app we need access to your GitHub and to your Google Play account. Settings walks you through each one.",
     cta: "Go to settings",
     helpLinks: [
-      { label: "How to get an EAS access token", url: "https://docs.expo.dev/accounts/programmatic-access/" },
-      { label: "How to set up Google Play service account", url: "https://developers.google.com/android-publisher/getting_started" },
+      { label: "How to set up a Google Play service account", url: "https://developers.google.com/android-publisher/getting_started" },
     ],
   },
   build: {
@@ -89,19 +88,27 @@ const stepGuides: Record<FlowStep, { title: string; body: string; cta: string; h
     cta: "Start build",
   },
   submit: {
-    title: "Submit to Google Play",
-    body: "Your build is ready. We'll upload the AAB, set your store listing metadata, and submit for Google Play review.",
-    cta: "Submit for review",
+    title: "Upload to Google Play testing",
+    body: "Your build is ready. We'll upload it to Google Play's internal testing track, so you can try it on your phone before it goes public.",
+    cta: "Upload for testing",
   },
 };
 
+// A web app can have no problems at all and still not be buildable: it has to be wrapped as a mobile app first.
+const conversionGuide: (typeof stepGuides)[FlowStep] = {
+  title: "Make your app ready for Google Play",
+  body: "Your app is a web app. One click wraps it as a mobile app, pushes the changes to your GitHub and checks it again.",
+  cta: "Show me where",
+};
+
 export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
-  const { steps, currentStep } = useShipFlow(projectId);
+  const { steps, currentStep, needsConversion, criticalIssues } = useShipFlow(projectId);
 
   const current = steps.find((s) => s.id === currentStep);
   if (!current) return null;
 
-  const guide = stepGuides[currentStep];
+  const convertFirst = currentStep === "fix" && needsConversion && criticalIssues === 0;
+  const guide = convertFirst ? conversionGuide : stepGuides[currentStep];
   const Icon = stepIcons[currentStep];
   const colorClass = stepColors[currentStep];
   const route = stepRoutes[currentStep](projectId);
@@ -152,7 +159,7 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
           )}
 
           {currentStep === "fix" ? (
-            <Button size="sm" className="gap-2" onClick={() => document.getElementById("issues-section")?.scrollIntoView({ behavior: "smooth" })}>
+            <Button size="sm" className="gap-2" onClick={() => document.getElementById(convertFirst ? "conversion-section" : "issues-section")?.scrollIntoView({ behavior: "smooth" })}>
               {guide.cta}
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>

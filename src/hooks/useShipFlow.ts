@@ -18,6 +18,7 @@ export interface FlowState {
   projectId: string | null;
   score: number | null;
   criticalIssues: number;
+  needsConversion: boolean;
   hasListing: boolean;
   hasCredentials: { eas: boolean; apple: boolean; google: boolean };
   hasBuild: boolean;
@@ -27,6 +28,7 @@ export interface FlowState {
 const EMPTY_FACTS: ShipFacts = {
   scanned: false,
   criticalIssues: 0,
+  needsConversion: false,
   loggedIn: false,
   hasListing: false,
   hasScreenshots: false,
@@ -45,6 +47,7 @@ export const useShipFlow = (projectId?: string) => {
     projectId: projectId ?? null,
     score: null,
     criticalIssues: 0,
+    needsConversion: false,
     hasListing: false,
     hasCredentials: { eas: false, apple: false, google: false },
     hasBuild: false,
@@ -58,6 +61,7 @@ export const useShipFlow = (projectId?: string) => {
       const facts: ShipFacts = {
         scanned: true,
         criticalIssues: 0,
+        needsConversion: false,
         loggedIn: true,
         hasListing: true,
         hasScreenshots: true,
@@ -72,6 +76,7 @@ export const useShipFlow = (projectId?: string) => {
         projectId: "demo",
         score: 73,
         criticalIssues: 0,
+        needsConversion: false,
         hasListing: true,
         hasCredentials: { eas: true, apple: true, google: true },
         hasBuild: false,
@@ -92,11 +97,13 @@ export const useShipFlow = (projectId?: string) => {
     let scanned = false;
     let score: number | null = null;
     let criticalIssues = 0;
+    let needsConversion = false;
     if (project?.scan_result) {
-      const scan = project.scan_result as { score: number; summary: { critical: number } };
+      const scan = project.scan_result as { score: number; summary: { critical: number }; needs_conversion?: boolean };
       scanned = true;
       score = scan.score;
       criticalIssues = scan.summary.critical;
+      needsConversion = scan.needs_conversion === true;
     }
     const isLive = project?.status === "live";
 
@@ -145,6 +152,7 @@ export const useShipFlow = (projectId?: string) => {
     const facts: ShipFacts = {
       scanned,
       criticalIssues,
+      needsConversion,
       loggedIn: !!user,
       hasListing,
       hasScreenshots,
@@ -160,6 +168,7 @@ export const useShipFlow = (projectId?: string) => {
       projectId,
       score,
       criticalIssues,
+      needsConversion,
       hasListing,
       hasCredentials: { eas: hasEas, apple: hasApple, google: hasGoogle },
       hasBuild,
