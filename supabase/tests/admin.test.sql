@@ -15,10 +15,11 @@ SELECT is(has_table_privilege('anon', 'public.page_views', 'select'), false, 'an
 SELECT is(has_table_privilege('authenticated', 'public.page_views', 'insert'), false, 'a signed-in user cannot write page views');
 
 -- Fixture: two visitors, three page views today, one scan, one signup, one live and one test payment.
-INSERT INTO auth.users(id, email, raw_app_meta_data) VALUES
-('30000000-0000-4000-8000-000000000001', 'free@example.test', '{"provider":"email"}'),
-('30000000-0000-4000-8000-000000000002', 'paid@example.test', jsonb_build_object('provider','github','plan','ship','payment_mode','live','plan_activated_at', now())),
-('30000000-0000-4000-8000-000000000003', 'test@example.test', jsonb_build_object('provider','google','plan','unlimited','payment_mode','test','plan_activated_at', now()));
+-- auth.users.created_at has no default (GoTrue sets it when someone signs up), so the fixture sets it.
+INSERT INTO auth.users(id, email, raw_app_meta_data, created_at) VALUES
+('30000000-0000-4000-8000-000000000001', 'free@example.test', '{"provider":"email"}', now()),
+('30000000-0000-4000-8000-000000000002', 'paid@example.test', jsonb_build_object('provider','github','plan','ship','payment_mode','live','plan_activated_at', now()), now()),
+('30000000-0000-4000-8000-000000000003', 'test@example.test', jsonb_build_object('provider','google','plan','unlimited','payment_mode','test','plan_activated_at', now()), now());
 INSERT INTO public.page_views(visitor, path, referrer, source, country, device, entry) VALUES
 ('aaaa', '/', 'news.ycombinator.com', NULL, 'SE', 'desktop', true),
 ('aaaa', '/scan', NULL, NULL, 'SE', 'desktop', false),
