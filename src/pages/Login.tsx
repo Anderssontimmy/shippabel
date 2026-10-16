@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { signInEmailError } from "@/lib/authErrors";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 export const Login = () => {
+  useDocumentHead({ title: "Log in" });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signInWithEmail, signInWithGoogle, signInWithGitHub } = useAuth();
@@ -97,14 +99,14 @@ export const Login = () => {
               Email address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-500" />
               <input
                 id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(null); }}
                 placeholder="you@example.com"
-                className="w-full rounded-lg bg-surface-50 border border-surface-200 pl-10 pr-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-400 transition-colors"
+                className="w-full rounded-lg bg-surface-50 border border-surface-200 pl-10 pr-4 py-3 text-sm text-surface-900 placeholder:text-surface-500 focus:border-surface-400 focus:ring-1 focus:ring-surface-400 transition-colors"
               />
             </div>
           </div>
@@ -128,7 +130,7 @@ export const Login = () => {
             <div className="w-full border-t border-surface-200" />
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="bg-white px-3 text-surface-400">or</span>
+            <span className="bg-white px-3 text-surface-500">or</span>
           </div>
         </div>
 

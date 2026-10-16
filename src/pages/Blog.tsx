@@ -24,7 +24,7 @@ export const BlogIndex = () => {
         {blogPosts.map((post) => (
           <Link key={post.slug} to={`/blog/${post.slug}`}>
             <article className="group rounded-2xl border border-surface-200 bg-white p-6 sm:p-8 hover:border-surface-300 hover:shadow-sm transition-all">
-              <div className="flex items-center gap-3 text-xs text-surface-400 mb-3">
+              <div className="flex items-center gap-3 text-xs text-surface-500 mb-3">
                 <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">{post.category}</span>
                 <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{post.readTime}</span>
                 <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{post.date}</span>
@@ -76,13 +76,13 @@ export const BlogPost = () => {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
       {/* Back */}
-      <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm text-surface-400 hover:text-surface-700 mb-8 transition-colors">
+      <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm text-surface-500 hover:text-surface-700 mb-8 transition-colors">
         <ArrowLeft className="h-3.5 w-3.5" /> All guides
       </Link>
 
       {/* Header */}
       <div className="mb-10">
-        <div className="flex items-center gap-3 text-xs text-surface-400 mb-4">
+        <div className="flex items-center gap-3 text-xs text-surface-500 mb-4">
           <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">{post.category}</span>
           <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{post.readTime}</span>
           <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{post.date}</span>
@@ -124,7 +124,7 @@ export const BlogPost = () => {
           {blogPosts.filter((p) => p.slug !== slug).slice(0, 3).map((p) => (
             <Link key={p.slug} to={`/blog/${p.slug}`} className="block rounded-xl border border-surface-200 p-4 hover:border-surface-300 transition-colors">
               <h4 className="font-medium text-surface-900 text-sm">{p.title}</h4>
-              <p className="text-xs text-surface-400 mt-1">{p.readTime}</p>
+              <p className="text-xs text-surface-500 mt-1">{p.readTime}</p>
             </Link>
           ))}
         </div>

@@ -23,6 +23,7 @@ import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { useCredentials, type Provider } from "@/hooks/useCredentials";
 import { useToast } from "@/components/ui/Toast";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 interface ProviderConfig {
   id: Provider;
@@ -161,6 +162,7 @@ const providers: ProviderConfig[] = [
 ];
 
 export const Settings = () => {
+  useDocumentHead({ title: "Settings" });
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { loading, saving, error, hasCredential, saveCredential, removeCredential } = useCredentials();
@@ -232,7 +234,7 @@ export const Settings = () => {
         <div className="flex items-start gap-3">
           <Shield className="h-5 w-5 text-surface-500 mt-0.5 shrink-0" />
           <div>
-            <h3 className="text-sm font-semibold text-surface-900 mb-1">Your credentials are safe and private</h3>
+            <h2 className="text-sm font-semibold text-surface-900 mb-1">Your credentials are safe and private</h2>
             <p className="text-xs text-surface-500">
               We encrypt everything you enter here. Your credentials are only used to publish your app — they're never shared, never visible to anyone, and never stored in plain text.
             </p>
@@ -250,12 +252,12 @@ export const Settings = () => {
             <Card key={provider.id}>
               <div className="flex items-start gap-4">
                 <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${connected ? "bg-green-50" : "bg-surface-100"}`}>
-                  <provider.icon className={`h-5 w-5 ${connected ? "text-green-600" : "text-surface-400"}`} />
+                  <provider.icon className={`h-5 w-5 ${connected ? "text-green-600" : "text-surface-500"}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold">{provider.name}</h3>
+                    <h2 className="font-semibold">{provider.name}</h2>
                     {connected && (
                       <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
                         <Check className="h-3 w-3" />
@@ -276,12 +278,12 @@ export const Settings = () => {
                           className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-surface-50 transition-colors cursor-pointer"
                         >
                           <span className="flex items-center gap-2 text-xs font-medium text-surface-700">
-                            <HelpCircle className="h-3.5 w-3.5 text-surface-400" />
+                            <HelpCircle className="h-3.5 w-3.5 text-surface-500" />
                             How do I get this?
                           </span>
                           {showGuide[provider.id]
-                            ? <ChevronDown className="h-3.5 w-3.5 text-surface-400" />
-                            : <ChevronRight className="h-3.5 w-3.5 text-surface-400" />
+                            ? <ChevronDown className="h-3.5 w-3.5 text-surface-500" />
+                            : <ChevronRight className="h-3.5 w-3.5 text-surface-500" />
                           }
                         </button>
                         {showGuide[provider.id] && (
@@ -289,7 +291,7 @@ export const Settings = () => {
                             <ol className="mt-2.5 space-y-2">
                               {provider.setupSteps.map((step, i) => (
                                 <li key={i} className="flex gap-2.5 text-xs text-surface-600">
-                                  <span className="flex items-center justify-center h-4.5 w-4.5 rounded-full bg-surface-100 text-surface-500 text-[10px] font-semibold shrink-0 mt-0.5" style={{ minWidth: "18px", minHeight: "18px" }}>
+                                  <span className="flex items-center justify-center h-4.5 w-4.5 rounded-full bg-surface-100 text-surface-500 text-xs font-semibold shrink-0 mt-0.5" style={{ minWidth: "18px", minHeight: "18px" }}>
                                     {i + 1}
                                   </span>
                                   <span>{step}</span>
@@ -339,7 +341,7 @@ export const Settings = () => {
                                 onChange={(e) => setFormData((d) => ({ ...d, [field.key]: e.target.value }))}
                                 placeholder={field.placeholder}
                                 rows={4}
-                                className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-xs text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 font-mono resize-none"
+                                className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-xs text-surface-900 placeholder:text-surface-500 focus:border-surface-400 font-mono resize-none"
                               />
                             )
                           ) : (
@@ -348,11 +350,11 @@ export const Settings = () => {
                               value={formData[field.key] ?? ""}
                               onChange={(e) => setFormData((d) => ({ ...d, [field.key]: e.target.value }))}
                               placeholder={field.placeholder}
-                              className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-xs text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 font-mono"
+                              className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-xs text-surface-900 placeholder:text-surface-500 focus:border-surface-400 font-mono"
                             />
                           )}
                           {field.help && (
-                            <p className="text-[10px] text-surface-600 mt-1">{field.help}</p>
+                            <p className="text-xs text-surface-600 mt-1">{field.help}</p>
                           )}
                         </div>
                       ))}
@@ -398,7 +400,7 @@ export const Settings = () => {
 
       {/* Status summary */}
       <Card className="mt-8">
-        <h3 className="text-sm font-semibold mb-3">What's ready</h3>
+        <h2 className="text-sm font-semibold mb-3">What's ready</h2>
         <div className="space-y-2">
           {[
             { label: "Scan & Fix", ready: true, note: "Always available" },
@@ -412,7 +414,7 @@ export const Settings = () => {
                 <div className={`h-2 w-2 rounded-full ${step.ready ? "bg-green-500" : "bg-surface-300"}`} />
                 <span className="text-sm text-surface-700">{step.label}</span>
               </div>
-              <span className={`text-xs ${step.ready ? "text-green-600" : "text-surface-400"}`}>{step.note}</span>
+              <span className={`text-xs ${step.ready ? "text-green-700" : "text-surface-500"}`}>{step.note}</span>
             </div>
           ))}
         </div>

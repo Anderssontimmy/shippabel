@@ -148,7 +148,7 @@ const IssueCard = ({ issue, onFix, fixingId, canFix, conversionFirst }: { issue:
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-50 transition-colors cursor-pointer"
       >
         <Icon className={`h-4 w-4 shrink-0 ${issue.fixed ? "text-green-600" : severityColor[issue.severity]}`} />
-        <span className={`flex-1 text-sm font-medium ${issue.fixed ? "text-surface-400 line-through" : "text-surface-800"}`}>{issue.friendly_title || issue.title}</span>
+        <span className={`flex-1 text-sm font-medium ${issue.fixed ? "text-surface-500 line-through" : "text-surface-800"}`}>{issue.friendly_title || issue.title}</span>
         <div className="flex items-center gap-2">
           {issue.fixed && (
             <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">Fixed</span>
@@ -156,7 +156,7 @@ const IssueCard = ({ issue, onFix, fixingId, canFix, conversionFirst }: { issue:
           {!issue.fixed && issue.auto_fixable && (
             <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">Auto-fix</span>
           )}
-          {open ? <ChevronDown className="h-4 w-4 text-surface-400" /> : <ChevronRight className="h-4 w-4 text-surface-400" />}
+          {open ? <ChevronDown className="h-4 w-4 text-surface-500" /> : <ChevronRight className="h-4 w-4 text-surface-500" />}
         </div>
       </button>
       {open && !issue.fixed && (
@@ -240,7 +240,7 @@ const SaveReportCard = ({ projectId }: { projectId: string }) => {
             onChange={(e) => { setEmail(e.target.value); setError(null); }}
             placeholder="you@example.com"
             aria-label="Email address"
-            className="w-44 sm:w-52 rounded-lg bg-white border border-surface-200 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400"
+            className="w-44 sm:w-52 rounded-lg bg-white border border-surface-200 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 focus:border-surface-400"
           />
           <Button type="submit" size="sm" disabled={sending} className="gap-1.5 whitespace-nowrap">
             {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
@@ -418,7 +418,7 @@ export const ScanResults = () => {
     return (
       <div className="mx-auto max-w-md px-4 py-32 text-center">
         <h1 className="text-xl font-semibold mb-2">Scan not found</h1>
-        <p className="text-sm text-surface-400 mb-6">This scan doesn't exist or has expired.</p>
+        <p className="text-sm text-surface-500 mb-6">This scan doesn't exist or has expired.</p>
         <Link to="/scan"><Button>Scan a new project</Button></Link>
       </div>
     );
@@ -464,7 +464,7 @@ export const ScanResults = () => {
           <div className="flex items-center gap-2 mb-1">
             <p className="text-sm text-surface-500">{projectName}</p>
             {scan.project_type && (
-              <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-100 text-surface-500">
+              <span className="text-xs font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-100 text-surface-600">
                 {scan.project_type === "react-web" ? "Web App" : scan.project_type === "nextjs" ? "Next.js" : scan.project_type === "vue" ? "Vue" : scan.project_type === "expo" ? "Expo" : scan.project_type === "react-native" ? "React Native" : scan.project_type === "static" ? "Website" : "Project"}
               </span>
             )}
@@ -564,7 +564,7 @@ export const ScanResults = () => {
               {severity === "warning" && <AlertTriangle className="h-4 w-4 text-amber-600" />}
               {severity === "info" && <Info className="h-4 w-4 text-blue-600" />}
               {groupLabel}
-              <span className="font-normal text-surface-400">({issues.length})</span>
+              <span className="font-normal text-surface-500">({issues.length})</span>
             </h2>
             <div className="space-y-2">
               {issues.map((issue) => (

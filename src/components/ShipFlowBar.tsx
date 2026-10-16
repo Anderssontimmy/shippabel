@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, ChevronRight, Lock } from "lucide-react";
 import { useShipFlow, type FlowStep } from "@/hooks/useShipFlow";
@@ -18,6 +19,23 @@ const hideWhenDone: Set<FlowStep> = new Set(["signup", "connect"]);
 
 export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
   const { steps, currentStep } = useShipFlow(projectId);
+  const scroller = useRef<HTMLDivElement>(null);
+  const currentRef = useRef<HTMLDivElement>(null);
+  const [hidden, setHidden] = useState({ left: false, right: false });
+
+  // On a phone the bar scrolls sideways: start at the current step and fade the edge that hides more.
+  const measure = useCallback(() => {
+    const el = scroller.current;
+    if (!el) return;
+    setHidden({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  }, []);
+  useEffect(() => {
+    currentRef.current?.scrollIntoView?.({ inline: "center", block: "nearest" });
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [currentStep, steps.length, measure]);
+  const fade = `linear-gradient(to right, ${hidden.left ? "transparent, black 12%" : "black, black"}, ${hidden.right ? "black 88%, transparent" : "black, black"})`;
 
   // Filter out completed infrastructure steps to reduce clutter
   const visibleSteps = steps.filter((step) => {
@@ -28,18 +46,23 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
   return (
     <div className="border-b border-surface-200/60 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
+        <div
+          ref={scroller}
+          onScroll={measure}
+          style={hidden.left || hidden.right ? { maskImage: fade, WebkitMaskImage: fade } : undefined}
+          className="flex items-center gap-1 py-2 overflow-x-auto scrollbar-hide"
+        >
           {visibleSteps.map((step, i) => {
             const isActive = step.id === currentStep;
             const isPast = step.completed;
             const route = stepRoutes[step.id](projectId);
 
             return (
-              <div key={step.id} className="flex items-center shrink-0">
+              <div key={step.id} ref={isActive ? currentRef : undefined} className="flex items-center shrink-0">
                 {step.available ? (
                   <Link
                     to={route}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                    className={`flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-all ${
                       isActive
                         ? "bg-surface-900 text-white"
                         : isPast
@@ -52,7 +75,7 @@ export const ShipFlowBar = ({ projectId }: { projectId: string }) => {
                   </Link>
                 ) : (
                   <span
-                    className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-surface-300 cursor-not-allowed"
+                    className="flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-surface-500 cursor-not-allowed"
                     title={`Complete the previous steps to unlock "${step.label}"`}
                   >
                     <Lock className="h-3 w-3" />

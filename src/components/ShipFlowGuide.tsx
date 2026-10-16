@@ -120,7 +120,7 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
     <Card className="border-primary-500/20 bg-gradient-to-b from-primary-500/5 to-transparent">
       {/* Progress bar */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-medium text-surface-400">
+        <span className="text-xs font-medium text-surface-500">
           Step {steps.findIndex((s) => s.id === currentStep) + 1} of {steps.length}
         </span>
         <span className="text-xs text-surface-500">{progress}% complete</span>
@@ -139,7 +139,7 @@ export const ShipFlowGuide = ({ projectId }: { projectId: string }) => {
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-lg mb-1">{guide.title}</h3>
-          <p className="text-sm text-surface-400 leading-relaxed mb-4">{guide.body}</p>
+          <p className="text-sm text-surface-500 leading-relaxed mb-4">{guide.body}</p>
 
           {guide.helpLinks && (
             <div className="space-y-1.5 mb-4">

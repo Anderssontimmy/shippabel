@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useBuild, type Submission } from "@/hooks/useBuild";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 const timelineSteps = [
   { key: "build", label: "Build" },
@@ -39,6 +40,7 @@ const getTimelineState = (submission: Submission) => {
 };
 
 export const Status = () => {
+  useDocumentHead({ title: "Submission status" });
   const { id } = useParams();
   const { submissions, loading, reload } = useBuild(id ?? "");
 
@@ -58,7 +60,7 @@ export const Status = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 className="h-8 w-8 text-surface-400 animate-spin" />
+        <Loader2 className="h-8 w-8 text-surface-500 animate-spin" />
       </div>
     );
   }
@@ -74,7 +76,7 @@ export const Status = () => {
           </Link>
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900">Submission Status</h1>
-            <p className="text-surface-400 text-sm mt-1">Track your builds and store reviews</p>
+            <p className="text-surface-500 text-sm mt-1">Track your builds and store reviews</p>
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={() => reload()} className="gap-1.5">
@@ -85,9 +87,9 @@ export const Status = () => {
 
       {submissions.length === 0 ? (
         <Card className="text-center py-16">
-          <Rocket className="h-12 w-12 text-surface-400 mx-auto mb-4" />
+          <Rocket className="h-12 w-12 text-surface-500 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-surface-900 mb-2">No submissions yet</h2>
-          <p className="text-sm text-surface-400 mb-6">
+          <p className="text-sm text-surface-500 mb-6">
             Build and submit your app to see the status here.
           </p>
           <Link to={`/app/${id}/submit`}>
@@ -109,17 +111,17 @@ export const Status = () => {
                   <div className="flex items-center gap-3">
                     {submission.platform === "ios" ? (
                       <div className="h-10 w-10 rounded-xl bg-surface-100 flex items-center justify-center">
-                        <Apple className="h-5 w-5 text-surface-400" />
+                        <Apple className="h-5 w-5 text-surface-500" />
                       </div>
                     ) : (
                       <div className="h-10 w-10 rounded-xl bg-surface-100 flex items-center justify-center">
-                        <Smartphone className="h-5 w-5 text-surface-400" />
+                        <Smartphone className="h-5 w-5 text-surface-500" />
                       </div>
                     )}
                     <div>
-                      <h3 className="font-semibold">
+                      <h2 className="font-semibold">
                         {submission.platform === "ios" ? "iOS" : "Android"} Submission
-                      </h3>
+                      </h2>
                       <p className="text-xs text-surface-500">
                         {new Date(submission.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                       </p>
@@ -131,7 +133,7 @@ export const Status = () => {
                       href={submission.eas_build_id}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-surface-400 hover:text-surface-700"
+                      className="flex items-center gap-1 text-xs text-surface-500 hover:text-surface-700"
                     >
                       Build logs
                       <ExternalLink className="h-3 w-3" />
@@ -160,7 +162,7 @@ export const Status = () => {
 
                     const iconClass = i < timeline.active || i === timeline.active
                       ? "h-4 w-4 text-white"
-                      : "h-4 w-4 text-surface-400";
+                      : "h-4 w-4 text-surface-500";
 
                     return (
                       <div key={step.key} className="flex sm:flex-1 items-center sm:items-center">
@@ -168,7 +170,7 @@ export const Status = () => {
                           <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${stepColor}`}>
                             <StepIcon className={`${iconClass} ${i === timeline.active && !timeline.failed && submission.review_status !== "internal_testing" ? "animate-spin" : ""}`} />
                           </div>
-                          <span className={`text-xs font-medium ${i <= timeline.active ? "text-surface-700" : "text-surface-400"}`}>
+                          <span className={`text-xs font-medium ${i <= timeline.active ? "text-surface-700" : "text-surface-500"}`}>
                             {submission.review_status === "internal_testing" && step.key === "review" ? "Internal testing" : step.label}
                           </span>
                         </div>
@@ -189,7 +191,7 @@ export const Status = () => {
                 {submission.rejection_reason && (
                   <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
                     <p className="text-sm font-medium text-red-700 mb-1">{submission.review_status === "pending_credentials" ? "Action needed" : "Rejection reason"}</p>
-                    <p className="text-sm text-surface-400">{submission.rejection_reason}</p>
+                    <p className="text-sm text-surface-500">{submission.rejection_reason}</p>
                   </div>
                 )}
 

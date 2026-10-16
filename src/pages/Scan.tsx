@@ -110,7 +110,7 @@ export const Scan = () => {
               </label>
               <button
                 onClick={() => setShowHelp(!showHelp)}
-                className="text-xs text-surface-400 hover:text-surface-600 flex items-center gap-1 cursor-pointer"
+                className="text-xs text-surface-500 hover:text-surface-600 flex items-center gap-1 cursor-pointer"
               >
                 <HelpCircle className="h-3 w-3" />
                 Where do I find this?
@@ -125,7 +125,7 @@ export const Scan = () => {
                   <li>Click on your app's project</li>
                   <li>Copy the link from your browser's address bar</li>
                 </ol>
-                <p className="text-xs text-surface-400">It looks something like: https://github.com/your-name/my-app</p>
+                <p className="text-xs text-surface-500">It looks something like: https://github.com/your-name/my-app</p>
               </div>
             )}
 
@@ -137,7 +137,7 @@ export const Scan = () => {
               onChange={(e) => { setRepoUrl(e.target.value); setValidationError(null); }}
               placeholder="https://github.com/your-name/your-app"
               disabled={scanning}
-              className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-400 transition-colors disabled:opacity-50"
+              className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-500 focus:border-surface-400 focus:ring-1 focus:ring-surface-400 transition-colors disabled:opacity-50"
             />
             <p className="mt-2 text-sm text-surface-500">
               The free check only reads your code. Nothing in your repository is changed.
@@ -167,24 +167,24 @@ export const Scan = () => {
               <div className="flex flex-col items-center gap-2">
                 <FileArchive className="h-10 w-10 text-green-600" />
                 <p className="text-sm font-medium text-surface-900">{file.name}</p>
-                <p className="text-xs text-surface-400">
+                <p className="text-xs text-surface-500">
                   {(file.size / 1024 / 1024).toFixed(1)} MB
                 </p>
                 <button
                   onClick={() => setFile(null)}
-                  className="text-xs text-surface-400 hover:text-red-600 mt-1 cursor-pointer"
+                  className="text-xs text-surface-500 hover:text-red-600 mt-1 cursor-pointer"
                 >
                   Remove
                 </button>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <Upload className="h-10 w-10 text-surface-300" />
+                <Upload className="h-10 w-10 text-surface-500" />
                 <div>
                   <p className="text-sm text-surface-600">
                     Drop your app's zip file here
                   </p>
-                  <p className="text-xs text-surface-400 mt-1">
+                  <p className="text-xs text-surface-500 mt-1">
                     or{" "}
                     <label className="text-surface-700 hover:text-surface-900 underline cursor-pointer">
                       pick a file from your computer
@@ -260,9 +260,9 @@ export const Scan = () => {
 
       {/* What we look at */}
       <div className="mt-16">
-        <h3 className="text-center text-sm font-medium text-surface-500 mb-8">
+        <h2 className="text-center text-sm font-medium text-surface-500 mb-8">
           Here's what we look at
-        </h3>
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
             { text: "Does your app have an icon?", detail: "Google Play requires one" },
@@ -276,7 +276,7 @@ export const Scan = () => {
               <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm text-surface-700">{item.text}</p>
-                <p className="text-xs text-surface-400">{item.detail}</p>
+                <p className="text-xs text-surface-500">{item.detail}</p>
               </div>
             </div>
           ))}

@@ -17,6 +17,7 @@ import { useStoreListing } from "@/hooks/useStoreListing";
 import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { useToast } from "@/components/ui/Toast";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 const charLimits: Record<string, Record<string, number>> = {
   ios: { app_name: 30, subtitle: 30, keywords: 100, full_description: 4000 },
@@ -26,13 +27,14 @@ const charLimits: Record<string, Record<string, number>> = {
 const CharCount = ({ current, max }: { current: number; max: number }) => {
   const over = current > max;
   return (
-    <span className={`text-xs ${over ? "text-red-400" : current > max * 0.9 ? "text-amber-400" : "text-surface-500"}`}>
+    <span className={`shrink-0 text-xs ${over ? "text-red-600" : current > max * 0.9 ? "text-amber-700" : "text-surface-500"}`}>
       {current}/{max}
     </span>
   );
 };
 
 export const Listing = () => {
+  useDocumentHead({ title: "Store page" });
   const { id } = useParams();
   const isDemo = id === "demo";
   const [platform] = useState<"ios" | "android">("android");
@@ -117,7 +119,7 @@ export const Listing = () => {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-16">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <Link to={`/scan/${id}`} aria-label="Back to scan results" className="text-surface-400 hover:text-surface-700 transition-colors">
+        <Link to={`/scan/${id}`} aria-label="Back to scan results" className="text-surface-500 hover:text-surface-700 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
@@ -137,8 +139,8 @@ export const Listing = () => {
             isPaid || isDemo ? (
             <Card className="border-surface-200">
               <div className="text-center py-4">
-                <Sparkles className="h-8 w-8 text-surface-400 mx-auto mb-3" />
-                <h3 className="text-lg font-semibold text-surface-900 mb-2">Let AI write your store page</h3>
+                <Sparkles className="h-8 w-8 text-surface-500 mx-auto mb-3" />
+                <h2 className="text-lg font-semibold text-surface-900 mb-2">Let AI write your store page</h2>
                 <p className="text-sm text-surface-500 mb-4 max-w-md mx-auto">
                   Describe your app in a few sentences and we'll write everything the {platform === "ios" ? "App Store" : "Google Play Store"} needs: name, description, keywords, and more.
                 </p>
@@ -147,9 +149,9 @@ export const Listing = () => {
                   value={appContext}
                   onChange={(e) => setAppContext(e.target.value)}
                   placeholder={"Example: A fitness app that helps new parents do quick 10-minute workouts at home. It has workout videos, a progress tracker, and sends daily reminders."}
-                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 mb-2 resize-none h-28"
+                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-500 focus:border-surface-400 mb-2 resize-none h-28"
                 />
-                <p className="text-xs text-surface-400 mb-4">Tip: Mention what your app does, who it's for, and what makes it special.</p>
+                <p className="text-xs text-surface-500 mb-4">Tip: Mention what your app does, who it's for, and what makes it special.</p>
                 <Button onClick={() => generateCopy(appContext)} disabled={saving} className="gap-2">
                   <Sparkles className="h-4 w-4" />
                   Write my store page
@@ -172,9 +174,9 @@ export const Listing = () => {
 
           {generating && (
             <Card className="text-center py-10">
-              <Loader2 className="h-8 w-8 text-surface-400 animate-spin mx-auto mb-3" />
+              <Loader2 className="h-8 w-8 text-surface-500 animate-spin mx-auto mb-3" />
               <p className="text-surface-700 font-medium mb-1">{loadingMessages[loadingMsg]}</p>
-              <p className="text-surface-400 text-xs">This usually takes 15-20 seconds</p>
+              <p className="text-surface-500 text-xs">This usually takes 15-20 seconds</p>
               <div className="mt-4 mx-auto max-w-xs h-1.5 rounded-full bg-surface-100 overflow-hidden">
                 <div className="h-full rounded-full bg-surface-900 animate-pulse" style={{ width: `${Math.min(95, (loadingMsg + 1) * 20)}%`, transition: "width 3s ease" }} />
               </div>
@@ -191,7 +193,7 @@ export const Listing = () => {
           {/* Variant selector */}
           {variants.length > 1 && (
             <div>
-              <h3 className="text-sm font-medium text-surface-500 mb-3">We wrote 3 versions — pick the one you like best</h3>
+              <h2 className="text-sm font-medium text-surface-500 mb-3">We wrote 3 versions — pick the one you like best</h2>
               <div className="grid grid-cols-3 gap-3">
                 {["Professional", "Friendly", "Bold"].map((label, i) => (
                   <button
@@ -215,51 +217,51 @@ export const Listing = () => {
             <div className="space-y-5">
               {/* App name */}
               <div>
-                <div className="flex justify-between mb-1.5">
-                  <label className="text-sm font-medium text-surface-700">App Name <span className="font-normal text-surface-400">— what people see on their home screen</span></label>
+                <div className="flex justify-between gap-3 mb-1.5">
+                  <label className="text-sm font-medium text-surface-700">App Name <span className="font-normal text-surface-500">— what people see on their home screen</span></label>
                   <CharCount current={listing?.app_name?.length ?? 0} max={lim("app_name")} />
                 </div>
                 <input
                   aria-label="App Name"
                   value={listing?.app_name ?? ""}
                   onChange={(e) => updateField("app_name", e.target.value)}
-                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 outline-none focus:border-surface-400 transition-colors"
+                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 focus:border-surface-400 transition-colors"
                 />
               </div>
 
               {/* Subtitle (iOS) / Short description (Android) */}
               {platform === "ios" ? (
                 <div>
-                  <div className="flex justify-between mb-1.5">
-                    <label className="text-sm font-medium text-surface-700">Subtitle <span className="font-normal text-surface-400">— shown below your app name in search</span></label>
+                  <div className="flex justify-between gap-3 mb-1.5">
+                    <label className="text-sm font-medium text-surface-700">Subtitle <span className="font-normal text-surface-500">— shown below your app name in search</span></label>
                     <CharCount current={listing?.subtitle?.length ?? 0} max={lim("subtitle")} />
                   </div>
                   <input
                     aria-label="Subtitle"
                     value={listing?.subtitle ?? ""}
                     onChange={(e) => updateField("subtitle", e.target.value)}
-                    className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 outline-none focus:border-surface-400 transition-colors"
+                    className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 focus:border-surface-400 transition-colors"
                   />
                 </div>
               ) : (
                 <div>
-                  <div className="flex justify-between mb-1.5">
-                    <label className="text-sm font-medium text-surface-700">Short Description <span className="font-normal text-surface-400">— the first thing people read in the store</span></label>
+                  <div className="flex justify-between gap-3 mb-1.5">
+                    <label className="text-sm font-medium text-surface-700">Short Description <span className="font-normal text-surface-500">— the first thing people read in the store</span></label>
                     <CharCount current={listing?.short_description?.length ?? 0} max={lim("short_description")} />
                   </div>
                   <input
                     aria-label="Short Description"
                     value={listing?.short_description ?? ""}
                     onChange={(e) => updateField("short_description", e.target.value)}
-                    className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 outline-none focus:border-surface-400 transition-colors"
+                    className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 focus:border-surface-400 transition-colors"
                   />
                 </div>
               )}
 
               {/* Full description */}
               <div>
-                <div className="flex justify-between mb-1.5">
-                  <label className="text-sm font-medium text-surface-700">Full Description <span className="font-normal text-surface-400">— your app's main sales pitch</span></label>
+                <div className="flex justify-between gap-3 mb-1.5">
+                  <label className="text-sm font-medium text-surface-700">Full Description <span className="font-normal text-surface-500">— your app's main sales pitch</span></label>
                   <CharCount current={listing?.full_description?.length ?? 0} max={lim("full_description")} />
                 </div>
                 <textarea
@@ -267,15 +269,15 @@ export const Listing = () => {
                   value={listing?.full_description ?? ""}
                   onChange={(e) => updateField("full_description", e.target.value)}
                   rows={10}
-                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 outline-none focus:border-surface-400 transition-colors resize-none"
+                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 focus:border-surface-400 transition-colors resize-none"
                 />
               </div>
 
               {/* Keywords (iOS only) */}
               {platform === "ios" && (
                 <div>
-                  <div className="flex justify-between mb-1.5">
-                    <label className="text-sm font-medium text-surface-700">Keywords <span className="font-normal text-surface-400">— words people might search for to find your app</span></label>
+                  <div className="flex justify-between gap-3 mb-1.5">
+                    <label className="text-sm font-medium text-surface-700">Keywords <span className="font-normal text-surface-500">— words people might search for to find your app</span></label>
                     <CharCount current={listing?.keywords?.length ?? 0} max={lim("keywords")} />
                   </div>
                   <input
@@ -283,7 +285,7 @@ export const Listing = () => {
                     value={listing?.keywords ?? ""}
                     onChange={(e) => updateField("keywords", e.target.value)}
                     placeholder="keyword1, keyword2, keyword3"
-                    className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-surface-400 transition-colors"
+                    className="w-full rounded-lg bg-surface-50 border border-surface-200 px-4 py-3 text-sm text-surface-900 placeholder:text-surface-500 focus:border-surface-400 transition-colors"
                   />
                   <p className="text-xs text-surface-500 mt-1">Separate each word with a comma. These help people find your app when they search the App Store.</p>
                 </div>
@@ -294,7 +296,7 @@ export const Listing = () => {
                 <div className="flex items-start gap-3">
                   <Shield className="h-5 w-5 text-surface-500 mt-0.5 shrink-0" />
                   <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-surface-900 mb-1">Privacy Policy</h4>
+                    <h2 className="text-sm font-semibold text-surface-900 mb-1">Privacy Policy</h2>
                     {listing?.privacy_policy_url ? (
                       <div className="flex items-center gap-2">
                         <Check className="h-4 w-4 text-green-600" />
@@ -346,9 +348,9 @@ export const Listing = () => {
         {/* Preview panel — below form on mobile, sticky sidebar on desktop */}
         <div className="lg:col-span-1">
           <div className="lg:sticky lg:top-24">
-            <h3 className="text-sm font-medium text-surface-500 mb-3">
+            <h2 className="text-sm font-medium text-surface-500 mb-3">
               {platform === "ios" ? "App Store" : "Google Play"} Preview
-            </h3>
+            </h2>
             <Card className="bg-white text-gray-900 p-4">
               <div className="flex items-start gap-3 mb-3">
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-500 shrink-0" />
@@ -369,7 +371,7 @@ export const Listing = () => {
                         </svg>
                       </div>
                     ))}
-                    <span className="text-[10px] text-gray-400 ml-1">5.0</span>
+                    <span className="text-[10px] text-surface-500 ml-1">5.0</span>
                   </div>
                 </div>
               </div>
@@ -378,7 +380,7 @@ export const Listing = () => {
               <div className="flex gap-1.5 overflow-hidden mb-3">
                 {[1, 2, 3].map((s) => (
                   <div key={s} className="h-28 w-14 rounded bg-gray-100 shrink-0 flex items-center justify-center">
-                    <span className="text-[8px] text-gray-300">Screenshot</span>
+                    <span className="text-[8px] text-surface-600">Screenshot</span>
                   </div>
                 ))}
               </div>
@@ -406,7 +408,7 @@ export const Listing = () => {
             aria-labelledby="privacy-modal-title"
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
-            <h3 id="privacy-modal-title" className="text-lg font-semibold text-surface-900 mb-4">Generate Privacy Policy</h3>
+            <h2 id="privacy-modal-title" className="text-lg font-semibold text-surface-900 mb-4">Generate Privacy Policy</h2>
             {error && <p role="alert" className="text-sm text-red-600 mb-3">{error}</p>}
             <div className="space-y-3">
               <div>
@@ -417,7 +419,7 @@ export const Listing = () => {
                   onChange={(e) => setDevName(e.target.value)}
                   placeholder="Your Name or Company"
                   autoFocus
-                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-sm text-surface-900 outline-none focus:border-surface-400"
+                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-sm text-surface-900 focus:border-surface-400"
                 />
               </div>
               <div>
@@ -428,7 +430,7 @@ export const Listing = () => {
                   value={devEmail}
                   onChange={(e) => setDevEmail(e.target.value)}
                   placeholder="privacy@yourapp.com"
-                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-sm text-surface-900 outline-none focus:border-surface-400"
+                  className="w-full rounded-lg bg-surface-50 border border-surface-200 px-3 py-2 text-sm text-surface-900 focus:border-surface-400"
                 />
               </div>
             </div>

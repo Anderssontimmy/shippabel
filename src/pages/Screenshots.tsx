@@ -20,6 +20,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import html2canvas from "html2canvas-pro";
 import { reportError } from "@/lib/monitoring";
+import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 interface PhoneData {
   id: string;
@@ -72,6 +73,7 @@ const GRADIENT_PRESETS = [
 ];
 
 export const Screenshots = () => {
+  useDocumentHead({ title: "Screenshots" });
   const { id } = useParams();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -308,7 +310,7 @@ export const Screenshots = () => {
         <Link to={`/scan/${id}`} aria-label="Back to scan results" className="text-surface-500 hover:text-surface-900"><ArrowLeft className="h-4 w-4" /></Link>
         <h1 className="text-sm font-bold text-surface-900">Screenshot Editor</h1>
         <div className="flex-1" />
-        <span className={`text-xs font-medium ${canContinue ? "text-green-600" : "text-surface-400"}`}>
+        <span className={`text-xs font-medium ${canContinue ? "text-green-700" : "text-surface-500"}`}>
           {filledPages}/{MIN_SCREENSHOTS} screenshots
         </span>
         <Button size="sm" variant="secondary" onClick={exportAll} disabled={allEmpty || saving || loadingSaved || loadError} className="gap-1.5 text-xs"><Download className="h-3 w-3" /> Download</Button>
@@ -343,7 +345,7 @@ export const Screenshots = () => {
                 </div>
                 <div className="flex gap-3 items-start">
                   <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-500 flex items-center justify-center text-xs font-semibold shrink-0">2</div>
-                  <p className="text-sm text-surface-600">Click <strong>"Add device"</strong> on any page below and upload your screenshot</p>
+                  <p className="text-sm text-surface-600">Click <strong>"Add screenshot"</strong> on any page below and choose your screenshot</p>
                 </div>
                 <div className="flex gap-3 items-start">
                   <div className="h-6 w-6 rounded-full bg-surface-100 text-surface-500 flex items-center justify-center text-xs font-semibold shrink-0">3</div>
@@ -369,8 +371,8 @@ export const Screenshots = () => {
               { id: "bg" as const, icon: Paintbrush, label: "Background" },
             ].map((tab) => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium cursor-pointer border-b-2 transition-colors ${
-                  activeTab === tab.id ? "border-indigo-500 text-indigo-600" : "border-transparent text-gray-400 hover:text-gray-600"
+                className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium cursor-pointer border-b-2 transition-colors ${
+                  activeTab === tab.id ? "border-indigo-500 text-indigo-600" : "border-transparent text-surface-500 hover:text-gray-600"
                 }`}>
                 <tab.icon className="h-3.5 w-3.5" />
                 {tab.label}
@@ -387,14 +389,14 @@ export const Screenshots = () => {
                   className="w-full border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:bg-indigo-50/30 cursor-pointer transition-colors active:scale-95 flex items-center gap-3">
                   <div style={{ width: 28 }}><PhoneFrame width={28} compact /></div>
                   <div className="text-left">
-                    <div className="text-sm font-semibold text-gray-700">+ Add device</div>
-                    <div className="text-[10px] text-gray-400">to Page {activePage + 1} — choose a screenshot</div>
+                    <div className="text-sm font-semibold text-gray-700">+ Add screenshot</div>
+                    <div className="text-xs text-surface-500">to Page {activePage + 1}</div>
                   </div>
                 </button>
 
                 {selectedPhone && (
                   <div className="pt-3 border-t border-gray-100 space-y-2">
-                    <h4 className="text-[10px] font-semibold text-gray-400 uppercase">Selected Device</h4>
+                    <h2 className="text-xs font-semibold text-surface-500 uppercase">Selected Device</h2>
                     <button onClick={() => {
                       const input = document.createElement("input"); input.type = "file"; input.accept = "image/*";
                       input.onchange = (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) updatePhone(selected!.id, { screenshotUrl: trackObjectUrl(f) }); };
@@ -402,11 +404,11 @@ export const Screenshots = () => {
                     }} className="w-full text-xs bg-indigo-50 text-indigo-600 rounded-lg px-3 py-2 hover:bg-indigo-100 cursor-pointer font-medium">
                       {selectedPhone.screenshotUrl ? "Change image" : "Add image"}
                     </button>
-                    <div><label className="text-[10px] text-gray-400">Rotation</label>
+                    <div><label className="text-xs text-surface-500">Rotation</label>
                       <input type="range" min="-30" max="30" value={selectedPhone.rotation} onChange={(e) => updatePhone(selected!.id, { rotation: +e.target.value })} className="w-full" /></div>
-                    <div><label className="text-[10px] text-gray-400">Size</label>
+                    <div><label className="text-xs text-surface-500">Size</label>
                       <input type="range" min="15" max="80" value={selectedPhone.scale} onChange={(e) => updatePhone(selected!.id, { scale: +e.target.value })} className="w-full" /></div>
-                    <div><label className="text-[10px] text-gray-400">Frame</label>
+                    <div><label className="text-xs text-surface-500">Frame</label>
                       <div className="flex gap-1 mt-1">
                         {["#1d1d1f", "#f5f5f7", "#4a4a4c", "#1f4e79", "#8b5e3c", "#b91c1c"].map((c) => (
                           <button key={c} onClick={() => updatePhone(selected!.id, { frameColor: c })}
@@ -416,8 +418,8 @@ export const Screenshots = () => {
                       </div>
                     </div>
                     <div className="flex gap-1 pt-1">
-                      <button onClick={duplicateSelected} className="flex-1 text-[10px] bg-gray-100 rounded py-1.5 hover:bg-gray-200 cursor-pointer flex items-center justify-center gap-1"><Copy className="h-3 w-3" /> Copy</button>
-                      <button onClick={deleteSelected} className="flex-1 text-[10px] bg-red-50 text-red-500 rounded py-1.5 hover:bg-red-100 cursor-pointer flex items-center justify-center gap-1"><Trash2 className="h-3 w-3" /> Delete</button>
+                      <button onClick={duplicateSelected} className="flex-1 text-xs bg-gray-100 rounded py-1.5 hover:bg-gray-200 cursor-pointer flex items-center justify-center gap-1"><Copy className="h-3 w-3" /> Copy</button>
+                      <button onClick={deleteSelected} className="flex-1 text-xs bg-red-50 text-red-500 rounded py-1.5 hover:bg-red-100 cursor-pointer flex items-center justify-center gap-1"><Trash2 className="h-3 w-3" /> Delete</button>
                     </div>
                   </div>
                 )}
@@ -429,12 +431,12 @@ export const Screenshots = () => {
               <>
                 <button onClick={addText} className="w-full border border-gray-200 rounded-lg px-4 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50/30 cursor-pointer transition-colors">
                   <span className="text-sm font-semibold text-gray-700">+ Add heading</span>
-                  <span className="text-[10px] text-gray-400 block">to Page {activePage + 1}</span>
+                  <span className="text-xs text-surface-500 block">to Page {activePage + 1}</span>
                 </button>
 
                 {selectedText && (
                   <div className="pt-3 border-t border-gray-100 space-y-2">
-                    <h4 className="text-[10px] font-semibold text-gray-400 uppercase">Selected Text</h4>
+                    <h2 className="text-xs font-semibold text-surface-500 uppercase">Selected Text</h2>
                     <input type="text" value={selectedText.text} onChange={(e) => updateText(selected!.id, { text: e.target.value })}
                       className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-xs text-gray-700" />
                     <div className="flex gap-2">
@@ -447,9 +449,9 @@ export const Screenshots = () => {
                         <option value="800">Extra Bold</option>
                       </select>
                     </div>
-                    <div><label className="text-[10px] text-gray-400">Size</label>
+                    <div><label className="text-xs text-surface-500">Size</label>
                       <input type="range" min="2" max="14" step="0.5" value={selectedText.size} onChange={(e) => updateText(selected!.id, { size: +e.target.value })} className="w-full" /></div>
-                    <div><label className="text-[10px] text-gray-400">Quick colors</label>
+                    <div><label className="text-xs text-surface-500">Quick colors</label>
                       <div className="flex gap-1 mt-1">
                         {["#000000", "#ffffff", "#1d4ed8", "#dc2626", "#059669", "#7c3aed", "#ea580c"].map((c) => (
                           <button key={c} onClick={() => updateText(selected!.id, { color: c })}
@@ -459,8 +461,8 @@ export const Screenshots = () => {
                       </div>
                     </div>
                     <div className="flex gap-1 pt-1">
-                      <button onClick={duplicateSelected} className="flex-1 text-[10px] bg-gray-100 rounded py-1.5 hover:bg-gray-200 cursor-pointer flex items-center justify-center gap-1"><Copy className="h-3 w-3" /> Copy</button>
-                      <button onClick={deleteSelected} className="flex-1 text-[10px] bg-red-50 text-red-500 rounded py-1.5 hover:bg-red-100 cursor-pointer flex items-center justify-center gap-1"><Trash2 className="h-3 w-3" /> Delete</button>
+                      <button onClick={duplicateSelected} className="flex-1 text-xs bg-gray-100 rounded py-1.5 hover:bg-gray-200 cursor-pointer flex items-center justify-center gap-1"><Copy className="h-3 w-3" /> Copy</button>
+                      <button onClick={deleteSelected} className="flex-1 text-xs bg-red-50 text-red-500 rounded py-1.5 hover:bg-red-100 cursor-pointer flex items-center justify-center gap-1"><Trash2 className="h-3 w-3" /> Delete</button>
                     </div>
                   </div>
                 )}
@@ -471,7 +473,7 @@ export const Screenshots = () => {
             {activeTab === "bg" && (
               <>
                 <div>
-                  <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-2">Solid Colors</h4>
+                  <h2 className="text-xs font-semibold text-surface-500 uppercase mb-2">Solid Colors</h2>
                   <div className="grid grid-cols-6 gap-1.5">
                     {["#ffffff", "#f0f0ff", "#f8fafc", "#fefce8", "#fef2f2", "#ecfdf5", "#eff6ff", "#fdf2f8", "#f5f3ff", "#000000", "#1e1b4b", "#0f172a"].map((c) => (
                       <button key={c} onClick={() => updatePage(activePage, (p) => ({ ...p, bgColor: c, bgGradient: null }))}
@@ -482,7 +484,7 @@ export const Screenshots = () => {
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-2">Gradients</h4>
+                  <h2 className="text-xs font-semibold text-surface-500 uppercase mb-2">Gradients</h2>
                   <div className="grid grid-cols-3 gap-1.5">
                     {GRADIENT_PRESETS.map((g) => (
                       <button key={g.label} onClick={() => updatePage(activePage, (p) => ({ ...p, bgGradient: g.value }))}
@@ -494,7 +496,7 @@ export const Screenshots = () => {
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-semibold text-gray-400 uppercase mb-2">Custom</h4>
+                  <h2 className="text-xs font-semibold text-surface-500 uppercase mb-2">Custom</h2>
                   <input type="color" aria-label="Custom background color" value={page.bgColor} onChange={(e) => updatePage(activePage, (p) => ({ ...p, bgColor: e.target.value, bgGradient: null }))} className="w-full h-8 rounded-lg cursor-pointer border-0" />
                 </div>
               </>
@@ -507,7 +509,7 @@ export const Screenshots = () => {
           <div className="flex gap-3 p-4 md:p-6 w-max">
             {pages.map((pg, pageIdx) => (
               <div key={pageIdx} className="relative shrink-0">
-                <div className="text-[10px] text-gray-400 font-medium mb-1">Page {pageIdx + 1}</div>
+                <div className="text-xs text-surface-500 font-medium mb-1">Page {pageIdx + 1}</div>
                 <div
                   ref={(el) => { pageRefs.current[pageIdx] = el; }}
                   className={`relative select-none overflow-visible ${pageIdx === activePage ? "ring-2 ring-indigo-400 ring-offset-2" : ""}`}
@@ -554,8 +556,8 @@ export const Screenshots = () => {
                   {/* Empty state */}
                   {!hasContent(pg) && (
                     <button onClick={() => { setActivePage(pageIdx); addPhone(0, 45, pageIdx); }}
-                      className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 hover:text-gray-400 cursor-pointer">
-                      <Smartphone className="h-6 w-6 mb-1" /><span className="text-[9px]">Add device</span>
+                      className="absolute inset-0 flex flex-col items-center justify-center text-surface-500 hover:text-surface-700 cursor-pointer">
+                      <Smartphone className="h-6 w-6 mb-1" /><span className="text-xs">Add screenshot</span>
                     </button>
                   )}
                 </div>
@@ -567,7 +569,7 @@ export const Screenshots = () => {
 
       {/* Bottom */}
       <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-2">
-        <span className="text-xs text-gray-400">Page {activePage + 1} — {page.phones.length} device{page.phones.length !== 1 ? "s" : ""}, {page.texts.length} text{page.texts.length !== 1 ? "s" : ""}</span>
+        <span className="text-xs text-surface-500">Page {activePage + 1} — {page.phones.length} device{page.phones.length !== 1 ? "s" : ""}, {page.texts.length} text{page.texts.length !== 1 ? "s" : ""}</span>
         <Button size="sm" variant="secondary" disabled={saving || loadingSaved || loadError || !hasContent(page)} onClick={() => exportPage(activePage)} className="gap-1.5 text-xs"><Download className="h-3 w-3" /> Export page {activePage + 1}</Button>
       </div>
     </div>
