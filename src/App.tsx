@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PageViewTracker } from "./components/PageViewTracker";
 import { Landing } from "./pages/Landing";
 import { useAuth } from "./hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -21,6 +22,7 @@ const Settings = lazy(() => import("./pages/Settings").then((m) => ({ default: m
 const BlogIndex = lazy(() => import("./pages/Blog").then((m) => ({ default: m.BlogIndex })));
 const BlogPostPage = lazy(() => import("./pages/Blog").then((m) => ({ default: m.BlogPost })));
 const About = lazy(() => import("./pages/About").then((m) => ({ default: m.About })));
+const Admin = lazy(() => import("./pages/Admin").then((m) => ({ default: m.Admin })));
 const NotFound = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFound })));
 
 const PageLoader = () => (
@@ -52,6 +54,7 @@ const App = () => {
   return (
     <ErrorBoundary fallbackTitle="The app encountered an error">
       <CanonicalSync />
+      <PageViewTracker />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route element={<Layout />}>
@@ -68,6 +71,7 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/admin" element={<ErrorBoundary fallbackTitle="Could not load the admin page"><Admin /></ErrorBoundary>} />
             <Route path="/blog" element={<BlogIndex />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="*" element={<NotFound />} />
