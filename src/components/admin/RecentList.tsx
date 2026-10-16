@@ -18,8 +18,8 @@ export const RecentList = ({ title, rows, empty }: RecentListProps) => (
         {rows.map((row) => (
           <li key={row.key} className="flex items-start justify-between gap-4 py-2 text-sm">
             <div className="min-w-0">
-              <p className="truncate text-surface-900" title={row.primary}>{row.primary}</p>
-              <p className="truncate text-surface-600">{row.secondary}</p>
+              <p className="break-all text-surface-900">{row.primary}</p>
+              <p className="text-surface-600">{row.secondary}</p>
             </div>
             <p className="shrink-0 tabular-nums text-surface-600">{row.when}</p>
           </li>

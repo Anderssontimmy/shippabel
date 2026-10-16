@@ -27,8 +27,8 @@ export const RankedTable = ({ title, column, rows, extraColumn, empty }: RankedT
           <tbody>
             {rows.map((row) => (
               <tr key={row.name} className="border-t border-surface-100 align-top">
-                <th scope="row" className="max-w-0 truncate py-2 text-left font-normal text-surface-700" title={row.name}>
-                  <span className="block truncate">{row.name}</span>
+                <th scope="row" className="w-full py-2 text-left font-normal text-surface-700">
+                  <span className="block break-all">{row.name}</span>
                   <span aria-hidden="true" className="mt-1 block h-1 rounded-full bg-surface-100">
                     <span className="block h-full rounded-full bg-surface-300" style={{ width: `${(row.value / widest) * 100}%` }} />
                   </span>
