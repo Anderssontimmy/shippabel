@@ -1,9 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Shield, Layers, Wand2, Scan, Wrench, ChevronDown, Globe } from "lucide-react";
-import { useState, useRef, type ReactNode } from "react";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { lazy, Suspense, useEffect, useState, useRef, type ReactNode, type RefObject } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import PlayPhone from "@/components/PlayPhone";
 import { trackEvent } from "@/lib/analytics";
+
+// The animated phone is below the first screen, so it loads after the page is usable.
+const PlayPhone = lazy(() => import("@/components/PlayPhone"));
 
 const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) => {
   const ref = useRef(null);
@@ -14,9 +16,9 @@ const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; 
   return (
     <motion.div
       ref={ref}
-      initial={reduce ? false : { opacity: 0, y: 30 }}
+      initial={reduce ? false : { opacity: 0, y: 24 }}
       animate={show ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, ease: "easeOut", delay }}
+      transition={{ duration: 0.5, ease: "easeOut", delay }}
       className={className}
     >
       {children}
@@ -24,80 +26,60 @@ const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; 
   );
 };
 
-const StaggerChildren = ({ children, className = "" }: { children: ReactNode; className?: string }) => {
-  const ref = useRef(null);
-  const reduce = useReducedMotion();
-  const isInView = useInView(ref, { once: true, margin: "-60px" });
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={reduce ? "visible" : "hidden"}
-      animate={reduce || isInView ? "visible" : "hidden"}
-      variants={{
-        visible: { transition: { staggerChildren: 0.1 } },
-        hidden: {},
-      }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
+// Starts false and only becomes true once the browser reports on the element, so nothing flashes at load.
+const useObserved = (ref: RefObject<HTMLElement | null>, test: (entry: IntersectionObserverEntry) => boolean) => {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => setMatches(!!entry && test(entry)));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref, test]);
+  return matches;
 };
+const scrolledPast = (entry: IntersectionObserverEntry) => !entry.isIntersecting && entry.boundingClientRect.bottom < 0;
+const reached = (entry: IntersectionObserverEntry) => entry.isIntersecting || entry.boundingClientRect.top < 0;
 
-const StaggerItem = ({ children, className = "" }: { children: ReactNode; className?: string }) => (
-  <motion.div
-    variants={{
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-    }}
-    className={className}
-  >
-    {children}
-  </motion.div>
-);
-
-const steps = [
-  { num: "01", title: "Check your app", desc: "Paste a link to your app or upload it as a zip file. We check everything Google Play requires." },
-  { num: "02", title: "Fix & polish", desc: "We show you what needs fixing and can auto-fix most things with one click. Then AI writes your store page." },
-  { num: "03", title: "Go live", desc: "We build your app, send it to Google Play, and let you know when it's approved. That's it — you're live." },
-];
-
-const features = [
-  { icon: Scan, title: "Check if you're ready", desc: "Paste a link or upload your app. We tell you exactly what needs fixing." },
-  { icon: Wrench, title: "We fix it for you", desc: "Most problems? One click and they're gone. We push the changes automatically." },
-  { icon: Shield, title: "We keep your app safe", desc: "We catch passwords and keys that are visible in your code." },
-  { icon: Globe, title: "Write your store page", desc: "AI writes your app name, description, and keywords. Pick from 3 styles." },
-  { icon: Layers, title: "Beautiful screenshots", desc: "Upload screenshots from your phone. We frame them professionally." },
-  { icon: Wand2, title: "Made for AI builders", desc: "Built with Claude, Cursor, Bolt, or Lovable? This is made for you." },
-];
-
-const whyCards = [
-  { title: "No coding needed", desc: "You used AI to build your app. Now use Shippabel to publish it. No terminal, no config, no jargon." },
-  { title: "Someone finally gets it", desc: "Other tools assume you're a developer. We assume you're not. Plain language, every step." },
-  { title: "Stupidly simple", desc: "No confusing dashboards. No surprise fees. No 40-step guides. Just your app, in the store, fast." },
+const trustPoints = [
+  {
+    title: "The check is free.",
+    body: "Paste a link and get your report in about 30 seconds. The check only reads your code, and you don't need an account.",
+  },
+  {
+    title: "We change your code only when you ask.",
+    body: "Fixes and builds happen when you press the button. They are ordinary commits in your GitHub, so you can review and undo them.",
+  },
+  {
+    title: "One price, no subscription.",
+    body: "$99 once for one app, or $179 for unlimited apps. Google's $25 developer fee is paid to Google.",
+  },
 ];
 
 const faqs = [
   { q: "Do I need to know how to code?", a: "Not at all. Shippabel is built for people who used AI tools to create their app. We handle all the technical stuff." },
-  { q: "Do I need a Google Play account?", a: "Yes — Google Play requires a one-time $25 developer fee. We'll walk you through it." },
-  { q: "How long does it take?", a: "The scan takes 30 seconds. Fixing takes a few minutes. After submitting, Google usually reviews new apps in a few hours to a few days." },
+  { q: "Do I need a Google Play account?", a: "Yes. Google charges a one-time $25 developer fee, paid to Google. We'll walk you through it." },
+  { q: "How long does it take?", a: "The check takes about 30 seconds. Fixing and writing your store page take a few minutes. After submitting, Google usually reviews new apps in a few hours to a few days." },
   { q: "What if my app gets rejected?", a: "We track your review status. If rejected, we explain why in plain language and help you fix it." },
-  { q: "What kind of apps work?", a: "Any app built with Lovable, Cursor, Bolt, v0, or Claude Code. React, Next.js, Expo, and React Native." },
+  { q: "What kind of apps work?", a: "Apps built with Lovable, Cursor, Bolt, v0 or Claude Code. Vite web apps are wrapped as a mobile app for you, and Expo and React Native apps are built as they are. Next.js apps need a static export first; the free check tells you." },
 ];
 
 const FaqItem = ({ q, a }: { q: string; a: string }) => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-gray-200/60">
+    <div className="border-b border-surface-200">
       <button onClick={() => setOpen(!open)} aria-expanded={open} className="w-full flex items-center justify-between py-5 text-left cursor-pointer group">
-        <span className="text-sm font-semibold text-gray-900 group-hover:text-green-700 transition-colors pr-4">{q}</span>
-        <ChevronDown className={`h-4 w-4 text-gray-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="text-base font-semibold text-surface-900 group-hover:text-green-700 transition-colors pr-4">{q}</span>
+        <ChevronDown aria-hidden="true" className={`h-4 w-4 text-surface-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && <p className="pb-5 text-sm text-gray-500 leading-relaxed">{a}</p>}
+      {open && <p className="pb-5 text-base text-surface-600 leading-relaxed">{a}</p>}
     </div>
   );
 };
+
+// The one primary action of the page. Green marks "forward" everywhere it appears.
+const primaryCta =
+  "inline-flex items-center justify-center gap-2 rounded-full bg-green-700 px-7 py-3.5 text-base font-semibold text-white transition-colors hover:bg-green-800";
 
 const HeroScanField = () => {
   const [url, setUrl] = useState("");
@@ -118,238 +100,225 @@ const HeroScanField = () => {
 
   return (
     <form onSubmit={handleSubmit} className="animate-fade-up-delay-3 mt-8">
-      <div className="flex rounded-full border border-gray-200 bg-white shadow-lg shadow-green-600/5 overflow-hidden max-w-md">
+      <div className="flex max-w-md rounded-full border border-surface-300 bg-white p-1 focus-within:ring-2 focus-within:ring-green-700 focus-within:ring-offset-2">
         <input
           type="text"
           inputMode="url"
+          autoComplete="off"
+          spellCheck={false}
           aria-label="GitHub repository link"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="Paste your GitHub link..."
-          className="flex-1 px-5 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none bg-transparent min-w-0"
+          placeholder="Paste your GitHub link"
+          className="min-w-0 flex-1 bg-transparent px-4 sm:px-5 py-3 text-base text-surface-900 placeholder:text-surface-500 outline-none"
         />
-        <button
-          type="submit"
-          className="flex items-center gap-1.5 rounded-full bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-500 transition-colors m-1 shrink-0 cursor-pointer"
-        >
+        <button type="submit" className={`${primaryCta} shrink-0 py-3 max-sm:px-5 cursor-pointer`}>
           Check now
-          <ArrowRight className="h-3.5 w-3.5" />
+          <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </button>
       </div>
-      <div className="mt-2.5 flex items-center gap-3 text-xs text-gray-400 px-1">
-        <span>or</span>
+      <p className="mt-3 text-sm text-surface-600">
+        Free, no account needed. Or{" "}
         <Link
           to="/scan"
           onClick={() => trackEvent("CTA Clicked", { location: "landing_hero", action: "upload_zip" })}
-          className="text-green-600 hover:text-green-500 font-medium"
+          className="font-medium text-green-700 underline hover:text-green-800"
         >
           upload a zip file
         </Link>
-        <span className="text-gray-300">·</span>
-        <a href="#how-it-works" className="hover:text-gray-600">How does it work?</a>
-      </div>
+        .
+      </p>
     </form>
   );
 };
 
+const SampleReport = () => (
+  <figure className="animate-fade-up-delay-2">
+    <div className="overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm [mask-image:linear-gradient(to_bottom,black_80%,transparent)]">
+      <img
+        src="/landing/report.jpg"
+        width={1560}
+        height={1350}
+        fetchPriority="high"
+        alt="A sample report from the free check: a score of 73 out of 100, the verdict 'Your app can be on Google Play', and the problems to fix first."
+        className="block h-auto w-full"
+      />
+    </div>
+    <figcaption className="mt-3 text-sm text-surface-600">
+      A sample report from the free check.{" "}
+      <Link to="/scan/demo" className="font-medium text-green-700 underline hover:text-green-800">
+        See the whole report
+      </Link>
+    </figcaption>
+  </figure>
+);
+
+const StickyCheckBar = ({ visible }: { visible: boolean }) => (
+  <div
+    aria-hidden={!visible}
+    className={`fixed bottom-0 left-0 right-0 z-50 border-t border-surface-200 bg-white/95 px-4 py-3 backdrop-blur-xl transition-transform duration-200 sm:hidden ${
+      visible ? "translate-y-0" : "translate-y-full"
+    }`}
+  >
+    <Link
+      to="/scan"
+      tabIndex={visible ? 0 : -1}
+      onClick={() => trackEvent("CTA Clicked", { location: "landing_sticky", action: "scan_empty" })}
+      className={`${primaryCta} w-full py-3`}
+    >
+      Check my app now
+      <ArrowRight aria-hidden="true" className="h-4 w-4" />
+    </Link>
+  </div>
+);
+
 export const Landing = () => {
+  const heroFieldRef = useRef<HTMLDivElement>(null);
+  const closingRef = useRef<HTMLElement>(null);
+  const heroScrolledPast = useObserved(heroFieldRef, scrolledPast);
+  const closingReached = useObserved(closingRef, reached);
+
   return (
-    <div className="bg-[#fafafa] text-gray-900 min-h-screen">
+    <div className="bg-white text-surface-900 min-h-screen">
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-green-50/60 via-[#fafafa] to-[#fafafa]" />
+      <section className="mx-auto max-w-6xl px-6 pt-16 md:pt-24 pb-16 md:pb-20">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+          <div ref={heroFieldRef}>
+            <h1 className="animate-fade-up font-display text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
+              You built it.
+              <br />
+              <span className="text-green-700">We'll publish it.</span>
+            </h1>
 
-        <div className="mx-auto max-w-6xl px-6 pt-20 md:pt-28 pb-16 md:pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: Text */}
-            <div>
-              <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-1.5 text-xs font-medium text-green-700 mb-5">
-                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                Free to try, no account needed
-              </div>
+            <p className="animate-fade-up-delay-1 mt-6 max-w-md text-lg leading-relaxed text-surface-600">
+              You built an app with AI. We take it the rest of the way: onto Google Play, with no tech skills needed.
+            </p>
 
-              <h1 className="animate-fade-up-delay-1 font-display text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
-                You built it.
-                <br />
-                <span className="text-green-600">We'll publish it.</span>
-              </h1>
-
-              <p className="animate-fade-up-delay-2 mt-6 text-sm text-gray-500 leading-relaxed max-w-md">
-                You built an app with AI. We take it the rest of the way:
-                onto Google Play, with no tech skills needed.
-              </p>
-
-              <HeroScanField />
-
-              <div className="animate-fade-up-delay-3 mt-5 flex items-center gap-2 text-xs text-gray-400">
-                <span>Free to check</span>
-                <span className="text-gray-300">·</span>
-                <span className="text-green-700 font-medium">$99 to publish</span>
-              </div>
-            </div>
-
-            {/* Right: your app, live on Google Play */}
-            <div className="relative flex justify-center lg:justify-end lg:pr-12">
-              <PlayPhone />
-            </div>
+            <HeroScanField />
           </div>
+
+          <SampleReport />
         </div>
 
-        {/* Works with logos */}
-        <div className="border-t border-gray-200/60 bg-white/50">
-          <div className="mx-auto max-w-6xl px-6 py-6">
-            <FadeIn>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-8">
-                <span className="text-xs font-medium tracking-widest uppercase text-gray-400">Works with</span>
-                <div className="flex items-center gap-5 sm:gap-8">
-                  {["Lovable", "Cursor", "Bolt", "Claude Code", "v0"].map((tool) => (
-                    <span key={tool} className="text-xs font-semibold text-gray-400/80 hover:text-gray-600 transition-colors">{tool}</span>
-                  ))}
-                </div>
-              </div>
+        <p className="mt-14 text-sm text-surface-600">
+          Made for apps built with Lovable, Cursor, Bolt, v0 and Claude Code.
+        </p>
+      </section>
+
+      {/* Fix, then the store page */}
+      <section id="how-it-works" className="bg-surface-50 py-20 md:py-28">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-2 lg:gap-20">
+          <FadeIn>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
+              We fix what Google would reject, then write your store page.
+            </h2>
+            <p className="mt-5 max-w-lg text-lg leading-relaxed text-surface-600">
+              Many problems in the report can be fixed with one click. After that, AI drafts your app name,
+              description and keywords in three styles. You pick the one you like and change anything you want.
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.1}>
+            <div className="overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm">
+              <img
+                src="/landing/listing.jpg"
+                width={1560}
+                height={1050}
+                loading="lazy"
+                alt="The store page editor: three written versions to choose from, the app name, the short description and a Google Play preview."
+                className="block h-auto w-full"
+              />
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Build and send */}
+      <section className="py-20 md:py-28">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-2 lg:gap-20">
+          <FadeIn className="flex justify-center lg:order-first">
+            <div className="min-h-[560px]">
+              <Suspense fallback={null}>
+                <PlayPhone />
+              </Suspense>
+            </div>
+          </FadeIn>
+          <FadeIn delay={0.1}>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
+              We build it and send it to Google Play.
+            </h2>
+            <p className="mt-5 max-w-lg text-lg leading-relaxed text-surface-600">
+              We build your app, sign it and upload it to Google Play, and show you every step on the way.
+              Google's own review decides when it goes public.
+            </p>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* What stays true */}
+      <section className="bg-surface-50 py-20 md:py-28">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
+          <FadeIn>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
+              You stay in control.
+            </h2>
+          </FadeIn>
+          <FadeIn delay={0.1}>
+            <ul>
+              {trustPoints.map((point) => (
+                <li key={point.title} className="border-t border-surface-200 py-6 first:border-t-0 first:pt-0">
+                  <h3 className="text-lg font-semibold text-surface-900">{point.title}</h3>
+                  <p className="mt-1.5 text-base leading-relaxed text-surface-600">{point.body}</p>
+                </li>
+              ))}
+            </ul>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="max-w-2xl">
+            <FadeIn className="mb-8">
+              <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight">
+                You're probably wondering
+              </h2>
+            </FadeIn>
+            <FadeIn delay={0.1}>
+              {faqs.map((faq) => <FaqItem key={faq.q} q={faq.q} a={faq.a} />)}
             </FadeIn>
           </div>
         </div>
       </section>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-green-200 to-transparent" />
-
-      {/* How it works */}
-      <section id="how-it-works" className="py-24 md:py-32">
+      {/* Closing action */}
+      <section ref={closingRef} className="bg-surface-50 py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-6">
-          <FadeIn className="text-center mb-12 md:mb-16">
-            <p className="text-xs font-medium tracking-widest uppercase text-green-600 mb-3">How it works</p>
-            <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-              Three steps. That's it.
-            </h2>
-          </FadeIn>
-
-          <StaggerChildren className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {steps.map((step, i) => (
-              <StaggerItem key={step.num}>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-16 w-16 rounded-2xl border border-gray-200/60 bg-white flex items-center justify-center">
-                    <span className="font-display text-2xl font-extrabold text-green-300 italic">{step.num}</span>
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div className="hidden md:block flex-1 h-px bg-gray-200" />
-                  )}
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
-              </StaggerItem>
-            ))}
-          </StaggerChildren>
-        </div>
-      </section>
-
-      <div className="h-px bg-gradient-to-r from-transparent via-green-200 to-transparent" />
-
-      {/* Features */}
-      <section className="py-24 md:py-32">
-        <div className="mx-auto max-w-6xl px-6">
-          <FadeIn className="text-center mb-12 md:mb-16">
-            <p className="text-xs font-medium tracking-widest uppercase text-green-600 mb-3">Features</p>
-            <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight leading-[1.1]">
-              We handle the hard part.
-              <br />
-              <span className="text-gray-300">You just click.</span>
-            </h2>
-          </FadeIn>
-
-          <StaggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((f) => (
-              <StaggerItem key={f.title}>
-                <div className="group rounded-2xl border border-gray-200/60 bg-white p-6 hover:border-green-200 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 h-full">
-                  <div className="h-12 w-12 rounded-xl bg-green-50 group-hover:bg-green-100 flex items-center justify-center mb-4 transition-colors">
-                    <f.icon className="h-6 w-6 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-1.5">{f.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerChildren>
-        </div>
-      </section>
-
-      <div className="h-px bg-gradient-to-r from-transparent via-green-200 to-transparent" />
-
-      {/* Why Shippabel */}
-      <section className="py-24 md:py-32">
-        <div className="mx-auto max-w-6xl px-6">
-          <FadeIn className="text-center mb-12 md:mb-16">
-            <p className="text-xs font-medium tracking-widest uppercase text-green-600 mb-3">Why Shippabel</p>
-            <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-              Finally, someone{" "}
-              <span className="text-gray-300">who gets it.</span>
-            </h2>
-          </FadeIn>
-
-          <StaggerChildren className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {whyCards.map((card) => (
-              <StaggerItem key={card.title}>
-                <div className="rounded-2xl border border-gray-200/60 bg-white p-6 h-full">
-                  <h3 className="text-lg font-semibold mb-2">{card.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{card.desc}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerChildren>
-        </div>
-      </section>
-
-      <div className="h-px bg-gradient-to-r from-transparent via-green-200 to-transparent" />
-
-      {/* FAQ */}
-      <section className="py-24 md:py-32">
-        <div className="mx-auto max-w-2xl px-6">
-          <FadeIn className="text-center mb-10">
-            <p className="text-xs font-medium tracking-widest uppercase text-green-600 mb-3">Questions</p>
-            <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-              You're probably wondering...
-            </h2>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            {faqs.map((faq) => <FaqItem key={faq.q} q={faq.q} a={faq.a} />)}
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-24 md:py-32 bg-gradient-to-b from-[#fafafa] to-green-50/40">
-        <div className="mx-auto max-w-2xl px-6 text-center">
           <FadeIn>
-            <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight leading-[1.1]">
-              Ready to{" "}
-              <span className="text-green-600">go live?</span>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
+              Find out what's in the way.
             </h2>
-            <p className="mt-5 text-sm text-gray-500 max-w-md mx-auto">
-              From GitHub link to Google Play. Start with a free 30-second check.
+            <p className="mt-4 max-w-md text-lg text-surface-600">
+              Paste your GitHub link. The check is free and takes about 30 seconds.
             </p>
+            <div className="mt-8 flex flex-wrap items-center gap-6">
+              <Link
+                to="/scan"
+                onClick={() => trackEvent("CTA Clicked", { location: "landing_footer", action: "scan_empty" })}
+                className={primaryCta}
+              >
+                Check my app now
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
+              <Link to="/pricing" className="text-base font-medium text-surface-700 underline hover:text-surface-900">
+                See pricing
+              </Link>
+            </div>
           </FadeIn>
-          <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
-            <span>Free to check</span>
-            <span className="text-gray-300">·</span>
-            <span>$99 to publish</span>
-          </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              to="/scan"
-              className="inline-flex items-center gap-2 rounded-full bg-green-600 px-8 py-3.5 text-sm font-semibold text-white hover:bg-green-500 transition-colors shadow-lg shadow-green-600/25"
-            >
-              Check my app now
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/pricing"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-8 py-3.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              See pricing
-            </Link>
-          </div>
         </div>
       </section>
+
+      <StickyCheckBar visible={heroScrolledPast && !closingReached} />
     </div>
   );
 };
