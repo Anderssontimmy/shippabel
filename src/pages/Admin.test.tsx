@@ -102,6 +102,16 @@ describe("admin page", () => {
     expect(screen.queryByText(/% of visitors/)).toBeNull();
   });
 
+  it("leaves out the countries card while no visit has a country, and shows it once one does", () => {
+    mock.stats = { ...mock.stats, data: overview({ countries: [{ name: "Unknown", visitors: 7 }] }) };
+    const first = renderAdmin();
+    expect(screen.queryByRole("heading", { name: "Countries" })).toBeNull();
+    first.unmount();
+    mock.stats = { ...mock.stats, data: overview({ countries: [{ name: "SE", visitors: 5 }, { name: "Unknown", visitors: 2 }] }) };
+    renderAdmin();
+    expect(screen.getByRole("heading", { name: "Countries" })).toBeTruthy();
+  });
+
   it("lists what happened last and where visitors came from", () => {
     renderAdmin();
     expect(screen.getByText("new@example.com")).toBeTruthy();

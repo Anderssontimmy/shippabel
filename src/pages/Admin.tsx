@@ -64,6 +64,9 @@ export const Admin = () => {
   // To anyone else this page does not exist.
   if (!isAdmin) return <NotFound />;
 
+  // Supabase does not pass the visitor's country on to edge functions, so today every visit is "Unknown".
+  // A card that can only say that is clutter; it comes back by itself if a country ever arrives.
+  const hasCountries = !!data?.countries.some((c) => c.name !== "Unknown");
   const visitsCoverRange = !!data?.tracking_since && data.tracking_since.slice(0, 10) <= data.range.from;
   const recent = data ? recentRows(data) : null;
 
@@ -180,12 +183,14 @@ export const Admin = () => {
               rows={data.sources.map((s) => ({ name: s.name, value: s.visitors }))}
               empty="No visits yet."
             />
-            <RankedTable
-              title="Countries"
-              column="Visitors"
-              rows={data.countries.map((c) => ({ name: c.name, value: c.visitors }))}
-              empty="No visits yet."
-            />
+            {hasCountries && (
+              <RankedTable
+                title="Countries"
+                column="Visitors"
+                rows={data.countries.map((c) => ({ name: c.name, value: c.visitors }))}
+                empty="No visits yet."
+              />
+            )}
             <RankedTable
               title="Devices"
               column="Visitors"
