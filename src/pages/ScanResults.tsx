@@ -113,7 +113,7 @@ const demoScanResult: ScanResult = {
     strengths: [
       "Firebase backend enables real-time sync across devices",
       "React Navigation gives a native multi-screen experience",
-      "Social features increase retention by 40% vs solo-tracking apps",
+      "Social challenges give people a reason to come back",
     ],
     growth_suggestions: [
       "Add Apple Health / Google Fit integration for automatic tracking",
@@ -259,7 +259,7 @@ const ScoreRing = ({ score }: { score: number }) => {
   const color = score >= 80 ? "text-green-600" : score >= 50 ? "text-amber-600" : "text-red-600";
 
   return (
-    <div className="relative h-36 w-36 sm:h-44 sm:w-44">
+    <div className="relative h-28 w-28 sm:h-44 sm:w-44">
       <svg className="h-full w-full -rotate-90" viewBox="0 0 120 120">
         <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="8" className="text-surface-100" />
         <circle
@@ -269,7 +269,7 @@ const ScoreRing = ({ score }: { score: number }) => {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-4xl sm:text-5xl font-bold ${color}`}>{score}</span>
+        <span className={`text-3xl sm:text-5xl font-bold ${color}`}>{score}</span>
         <span className="text-xs text-surface-500 mt-1">/ 100</span>
       </div>
     </div>
@@ -456,9 +456,9 @@ export const ScanResults = () => {
       {/* Flow progress bar */}
       {id && id !== "demo" && <ShipFlowBar projectId={id} />}
 
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-12 sm:py-20">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-20">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 mb-10">
+      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-10 mb-6 sm:mb-10">
         <ScoreRing score={scan.score} />
         <div className="flex-1 text-center sm:text-left">
           <div className="flex items-center gap-2 mb-1">
@@ -509,13 +509,13 @@ export const ScanResults = () => {
 
       {/* Conversion CTA — for non-Expo projects */}
       {scan.needs_conversion && (
-        <div className="mb-8 rounded-2xl border border-green-200 bg-green-50 p-6 sm:p-8">
+        <div className="mb-8 rounded-2xl border border-green-200 bg-green-50 p-5 sm:p-8">
           <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-green-100 flex items-center justify-center shrink-0">
+            <div className="hidden sm:flex h-12 w-12 rounded-2xl bg-green-100 items-center justify-center shrink-0">
               <Rocket className="h-6 w-6 text-green-700" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-surface-900 mb-2">We can make your app store-ready</h3>
+              <h2 className="text-lg font-semibold text-surface-900 mb-2">We can make your app store-ready</h2>
               <p className="text-surface-500 text-sm leading-relaxed mb-4">
                 {scan.conversion_message}
                 {" "}We'll update your code, push the changes to your GitHub, and re-scan to make sure everything passes.
@@ -542,13 +542,6 @@ export const ScanResults = () => {
               )}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* App Potential — the personal hook: what your app is, and what it could become */}
-      {scan.potential_analysis && (
-        <div className="mb-10">
-          <AppPotentialCard analysis={scan.potential_analysis} projectId={id ?? "demo"} />
         </div>
       )}
 
@@ -582,6 +575,12 @@ export const ScanResults = () => {
         );
       })}
 
+      {/* What the scan understood about the app: after the fixes, so it never competes with them */}
+      {scan.potential_analysis && (
+        <div className="mt-10">
+          <AppPotentialCard analysis={scan.potential_analysis} />
+        </div>
+      )}
 
       {/* Guided next step */}
       {id && id !== "demo" && (
