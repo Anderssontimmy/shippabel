@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowRight, Sparkles, CheckCircle2, Rocket } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { BuyShipButton } from "@/components/BuyShipButton";
 
 interface UpgradePromptProps {
   feature: string;
@@ -12,6 +12,7 @@ interface UpgradePromptProps {
 }
 
 export const UpgradePrompt = ({ feature, description, benefits, compact = false, titleAs = "h3" }: UpgradePromptProps) => {
+  const { pathname } = useLocation();
   if (compact) {
     return (
       <Link to="/pricing" className="inline-flex items-center gap-1.5 rounded-full bg-green-50 border border-green-200 px-3.5 py-2 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">
@@ -66,12 +67,10 @@ export const UpgradePrompt = ({ feature, description, benefits, compact = false,
           </p>
 
           {/* CTA */}
-          <Link to="/pricing">
-            <Button size="lg" className="w-full gap-2 bg-green-700 hover:bg-green-800 text-white">
-              Get Ship — $99 one-time
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <BuyShipButton returnPath={pathname} className="w-full">
+            Get Ship — $99 one-time
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </BuyShipButton>
           <p className="text-xs text-surface-500 mt-3">
             One-time payment, no subscription. If we can't get your app on Google Play, you get your money back.
           </p>

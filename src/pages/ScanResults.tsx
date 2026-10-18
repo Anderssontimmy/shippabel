@@ -12,6 +12,7 @@ import {
   Loader2,
   Rocket,
   FileText,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -27,6 +28,7 @@ import { signInEmailError } from "@/lib/authErrors";
 import { usePlan } from "@/hooks/usePlan";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { BuyShipButton } from "@/components/BuyShipButton";
 import { supabase } from "@/lib/supabase";
 import { scoreGoal } from "@/lib/scoreGoal";
 import type { Issue, IssueSeverity, ScanResult } from "@/lib/types";
@@ -166,7 +168,7 @@ const IssueCard = ({ issue, onFix, fixingId, canFix, conversionFirst }: { issue:
           )}
           {issue.auto_fixable && conversionFirst && (
             <p className="mt-3 text-xs font-medium text-surface-500">
-              We'll fix this automatically. First click "Make it Google Play ready" above.
+              We'll fix this automatically as soon as your app is made Google Play ready, in the green box above.
             </p>
           )}
           {issue.auto_fixable && !conversionFirst && canFix && (
@@ -518,23 +520,44 @@ export const ScanResults = () => {
                 {scan.conversion_message}
                 {" "}We'll update your code, push the changes to your GitHub, and re-scan to make sure everything passes.
               </p>
-              <Button
-                onClick={handleConvert}
-                disabled={converting}
-                className="gap-2"
-              >
-                {converting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Converting your app...
-                  </>
-                ) : (
-                  <>
-                    <Rocket className="h-4 w-4" />
-                    Make it Google Play ready
-                  </>
-                )}
-              </Button>
+              {id && id !== "demo" && !isPaid ? (
+                // The first thing a free reader wants to do is paid, so this is where the plan is offered:
+                // what it gives, the price, and one button that goes to checkout and comes back here.
+                <>
+                  <ul className="mb-4 space-y-1.5 text-sm text-surface-700">
+                    {[
+                      "We convert your app and fix what Google would reject",
+                      "AI writes your store page and frames your screenshots",
+                      "We build it and upload it to Google Play",
+                    ].map((benefit) => (
+                      <li key={benefit} className="flex items-start gap-2">
+                        <CheckCircle2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-green-700" />
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                  <BuyShipButton returnPath={`/scan/${id}`}>Get Ship, $99 one-time</BuyShipButton>
+                  <p className="mt-2 text-sm text-surface-600">One payment, no subscription. You come back to this report afterwards.</p>
+                </>
+              ) : (
+                <Button
+                  onClick={handleConvert}
+                  disabled={converting}
+                  className="gap-2"
+                >
+                  {converting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Converting your app...
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="h-4 w-4" />
+                      Make it Google Play ready
+                    </>
+                  )}
+                </Button>
+              )}
               {convertError && (
                 <p className="text-sm text-red-600 mt-2">{convertError}</p>
               )}
