@@ -37,14 +37,14 @@ export interface Project {
 
 export interface AppPotentialAnalysis {
   app_description: string;
-  market_potential: {
-    comparable_apps: string[];
-    market_size: string;
-  };
-  revenue_potential: string;
+  // Ideas, never figures. Scans made before 2026-10-16 also carry market_potential, revenue_potential and
+  // excitement_hook with numbers the model invented; those are stored but never shown.
+  monetization_ideas?: string[];
   strengths: string[];
   growth_suggestions: string[];
-  excitement_hook: string;
+  market_potential?: { comparable_apps: string[]; market_size: string };
+  revenue_potential?: string;
+  excitement_hook?: string;
 }
 
 export interface ScanResult {

@@ -6,6 +6,7 @@ import { analyzeZip, extractGitHubPath, fetchGitHubProject, findSecrets, ScanErr
 import { canScanProject, validateScanRequest } from "../_shared/scanAccess.ts";
 import { instrument } from "../_shared/monitoring.ts";
 import { capacitorIssues } from "../_shared/capacitor.ts";
+import { buildPotentialPrompt, parsePotentialAnalysis } from "../_shared/potential.ts";
 
 const ALLOWED_ORIGINS = ["https://shippabel.com", "https://www.shippabel.com", "http://localhost:5173"];
 
@@ -355,25 +356,19 @@ async function generatePotentialAnalysis(
     const dirs = new Set(fileList.map((f) => f.split("/")[0]).filter(Boolean));
     const extensions = new Set(fileList.map((f) => f.slice(f.lastIndexOf("."))).filter((e) => e.length < 6));
 
-    const prompt = `You are an expert mobile app market analyst. Based on the following app project data, generate an exciting and specific market potential analysis. Be enthusiastic but realistic. Respond with raw JSON only — no markdown, no code fences.
+    const prompt = buildPotentialPrompt({
+      appName,
+      appDescription: appDesc,
+      dependencies: deps,
+      directories: [...dirs].slice(0, 15).join(", "),
+      extensions: [...extensions].join(", "),
+      fileCount: fileList.length,
+      readme: readmeContent,
+    });
 
-App name: ${appName}
-App description: ${appDesc}
-Key dependencies: ${deps}
-File structure: directories=${[...dirs].slice(0, 15).join(", ")}; extensions=${[...extensions].join(", ")}
-File count: ${fileList.length}
-${readmeContent ? `README excerpt: ${readmeContent.slice(0, 800)}` : ""}
-
-Respond in this exact JSON format:
-{"app_description":"One sentence describing what this app does","market_potential":{"comparable_apps":["App1 - brief note","App2 - brief note","App3 - brief note"],"market_size":"One sentence about market size"},"revenue_potential":"2-3 sentences about what similar apps earn with specific numbers","strengths":["Strength 1","Strength 2","Strength 3"],"growth_suggestions":["Suggestion 1","Suggestion 2","Suggestion 3"],"excitement_hook":"One motivational sentence about this app's potential"}
-
-Be specific based on detected frameworks and features. If you see navigation libraries, mention multi-screen experience. If you see payment/stripe, mention monetization readiness. If you see Firebase/Supabase, mention backend capabilities. Never be generic.`;
-
-    const text = await generateText({ apiKey: anthropicKey, prompt, maxTokens: 2048, timeoutMs: 25000 });
-
-    // Strip any accidental markdown fences
-    const jsonStr = text.replace(/^```json?\s*/, "").replace(/\s*```$/, "");
-    return JSON.parse(jsonStr);
+    const text = await generateText({ apiKey: anthropicKey, prompt, maxTokens: 900, timeoutMs: 25000 });
+    const analysis = parsePotentialAnalysis(text);
+    return analysis ? { ...analysis } : null;
   } catch {
     return null;
   }
