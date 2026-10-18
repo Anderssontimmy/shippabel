@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageViewTracker } from "./components/PageViewTracker";
+import { CheckoutReturn } from "./components/CheckoutReturn";
 import { Landing } from "./pages/Landing";
 import { useAuth } from "./hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -55,6 +56,7 @@ const App = () => {
     <ErrorBoundary fallbackTitle="The app encountered an error">
       <CanonicalSync />
       <PageViewTracker />
+      <CheckoutReturn />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route element={<Layout />}>
