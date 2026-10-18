@@ -24,6 +24,13 @@ describe("scan results page", () => {
     expect(mustFix.compareDocumentPosition(potential) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("tells the reader what it takes to reach the top score, right under the verdict", async () => {
+    renderDemo();
+    const goal = await screen.findByText("Fix the 10 items below and your score can reach 100. Auto-fix can do 5 of them.");
+    const verdict = screen.getByRole("heading", { level: 1 });
+    expect(verdict.compareDocumentPosition(goal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("has exactly one primary action while the app still needs conversion", async () => {
     renderDemo();
     await screen.findByRole("heading", { level: 1 });

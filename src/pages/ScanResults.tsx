@@ -28,6 +28,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { supabase } from "@/lib/supabase";
+import { scoreGoal } from "@/lib/scoreGoal";
 import type { Issue, IssueSeverity, ScanResult } from "@/lib/types";
 
 // Fallback demo data for when Supabase isn't connected
@@ -101,15 +102,11 @@ const demoScanResult: ScanResult = {
   summary: { critical: 2, warning: 5, info: 3, total: 10 },
   potential_analysis: {
     app_description: "A fitness tracking app with workout logging, progress charts, and social challenges built with React Native and Firebase.",
-    market_potential: {
-      comparable_apps: [
-        "Fitbod — $10M+ ARR, premium workout tracking",
-        "Strong — Top 50 Health & Fitness, 4.9 stars",
-        "JEFIT — 10M+ downloads on Google Play",
-      ],
-      market_size: "The global fitness app market is projected to reach $30B by 2028, growing at 21% CAGR.",
-    },
-    revenue_potential: "Top fitness apps earn $5-15M ARR through subscriptions. Even niche fitness apps with 10K users can generate $50-150K/year with a $9.99/month premium tier. Your Firebase backend means you're already set up for user accounts and data sync.",
+    monetization_ideas: [
+      "A free core with a paid plan for personal plans and deeper progress charts, for people who train every week.",
+      "Paid challenge packs that people buy once, since the social challenges already give them a reason to come back.",
+      "A coaching tier where people pay for plans written by a real trainer, using the accounts and sync you already have.",
+    ],
     strengths: [
       "Firebase backend enables real-time sync across devices",
       "React Navigation gives a native multi-screen experience",
@@ -118,9 +115,8 @@ const demoScanResult: ScanResult = {
     growth_suggestions: [
       "Add Apple Health / Google Fit integration for automatic tracking",
       "Implement push notification reminders to boost daily active users",
-      "Add a freemium tier with premium workout plans to monetize",
+      "Let people set a first goal in their first minute, so the app feels personal right away",
     ],
-    excitement_hook: "Your app has the technical foundation to compete in one of the fastest-growing app categories — ship it and start building your user base.",
   },
 };
 
@@ -431,6 +427,7 @@ export const ScanResults = () => {
   };
 
   const autoFixable = scan.issues.filter((i) => i.auto_fixable && !i.fixed).length;
+  const goal = scoreGoal(scan.score, scan.issues);
 
   // Verdict-first: answer "can my app be on Google Play?" before anything else.
   const isReady = scan.summary.critical === 0 && !scan.needs_conversion;
@@ -470,7 +467,8 @@ export const ScanResults = () => {
             )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-surface-900 mb-2">{verdict.title}</h1>
-          <p className="text-surface-500 mb-4 max-w-lg">{verdict.sub}</p>
+          <p className="text-surface-500 mb-2 max-w-lg">{verdict.sub}</p>
+          {goal && <p className="text-sm font-medium text-surface-700 mb-4 max-w-lg">{goal}</p>}
           <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
             {scan.summary.critical > 0 && <Badge severity="critical">{scan.summary.critical} must fix</Badge>}
             {scan.summary.warning > 0 && <Badge severity="warning">{scan.summary.warning} good to fix</Badge>}
