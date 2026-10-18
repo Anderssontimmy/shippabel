@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Clock, Calendar } from "lucide-react";
 import { blogPosts } from "@/lib/blog-data";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
+import { ScanField } from "@/components/ScanField";
 
 export const BlogIndex = () => {
   useDocumentHead({
@@ -90,6 +91,13 @@ export const BlogPost = () => {
         <h1 className="text-3xl sm:text-4xl font-semibold text-surface-900 leading-tight mb-4">{post.title}</h1>
         <p className="text-lg text-surface-500">{post.excerpt}</p>
       </div>
+
+      {/* Nearly all visitors arrive on a guide from search, so the first step is here, not only at the end */}
+      <aside aria-label="Check your own app" className="mb-10 rounded-2xl border border-surface-200 bg-surface-50 p-5 sm:p-6">
+        <p className="text-base font-semibold text-surface-900">Is your app ready for Google Play?</p>
+        <p className="mt-1 text-sm text-surface-600">Paste your GitHub link. The free check takes about 30 seconds.</p>
+        <ScanField location="blog_top" className="mt-4" />
+      </aside>
 
       {/* Content */}
       <article

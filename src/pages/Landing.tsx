@@ -1,7 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { lazy, Suspense, useEffect, useState, useRef, type ReactNode, type RefObject } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
+import { ScanField } from "@/components/ScanField";
+import { primaryCta } from "@/components/ui/styles";
 import { trackEvent } from "@/lib/analytics";
 
 // The animated phone is below the first screen, so it loads after the page is usable.
@@ -77,61 +79,6 @@ const FaqItem = ({ q, a }: { q: string; a: string }) => {
   );
 };
 
-// The one primary action of the page. Green marks "forward" everywhere it appears.
-const primaryCta =
-  "inline-flex items-center justify-center gap-2 rounded-full bg-green-700 px-7 py-3.5 text-base font-semibold text-white transition-colors hover:bg-green-800";
-
-const HeroScanField = () => {
-  const [url, setUrl] = useState("");
-  const navigate = useNavigate();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    trackEvent("CTA Clicked", {
-      location: "landing_hero",
-      action: url.trim() ? "scan_with_url" : "scan_empty",
-    });
-    if (url.trim()) {
-      navigate(`/scan?url=${encodeURIComponent(url.trim())}`);
-    } else {
-      navigate("/scan");
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="animate-fade-up-delay-3 mt-8">
-      <div className="flex max-w-md rounded-full border border-surface-300 bg-white p-1 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-green-700 has-[input:focus-visible]:ring-offset-2">
-        <input
-          type="text"
-          inputMode="url"
-          autoComplete="off"
-          spellCheck={false}
-          aria-label="GitHub repository link"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Paste your GitHub link"
-          className="min-w-0 flex-1 bg-transparent px-4 sm:px-5 py-3 text-base text-surface-900 placeholder:text-surface-500 outline-none"
-        />
-        <button type="submit" className={`${primaryCta} shrink-0 py-3 max-sm:px-5 cursor-pointer`}>
-          Check now
-          <ArrowRight aria-hidden="true" className="h-4 w-4" />
-        </button>
-      </div>
-      <p className="mt-3 text-sm text-surface-600">
-        Free, no account needed. Or{" "}
-        <Link
-          to="/scan"
-          onClick={() => trackEvent("CTA Clicked", { location: "landing_hero", action: "upload_zip" })}
-          className="font-medium text-green-700 underline hover:text-green-800"
-        >
-          upload a zip file
-        </Link>
-        .
-      </p>
-    </form>
-  );
-};
-
 const SampleReport = () => (
   <figure className="animate-fade-up-delay-2">
     <div className="overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm [mask-image:linear-gradient(to_bottom,black_80%,transparent)]">
@@ -194,7 +141,7 @@ export const Landing = () => {
               You built an app with AI. We take it the rest of the way: onto Google Play, with no tech skills needed.
             </p>
 
-            <HeroScanField />
+            <ScanField location="landing_hero" className="animate-fade-up-delay-3 mt-8" />
           </div>
 
           <SampleReport />
