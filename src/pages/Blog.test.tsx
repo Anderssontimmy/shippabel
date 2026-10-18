@@ -21,11 +21,19 @@ describe("blog article", () => {
     expect(container.querySelectorAll("article h2").length).toBeGreaterThan(0);
   });
 
+  it("lets a reader check their app before the first paragraph, because that is where search traffic lands", () => {
+    const { container } = renderPost(blogPosts[0]!.slug);
+    const field = screen.getByRole("complementary", { name: "Check your own app" });
+    expect(field.querySelector("input")?.getAttribute("aria-label")).toBe("GitHub repository link");
+    const article = container.querySelector("article")!;
+    expect(field.compareDocumentPosition(article) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("ends with one link to the scanner, not a button inside a link", () => {
     renderPost(blogPosts[0]!.slug);
     const cta = screen.getByRole("link", { name: /Check my app for free/ });
     expect(cta.getAttribute("href")).toBe("/scan");
     expect(cta.querySelector("button")).toBeNull();
-    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getAllByRole("button").map((b) => b.textContent?.trim())).toEqual(["Check now"]);
   });
 });
