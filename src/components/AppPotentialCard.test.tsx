@@ -65,3 +65,64 @@ describe("AppPotentialCard", () => {
     expect(screen.getByRole("heading", { name: "Your strengths" })).toBeTruthy();
   });
 });
+
+describe("AppPotentialCard earning example", () => {
+  const monthly: AppPotentialAnalysis = { ...analysis, earning_example: { billing: "monthly", price_usd: 3.99 } };
+
+  it("shows plain multiplication of one price by example audiences, as a table", () => {
+    render(<AppPotentialCard analysis={monthly} />);
+    expect(screen.getByRole("heading", { level: 3, name: "What that could look like" })).toBeTruthy();
+    expect(screen.getByText("Say people pay $3.99 a month for your app.")).toBeTruthy();
+    const rows = screen.getAllByRole("row").map((row) => row.textContent);
+    expect(rows).toEqual([
+      "Paying customersYou would earn",
+      "25$99.75 a month",
+      "100$399 a month",
+      "500$1,995 a month",
+    ]);
+  });
+
+  it("says in the same place that it is an illustration, not a forecast, and before fees and tax", () => {
+    render(<AppPotentialCard analysis={monthly} />);
+    expect(screen.getByText(/not a forecast\. Nobody can tell how many people will pay/)).toBeTruthy();
+    expect(screen.getByText(/before store fees and tax/)).toBeTruthy();
+  });
+
+  it("describes a one-time price as money in total", () => {
+    render(<AppPotentialCard analysis={{ ...analysis, earning_example: { billing: "once", price_usd: 2.99 } }} />);
+    expect(screen.getByText("Say people pay $2.99 once for your app.")).toBeTruthy();
+    expect(screen.getAllByRole("row").map((row) => row.textContent)).toContain("500$1,495 in total");
+  });
+
+  it("connects the figures to what Ship costs, for someone who does not have Ship yet", () => {
+    render(<AppPotentialCard analysis={monthly} />);
+    expect(screen.getByText("At that price, 25 paying customers cover Ship's $99 in the first month.")).toBeTruthy();
+  });
+
+  it("says sales, not months, for a one-time price", () => {
+    render(<AppPotentialCard analysis={{ ...analysis, earning_example: { billing: "once", price_usd: 4 } }} />);
+    expect(screen.getByText("At that price, 25 sales cover Ship's $99.")).toBeTruthy();
+  });
+
+  it("leaves Ship's price out for someone who has Ship", () => {
+    render(<AppPotentialCard analysis={monthly} isPaid />);
+    expect(screen.queryByText(/Ship's \$99/)).toBeNull();
+    expect(screen.getByRole("table")).toBeTruthy();
+  });
+
+  it("shows the example even when the model gave no ideas, and nothing when the price is not believable", () => {
+    const { monetization_ideas: _ideas, ...noIdeas } = monthly;
+    const { rerender } = render(<AppPotentialCard analysis={noIdeas} />);
+    expect(screen.getByRole("heading", { name: "How it could earn money" })).toBeTruthy();
+    expect(screen.queryByText("Ideas to think about, not a forecast.")).toBeNull();
+    rerender(<AppPotentialCard analysis={{ ...noIdeas, earning_example: { billing: "monthly", price_usd: 5000 } }} />);
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "How it could earn money" })).toBeNull();
+  });
+
+  it("still never shows the old model-guessed figures next to the new example", () => {
+    render(<AppPotentialCard analysis={monthly} />);
+    expect(screen.queryByText(/\$9B/)).toBeNull();
+    expect(screen.queryByText(/\$2M/)).toBeNull();
+  });
+});

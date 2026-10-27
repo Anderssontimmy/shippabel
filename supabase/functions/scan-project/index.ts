@@ -366,7 +366,7 @@ async function generatePotentialAnalysis(
       readme: readmeContent,
     });
 
-    const text = await generateText({ apiKey: anthropicKey, prompt, maxTokens: 900, timeoutMs: 25000 });
+    const text = await generateText({ apiKey: anthropicKey, prompt, maxTokens: 1200, timeoutMs: 25000 });
     const analysis = parsePotentialAnalysis(text);
     return analysis ? { ...analysis } : null;
   } catch {

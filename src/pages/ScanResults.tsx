@@ -21,6 +21,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ShipFlowBar } from "@/components/ShipFlowBar";
 import { ShipFlowGuide } from "@/components/ShipFlowGuide";
 import { AppPotentialCard } from "@/components/AppPotentialCard";
+import { StorePreviewCard } from "@/components/StorePreviewCard";
 import { useFix } from "@/hooks/useFix";
 import { useConvert } from "@/hooks/useConvert";
 import { useAuth } from "@/hooks/useAuth";
@@ -119,6 +120,11 @@ const demoScanResult: ScanResult = {
       "Implement push notification reminders to boost daily active users",
       "Let people set a first goal in their first minute, so the app feels personal right away",
     ],
+    store_preview: {
+      title: "FitTrack Challenges",
+      short_description: "Log workouts, see your progress and take on challenges with friends.",
+    },
+    earning_example: { billing: "monthly", price_usd: 4.99 },
   },
 };
 
@@ -507,6 +513,13 @@ export const ScanResults = () => {
       {/* Save-report email capture — anonymous scans only */}
       {!user && id && id !== "demo" && ownerId === null && <SaveReportCard projectId={id} />}
 
+      {/* Their own store page, drafted from their code: seen before the offer, so the offer is about something real */}
+      {scan.potential_analysis?.store_preview && (
+        <div className="mb-8">
+          <StorePreviewCard preview={scan.potential_analysis.store_preview} isPaid={isPaid} />
+        </div>
+      )}
+
       {/* Conversion CTA — for non-Expo projects */}
       {scan.needs_conversion && (
         <div id="conversion-section" className="mb-8 rounded-2xl border border-green-200 bg-green-50 p-5 sm:p-8">
@@ -599,7 +612,7 @@ export const ScanResults = () => {
       {/* What the scan understood about the app: after the fixes, so it never competes with them */}
       {scan.potential_analysis && (
         <div className="mt-10">
-          <AppPotentialCard analysis={scan.potential_analysis} />
+          <AppPotentialCard analysis={scan.potential_analysis} isPaid={isPaid} />
         </div>
       )}
 
