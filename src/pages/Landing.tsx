@@ -84,34 +84,6 @@ const notIncluded = [
   "New features or a redesign: we publish the app you built",
 ];
 
-type Tone = "live" | "step" | "soon" | "no";
-const toneStyles: Record<Tone, string> = {
-  live: "bg-green-50 text-green-800",
-  step: "bg-amber-50 text-amber-800",
-  soon: "bg-surface-100 text-surface-700",
-  no: "bg-surface-100 text-surface-600",
-};
-const appSupport: { what: string; status: string; tone: Tone }[] = [
-  { what: "Web apps from Lovable, Bolt, v0, Cursor and others (Vite)", status: "Live", tone: "live" },
-  { what: "Expo apps", status: "Live", tone: "live" },
-  { what: "Next.js and Nuxt apps", status: "Static export first", tone: "step" },
-  { what: "Flutter, Swift and Kotlin apps", status: "Not supported", tone: "no" },
-];
-const storeSupport: { what: string; status: string; tone: Tone }[] = [
-  { what: "Google Play", status: "Live", tone: "live" },
-  { what: "App Store", status: "Coming soon", tone: "soon" },
-];
-
-// Each one is a guide that already exists in the blog; a test keeps them honest.
-const toolGuides = [
-  { label: "Cursor", slug: "publish-cursor-app-to-google-play" },
-  { label: "Bolt", slug: "publish-bolt-app-to-google-play" },
-  { label: "Lovable", slug: "publish-lovable-app" },
-  { label: "Base44", slug: "publish-base44-app" },
-  { label: "ChatGPT", slug: "publish-chatgpt-built-app" },
-  { label: "Claude Code", slug: "publish-claude-code-app" },
-];
-
 const faqs = [
   { q: "Do I need to know how to code?", a: "Not at all. Shippabel is built for people who used AI tools to create their app. We handle all the technical stuff." },
   { q: "Do I need a Google Play account?", a: "Yes. Google charges a one-time $25 developer fee, paid to Google. We'll walk you through it." },
@@ -346,49 +318,8 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* Which apps and stores work today, said plainly */}
-      <section className="bg-surface-50 py-20 md:py-28">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
-          <FadeIn>
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
-              Which apps and stores work today.
-            </h2>
-            <p className="mt-5 max-w-md text-lg leading-relaxed text-surface-600">
-              So you know before you start. The free check tells you where your own app stands.
-            </p>
-            <nav aria-label="Guides by tool" className="mt-8">
-              <p className="text-sm font-medium text-surface-700">Step-by-step guides</p>
-              <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-                {toolGuides.map((guide) => (
-                  <li key={guide.slug}>
-                    <Link to={`/blog/${guide.slug}`} className="text-base font-medium text-green-700 underline hover:text-green-800">
-                      {guide.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </FadeIn>
-          <FadeIn delay={0.1}>
-            {([["Apps", appSupport], ["Stores", storeSupport]] as const).map(([title, rows], group) => (
-              <div key={title} className={group === 0 ? "" : "mt-10"}>
-                <h3 id={`support-${title.toLowerCase()}`} className="text-lg font-semibold text-surface-900">{title}</h3>
-                <ul aria-labelledby={`support-${title.toLowerCase()}`} className="mt-4">
-                  {rows.map((row) => (
-                    <li key={row.what} className="flex items-start justify-between gap-4 border-t border-surface-200 py-4 first:border-t-0 first:pt-0">
-                      <span className="text-base text-surface-800">{row.what}</span>
-                      <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${toneStyles[row.tone]}`}>{row.status}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </FadeIn>
-        </div>
-      </section>
-
       {/* FAQ */}
-      <section className="py-20 md:py-28">
+      <section className="bg-surface-50 py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-6">
           <div className="max-w-2xl">
             <FadeIn className="mb-8">
@@ -404,7 +335,7 @@ export const Landing = () => {
       </section>
 
       {/* Closing action */}
-      <section ref={closingRef} className="bg-surface-50 py-20 md:py-28">
+      <section ref={closingRef} className="py-20 md:py-28">
         <div className="mx-auto max-w-6xl px-6">
           <FadeIn>
             <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
