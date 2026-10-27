@@ -138,7 +138,7 @@ export const Landing = () => {
             </h1>
 
             <p className="animate-fade-up-delay-1 mt-6 max-w-md text-lg leading-relaxed text-surface-600">
-              You built an app with AI. We take it the rest of the way: onto Google Play, with no tech skills needed.
+              You built an app with AI. We take it the rest of the way: onto the App Store and Google Play, with no tech skills needed.
             </p>
 
             <ScanField location="landing_hero" className="animate-fade-up-delay-3 mt-8" />
