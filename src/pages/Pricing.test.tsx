@@ -30,3 +30,12 @@ describe("pricing page", () => {
     expect(screen.getByText(/only change your repository when you press Fix/)).toBeTruthy();
   });
 });
+
+describe("pricing page promise", () => {
+  it("shows the money-back promise with the words shared with the landing page", async () => {
+    const { guarantee } = await import("@/lib/guarantee");
+    renderPricing();
+    expect(screen.getByText(guarantee.headline)).toBeTruthy();
+    expect(screen.getByText(guarantee.detail)).toBeTruthy();
+  });
+});
