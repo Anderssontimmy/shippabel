@@ -128,12 +128,12 @@ const pages = [
     path: "/about",
     title: "About — Shippabel",
     description:
-      "Shippabel was built for the new generation of app creators — people who build with AI tools like Cursor, Bolt, and Lovable and need help getting their app onto Google Play.",
+      "Shippabel was built for the new generation of app creators — people who build with AI tools like Cursor, Bolt, and Lovable and need help getting their app onto the App Store and Google Play.",
     canonical: "https://shippabel.com/about",
-    extraContent: `<h1>Get your app on Google Play — without the headache</h1>
+    extraContent: `<h1>Get your app on the App Store and Google Play — without the headache</h1>
 <p>Shippabel is built for people who used AI to build their app. We handle everything from scan to submission.</p>
 <h2>Why we built this</h2>
-<p>Publishing an app sounds simple. It isn't. Google Play has hundreds of requirements. Shippabel handles the entire technical maze so you don't have to.</p>
+<p>Publishing an app sounds simple. It isn't. The App Store and Google Play have hundreds of requirements. Shippabel handles the entire technical maze so you don't have to.</p>
 <h2>What Shippabel does</h2>
 <p>We scan your app, auto-fix issues, write your store listing with AI, frame your screenshots, build it in the cloud, and submit it to Google Play.</p>`,
   },

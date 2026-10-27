@@ -5,7 +5,7 @@ import { useDocumentHead } from "@/hooks/useDocumentHead";
 export const About = () => {
   useDocumentHead({
     title: "About",
-    description: "Shippabel was built for the new generation of app creators — people who build with AI tools and need help getting their app onto Google Play.",
+    description: "Shippabel was built for the new generation of app creators — people who build with AI tools and need help getting their app onto the App Store and Google Play.",
   });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24">
@@ -15,11 +15,11 @@ export const About = () => {
           <span className="text-sm font-medium text-surface-500 uppercase tracking-wide">About Shippabel</span>
         </div>
         <h1 className="text-4xl font-bold text-surface-900 mb-4 leading-tight">
-          Get your app on Google Play — without the headache
+          Get your app on the App Store and Google Play — without the headache
         </h1>
         <p className="text-lg text-surface-500 leading-relaxed">
           Shippabel is built for people who used AI to build their app. You wrote the code (or had Claude do it).
-          We handle everything it takes to get from "it works on my machine" to "live on Google Play."
+          We handle everything it takes to get from "it works on my machine" to "live on the App Store and Google Play."
         </p>
       </div>
 
@@ -27,7 +27,7 @@ export const About = () => {
         <h2 className="text-2xl font-bold text-surface-900 mb-3">Why we built this</h2>
         <div className="space-y-4 text-surface-500 leading-relaxed">
           <p>
-            Publishing an app sounds simple. It isn't. Google Play has hundreds of requirements —
+            Publishing an app sounds simple. It isn't. The App Store and Google Play have hundreds of requirements —
             icons in 12 sizes, privacy manifests, permission strings, metadata limits, screenshot dimensions,
             and a review process that rejects apps for reasons most developers have never heard of.
           </p>
@@ -70,7 +70,7 @@ export const About = () => {
           mobile developer just to get through the stores.
         </p>
         <p className="text-surface-500 leading-relaxed">
-          If you've ever stared at a Google Play rejection wondering what you did wrong,
+          If you've ever stared at an App Store or Google Play rejection wondering what you did wrong,
           Shippabel is for you.
         </p>
       </div>
