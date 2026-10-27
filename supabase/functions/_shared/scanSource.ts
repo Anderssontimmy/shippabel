@@ -65,7 +65,7 @@ export async function fetchGitHubProject(repoPath: string, token?: string, reque
       });
     } catch { throw new ScanError("GitHub could not be reached. Please try again.", 502); }
     if (!response.ok) {
-      if (response.status === 404) throw new ScanError("Repository or file not found. For a private app, connect GitHub in Settings and check access.");
+      if (response.status === 404) throw new ScanError("Repository or file not found. If it is a private app, continue with GitHub so we can read it.");
       if (response.status === 401) throw new ScanError("Your GitHub connection has expired. Reconnect it in Settings.");
       if ([403, 429].includes(response.status)) throw new ScanError("GitHub refused access or reached its request limit. Check repository access and try again later.", 429);
       throw new ScanError(`GitHub could not read this project (${response.status}). Try again later.`, 502);
