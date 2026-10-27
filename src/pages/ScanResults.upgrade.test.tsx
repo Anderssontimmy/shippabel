@@ -105,11 +105,11 @@ describe("what the report shows right after a scan to make the next step worth t
   it("shows the earning example with Ship's price to a free reader, and without it to someone who has Ship", async () => {
     const { unmount } = renderReport();
     expect(await screen.findByText("At that price, 25 paying customers cover Ship's $99 in the first month.")).toBeTruthy();
-    expect(screen.getByRole("table")).toBeTruthy();
+    expect(screen.getByText(/would bring in about/)).toBeTruthy();
     unmount();
     mock.user = { id: "owner", app_metadata: { plan: "ship" } };
     renderReport();
-    expect(await screen.findByRole("table")).toBeTruthy();
+    expect(await screen.findByText(/would bring in about/)).toBeTruthy();
     expect(screen.queryByText(/Ship's \$99/)).toBeNull();
   });
 
@@ -118,12 +118,12 @@ describe("what the report shows right after a scan to make the next step worth t
     renderReport();
     expect(await screen.findByRole("heading", { name: "We can make your app store-ready" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Your Google Play page, first draft" })).toBeNull();
-    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.queryByText(/would bring in about/)).toBeNull();
   });
 
   it("shows both in the demo, which is where people look to see what they would get", async () => {
     renderReport("demo");
     expect(await screen.findByRole("heading", { name: "Your Google Play page, first draft" })).toBeTruthy();
-    expect(screen.getByRole("table")).toBeTruthy();
+    expect(screen.getByText(/would bring in about/)).toBeTruthy();
   });
 });

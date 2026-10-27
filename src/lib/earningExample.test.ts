@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { earningExample, formatUsd, SHIP_PRICE_USD } from "./earningExample";
+import { earningExample, formatUsd, SHIP_PRICE_USD, SUCCESS_CUSTOMERS } from "./earningExample";
 
 describe("earningExample", () => {
-  it("multiplies one price by fixed example audiences, so every figure can be checked by hand", () => {
-    const example = earningExample({ billing: "monthly", price_usd: 3.99 }, false);
-    expect(example?.rows).toEqual([
-      { customers: 25, total: 99.75 },
-      { customers: 100, total: 399 },
-      { customers: 500, total: 1995 },
-    ]);
+  it("multiplies one price by one stated number of paying customers, so the figure can be checked by hand", () => {
+    expect(SUCCESS_CUSTOMERS).toBe(250);
+    expect(earningExample({ billing: "monthly", price_usd: 4 }, false)).toMatchObject({ price: 4, customers: 250, total: 1000 });
+  });
+
+  it("rounds the total to whole dollars, because it is an 'about' figure", () => {
+    expect(earningExample({ billing: "monthly", price_usd: 3.99 }, false)?.total).toBe(998); // 997.50
+    expect(earningExample({ billing: "once", price_usd: 2.99 }, false)?.total).toBe(748); // 747.50
   });
 
   it("says whether the money comes every month or once", () => {
