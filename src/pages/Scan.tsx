@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Github, Upload, ArrowRight, FileArchive, Loader2, AlertCircle, Unlock, CheckCircle2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -10,18 +10,24 @@ import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { trackEvent } from "@/lib/analytics";
 import { needsGitHubAccess } from "@/lib/scanErrors";
 
+const GITHUB_URL = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/;
+
 export const Scan = () => {
   useDocumentHead({
     title: "Free Google Play Readiness Scanner",
     description: "Check if your app is ready for Google Play in 30 seconds. Paste your GitHub link and get a detailed report with issues, fixes, and a readiness score.",
   });
-  const { githubToken, signInWithGitHub } = useAuth();
+  const { githubToken, signInWithGitHub, loading: authLoading } = useAuth();
   const { hasCredential } = useCredentials();
   const hasGitHub = !!githubToken || hasCredential("github");
   const navigate = useNavigate();
   const { scanning, progress, error: scanError, scanFromUrl, scanFromFile } = useScan();
   const [mode, setMode] = useState<"url" | "upload">("url");
-  const [repoUrl, setRepoUrl] = useState("");
+  // The landing page and the guides send people here with the link they already pasted (?url=...), and
+  // signing in with GitHub sends them back with ?github=connected. Use what they gave instead of asking again.
+  const [params, setParams] = useSearchParams();
+  const arrival = useRef({ url: params.get("url")?.trim() ?? "", connected: params.get("github") === "connected" });
+  const [repoUrl, setRepoUrl] = useState(arrival.current.url);
   const [file, setFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -33,25 +39,44 @@ export const Scan = () => {
   // brings the person back here with what they pasted. (A token typed into Settings often lacks the right access.)
   const connectGitHub = async () => {
     trackEvent("CTA Clicked", { location: "scan_private_repo", action: "github_oauth" });
-    const back = `/scan${repoUrl.trim() ? `?url=${encodeURIComponent(repoUrl.trim())}` : ""}`;
+    const query = new URLSearchParams();
+    if (repoUrl.trim()) query.set("url", repoUrl.trim());
+    query.set("github", "connected");
+    const back = `/scan?${query.toString()}`;
     const { error: failure } = await signInWithGitHub(`${window.location.origin}/login?next=${encodeURIComponent(back)}`);
     if (failure) setValidationError(failure.message);
   };
+
+  const scanUrl = async (url: string) => {
+    setValidationError(null);
+    if (!url) {
+      setValidationError("Paste the link to your app above first.");
+      return;
+    }
+    if (!GITHUB_URL.test(url)) {
+      setValidationError("That doesn't look like a GitHub link. It should start with https://github.com/");
+      return;
+    }
+    const projectId = await scanFromUrl(url);
+    if (projectId) navigate(`/scan/${projectId}`);
+  };
+
+  // Pasted on another page and sent here: scan it now, since pressing "Check now" already asked for that.
+  // After signing in with GitHub the person presses the button themselves (the sign-in is still being saved).
+  const started = useRef(false);
+  useEffect(() => {
+    if (authLoading || started.current || !arrival.current.url) return;
+    started.current = true;
+    setParams({}, { replace: true });
+    if (!arrival.current.connected) void scanUrl(arrival.current.url);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, as soon as we know who is signed in
+  }, [authLoading]);
 
   const handleScan = async () => {
     setValidationError(null);
 
     if (mode === "url") {
-      if (!repoUrl.trim()) {
-        setValidationError("Paste the link to your app above first.");
-        return;
-      }
-      if (!/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(repoUrl.trim())) {
-        setValidationError("That doesn't look like a GitHub link. It should start with https://github.com/");
-        return;
-      }
-      const projectId = await scanFromUrl(repoUrl.trim());
-      if (projectId) navigate(`/scan/${projectId}`);
+      await scanUrl(repoUrl.trim());
     } else {
       if (!file) {
         setValidationError("Choose a file to upload first.");
@@ -109,6 +134,12 @@ export const Scan = () => {
           I have a file
         </button>
       </div>
+
+      {arrival.current.connected && (
+        <p role="status" className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          You're signed in with GitHub. Press "Check my app for free" to scan your app.
+        </p>
+      )}
 
       {/* Input area */}
       <Card className="mb-6">

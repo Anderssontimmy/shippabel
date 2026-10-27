@@ -18,6 +18,16 @@ test("landing and demo render without browser exceptions", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("a link pasted on the landing page is scanned without pasting it again", async ({ page }) => {
+  await page.route("**/rest/v1/projects**", (route) => route.fulfill({ json: { id: projectId, name: "test app", user_id: null, scan_result: scan } }));
+  await page.route("**/functions/v1/scan-project", (route) => route.fulfill({ json: { success: true, scan_result: scan } }));
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("GitHub repository link").fill("https://github.com/owner/repository");
+  await page.getByRole("button", { name: /check now/i }).click();
+  await expect(page).toHaveURL(`/scan/${projectId}`);
+  await expect(page.getByText("80", { exact: true })).toBeVisible();
+});
+
 test("lookalike GitHub host rejected without creating a project", async ({ page }) => {
   let apiRequests = 0;
   await page.route("**/rest/v1/projects**", (route) => { apiRequests++; return route.abort(); });
