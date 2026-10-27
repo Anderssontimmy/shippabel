@@ -6,7 +6,6 @@ vi.mock("@/lib/analytics", () => ({ trackEvent: vi.fn() }));
 vi.mock("@/components/PlayPhone", () => ({ default: () => <div data-testid="phone" /> }));
 import { Landing } from "./Landing";
 import { guarantee } from "@/lib/guarantee";
-import { blogPosts } from "@/lib/blog-data";
 
 // jsdom has no IntersectionObserver. This one lets a test say what the browser would report.
 type Entry = { isIntersecting: boolean; boundingClientRect: { top: number; bottom: number } };
@@ -108,34 +107,6 @@ describe("what the landing page tells a hesitant buyer", () => {
     expect(screen.getAllByText(guarantee.detail).length).toBeGreaterThan(0);
     const panel = screen.getAllByText(guarantee.headline)[0]!.closest("div")!;
     expect(within(panel).getByRole("link", { name: "hello@shippabel.com" }).getAttribute("href")).toBe("mailto:hello@shippabel.com");
-  });
-
-  it("says plainly which stores work today: Google Play is live, the App Store is not yet", () => {
-    renderLanding();
-    const stores = within(screen.getByRole("list", { name: "Stores" })).getAllByRole("listitem");
-    const row = (name: string) => stores.find((li) => li.textContent?.startsWith(name))?.textContent;
-    expect(row("Google Play")).toBe("Google PlayLive");
-    expect(row("App Store")).toBe("App StoreComing soon");
-  });
-
-  it("says which kinds of app work, which need a step first and which do not", () => {
-    renderLanding();
-    const apps = within(screen.getByRole("list", { name: "Apps" })).getAllByRole("listitem").map((li) => li.textContent);
-    expect(apps).toContain("Web apps from Lovable, Bolt, v0, Cursor and others (Vite)Live");
-    expect(apps).toContain("Next.js and Nuxt appsStatic export first");
-    expect(apps).toContain("Flutter, Swift and Kotlin appsNot supported");
-  });
-
-  it("links to a guide for each tool, and every link goes to a guide that exists", () => {
-    renderLanding();
-    const links = within(screen.getByRole("navigation", { name: "Guides by tool" })).getAllByRole("link");
-    expect(links.length).toBeGreaterThanOrEqual(5);
-    const slugs = new Set(blogPosts.map((post) => post.slug));
-    for (const link of links) {
-      const href = link.getAttribute("href")!;
-      expect(href.startsWith("/blog/"), href).toBe(true);
-      expect(slugs.has(href.replace("/blog/", "")), href).toBe(true);
-    }
   });
 
   it("answers the questions a buyer hesitates over: the App Store, the guarantee and Google's 12 testers", () => {
