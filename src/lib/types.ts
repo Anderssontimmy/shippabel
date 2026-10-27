@@ -35,6 +35,17 @@ export interface Project {
   updated_at: string;
 }
 
+export interface StorePreview {
+  title: string;
+  short_description: string;
+}
+
+// One price and how it is paid. How many people pay is never stored; see lib/earningExample.
+export interface EarningExample {
+  billing: "monthly" | "once";
+  price_usd: number;
+}
+
 export interface AppPotentialAnalysis {
   app_description: string;
   // Ideas, never figures. Scans made before 2026-10-16 also carry market_potential, revenue_potential and
@@ -42,6 +53,8 @@ export interface AppPotentialAnalysis {
   monetization_ideas?: string[];
   strengths: string[];
   growth_suggestions: string[];
+  store_preview?: StorePreview;
+  earning_example?: EarningExample;
   market_potential?: { comparable_apps: string[]; market_size: string };
   revenue_potential?: string;
   excitement_hook?: string;

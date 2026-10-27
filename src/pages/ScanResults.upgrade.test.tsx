@@ -81,3 +81,49 @@ describe("the paid first step on the report", () => {
     expect(screen.queryByRole("button", { name: /Get Ship/ })).toBeNull();
   });
 });
+
+describe("what the report shows right after a scan to make the next step worth taking", () => {
+  const analysis = {
+    app_description: "A habit tracker with daily streaks.",
+    monetization_ideas: ["A free core with a paid plan for extra statistics."],
+    strengths: ["Simple onboarding"],
+    growth_suggestions: ["Add reminders"],
+    store_preview: { title: "Habit Hero", short_description: "Build habits that stick with daily streaks." },
+    earning_example: { billing: "monthly", price_usd: 4 },
+  };
+  const withAnalysis = { ...webApp, scan_result: { ...webApp.scan_result, potential_analysis: analysis } };
+  beforeEach(() => { mock.user = { id: "owner", app_metadata: {} }; mock.checkout.mockReset(); mock.project = withAnalysis; });
+
+  it("puts the draft of their Google Play page before the offer, so the offer is about something they have seen", async () => {
+    renderReport();
+    const draft = await screen.findByRole("heading", { name: "Your Google Play page, first draft" });
+    const offer = screen.getByRole("heading", { name: "We can make your app store-ready" });
+    expect(screen.getByText("Habit Hero")).toBeTruthy();
+    expect(draft.compareDocumentPosition(offer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("shows the earning example with Ship's price to a free reader, and without it to someone who has Ship", async () => {
+    const { unmount } = renderReport();
+    expect(await screen.findByText("At that price, 25 paying customers cover Ship's $99 in the first month.")).toBeTruthy();
+    expect(screen.getByRole("table")).toBeTruthy();
+    unmount();
+    mock.user = { id: "owner", app_metadata: { plan: "ship" } };
+    renderReport();
+    expect(await screen.findByRole("table")).toBeTruthy();
+    expect(screen.queryByText(/Ship's \$99/)).toBeNull();
+  });
+
+  it("shows neither for a report made before they existed", async () => {
+    mock.project = { ...webApp, scan_result: { ...webApp.scan_result, potential_analysis: { ...analysis, store_preview: undefined, earning_example: undefined } } };
+    renderReport();
+    expect(await screen.findByRole("heading", { name: "We can make your app store-ready" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Your Google Play page, first draft" })).toBeNull();
+    expect(screen.queryByRole("table")).toBeNull();
+  });
+
+  it("shows both in the demo, which is where people look to see what they would get", async () => {
+    renderReport("demo");
+    expect(await screen.findByRole("heading", { name: "Your Google Play page, first draft" })).toBeTruthy();
+    expect(screen.getByRole("table")).toBeTruthy();
+  });
+});
