@@ -63,7 +63,7 @@ const faqs = [
   { q: "Do I need a Google Play account?", a: "Yes. Google charges a one-time $25 developer fee, paid to Google. We'll walk you through it." },
   { q: "How long does it take?", a: "The check takes about 30 seconds. Fixing and writing your store page take a few minutes. After submitting, Google usually reviews new apps in a few hours to a few days." },
   { q: "What if my app gets rejected?", a: "We track your review status. If rejected, we explain why in plain language and help you fix it." },
-  { q: "What kind of apps work?", a: "Apps built with Lovable, Cursor, Bolt, v0 or Claude Code. Vite web apps are wrapped as a mobile app for you, and Expo and React Native apps are built as they are. Next.js apps need a static export first; the free check tells you." },
+  { q: "What kind of apps work?", a: "Apps built with ChatGPT, Claude, Gemini, Cursor, Lovable, Bolt, Replit or v0. Vite web apps are wrapped as a mobile app for you, and Expo and React Native apps are built as they are. Next.js apps need a static export first; the free check tells you." },
 ];
 
 const FaqItem = ({ q, a }: { q: string; a: string }) => {
@@ -148,7 +148,7 @@ export const Landing = () => {
         </div>
 
         <p className="mt-14 text-sm text-surface-600">
-          Made for apps built with Lovable, Cursor, Bolt, v0 and Claude Code.
+          Made for apps built with ChatGPT, Claude, Gemini, Cursor, Lovable, Bolt, Replit and v0.
         </p>
       </section>
 
