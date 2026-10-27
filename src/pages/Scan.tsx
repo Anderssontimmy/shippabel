@@ -8,13 +8,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCredentials } from "@/hooks/useCredentials";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { trackEvent } from "@/lib/analytics";
+import { needsGitHubAccess } from "@/lib/scanErrors";
 
 export const Scan = () => {
   useDocumentHead({
     title: "Free Google Play Readiness Scanner",
     description: "Check if your app is ready for Google Play in 30 seconds. Paste your GitHub link and get a detailed report with issues, fixes, and a readiness score.",
   });
-  const { githubToken } = useAuth();
+  const { githubToken, signInWithGitHub } = useAuth();
   const { hasCredential } = useCredentials();
   const hasGitHub = !!githubToken || hasCredential("github");
   const navigate = useNavigate();
@@ -27,6 +28,15 @@ export const Scan = () => {
   const [showHelp, setShowHelp] = useState(false);
 
   const error = validationError ?? scanError;
+
+  // One click instead of a token: signing in with GitHub gives access to private repositories and
+  // brings the person back here with what they pasted. (A token typed into Settings often lacks the right access.)
+  const connectGitHub = async () => {
+    trackEvent("CTA Clicked", { location: "scan_private_repo", action: "github_oauth" });
+    const back = `/scan${repoUrl.trim() ? `?url=${encodeURIComponent(repoUrl.trim())}` : ""}`;
+    const { error: failure } = await signInWithGitHub(`${window.location.origin}/login?next=${encodeURIComponent(back)}`);
+    if (failure) setValidationError(failure.message);
+  };
 
   const handleScan = async () => {
     setValidationError(null);
@@ -146,7 +156,13 @@ export const Scan = () => {
               {hasGitHub ? (
                 <span className="flex items-center gap-1"><Unlock className="h-3 w-3 text-green-600" /> Works with all your apps — private and public</span>
               ) : (
-                <span>Works with public apps. <Link to="/settings" className="text-surface-700 hover:text-surface-900 underline">Connect your GitHub account</Link> to check private apps too.</span>
+                <span>
+                  Works with public apps. For a private app,{" "}
+                  <button type="button" onClick={connectGitHub} className="font-medium text-green-700 underline hover:text-green-800 cursor-pointer">
+                    continue with GitHub
+                  </button>{" "}
+                  so we can read it.
+                </span>
               )}
             </p>
           </div>
@@ -210,9 +226,17 @@ export const Scan = () => {
       {/* Error */}
       {error && (
         <div className="flex items-center justify-between rounded-lg bg-red-50 border border-red-200 px-4 py-3 mb-6">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+            {needsGitHubAccess(error) && (
+              <Button type="button" size="sm" variant="secondary" onClick={connectGitHub} className="mt-3 gap-2">
+                <Github aria-hidden="true" className="h-4 w-4" />
+                {hasGitHub ? "Reconnect with GitHub" : "Continue with GitHub"}
+              </Button>
+            )}
           </div>
           <button onClick={handleScan} className="text-xs text-red-600 hover:text-red-800 font-medium cursor-pointer shrink-0 ml-3">
             Try again

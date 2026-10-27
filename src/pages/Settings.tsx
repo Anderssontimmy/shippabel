@@ -163,7 +163,7 @@ const providers: ProviderConfig[] = [
 
 export const Settings = () => {
   useDocumentHead({ title: "Settings" });
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signInWithGitHub } = useAuth();
   const navigate = useNavigate();
   const { loading, saving, error, hasCredential, saveCredential, removeCredential } = useCredentials();
   const { toast } = useToast();
@@ -211,6 +211,13 @@ export const Settings = () => {
     } else {
       toast("error", `Couldn't remove ${provider.name} credentials. Please try again.`);
     }
+  };
+
+  // The easy way to connect GitHub: sign in with it. That gives access to private repositories, which a
+  // token typed in by hand often does not (the selected repositories or permissions are wrong).
+  const connectWithGitHub = async () => {
+    const { error } = await signInWithGitHub(`${window.location.origin}/login?next=${encodeURIComponent("/settings")}`);
+    if (error) toast("error", error.message);
   };
 
   const startEditing = (provider: ProviderConfig) => {
@@ -380,9 +387,15 @@ export const Settings = () => {
 
                   {/* Action buttons */}
                   {!isEditing && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {provider.id === "github" && !connected && (
+                        <Button size="sm" onClick={() => void connectWithGitHub()} className="gap-2">
+                          <Github aria-hidden="true" className="h-4 w-4" />
+                          Continue with GitHub
+                        </Button>
+                      )}
                       <Button size="sm" variant="secondary" onClick={() => startEditing(provider)}>
-                        {connected ? "Update" : "Connect"}
+                        {connected ? "Update" : provider.id === "github" ? "Use a token instead" : "Connect"}
                       </Button>
                       {connected && (
                         <Button size="sm" variant="ghost" aria-label={`Remove ${provider.name} credentials`} onClick={() => handleRemove(provider)} className="text-red-400 hover:text-red-300">
