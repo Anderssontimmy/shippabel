@@ -3,7 +3,7 @@
 // number, and a wrong one costs the trust the whole product depends on. This version asks for ideas and
 // refuses to keep anything that looks like a figure. Two things are allowed to carry a number, both small and
 // bounded: the store page draft (a title and a short line that fit Google Play) and one price with how it is
-// paid. How many people will pay is never asked for; the page multiplies the price by fixed example counts.
+// paid. How many people will pay is never asked for; the page multiplies the price by one stated number of people.
 
 export interface StorePreview {
   title: string;

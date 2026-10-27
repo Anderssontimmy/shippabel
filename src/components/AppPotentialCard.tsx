@@ -7,35 +7,16 @@ interface AppPotentialCardProps {
   isPaid?: boolean;
 }
 
-const EarningTable = ({ example }: { example: ComputedExample }) => {
+// One sentence with its basis in view: a price and a stated number of people. It says nothing about what real
+// apps earn, because nobody here knows that.
+const EarningLine = ({ example }: { example: ComputedExample }) => {
   const once = example.paid === "once";
+  const sentence = `If an app like this succeeds, ${example.customers} people paying ${formatUsd(example.price)} ${example.paid} would bring in about ${formatUsd(example.total)} ${once ? "in total" : "a month"}.`;
   return (
-    <div>
-      <p className="mb-2 text-sm text-surface-700">
-        Say people pay {formatUsd(example.price)} {example.paid} for your app.
-      </p>
-      <table className="w-full max-w-sm text-left text-sm">
-        <caption className="sr-only">What that price adds up to for different numbers of paying customers</caption>
-        <thead>
-          <tr className="border-b border-surface-200 text-surface-500">
-            <th scope="col" className="py-1.5 pr-4 font-medium">Paying customers</th>
-            <th scope="col" className="py-1.5 font-medium">You would earn</th>
-          </tr>
-        </thead>
-        <tbody className="text-surface-700">
-          {example.rows.map((row) => (
-            <tr key={row.customers} className="border-b border-surface-100">
-              <td className="py-1.5 pr-4">{row.customers}</td>
-              <td className="py-1.5 font-medium text-surface-900">
-                {formatUsd(row.total)} {once ? "in total" : "a month"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="mt-4">
+      <p className="text-base font-semibold leading-snug text-surface-900">{sentence}</p>
       <p className="mt-2 text-sm text-surface-600">
-        An illustration with a price that suits this kind of app, not a forecast. Nobody can tell how many people will pay,
-        and the amounts are before store fees and tax.
+        An illustration, not a forecast. Nobody can tell how many people will pay, and the amount is before store fees and tax.
       </p>
       {example.shipCovered !== null && (
         <p className="mt-2 text-sm font-medium text-surface-700">
@@ -47,7 +28,7 @@ const EarningTable = ({ example }: { example: ComputedExample }) => {
   );
 };
 
-const BulletList = ({ items }: { items: string[] }) => (
+const BulletList =({ items }: { items: string[] }) => (
   <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-surface-600 marker:text-surface-500">
     {items.map((item) => (
       <li key={item}>{item}</li>
@@ -56,8 +37,8 @@ const BulletList = ({ items }: { items: string[] }) => (
 );
 
 // What the scan understood about the app, and how it could earn money. No market sizes or revenue figures:
-// the model can only guess them, and a wrong number costs us the user's trust. The one example with dollar
-// amounts is a price times fixed audience sizes, labelled as an illustration.
+// the model can only guess them, and a wrong number costs us the user's trust. The one example with a dollar
+// amount is a price times a stated number of people, labelled as an illustration.
 export const AppPotentialCard = ({ analysis, isPaid = false }: AppPotentialCardProps) => {
   const ideas = analysis.monetization_ideas ?? [];
   const example = earningExample(analysis.earning_example, !isPaid);
@@ -69,18 +50,11 @@ export const AppPotentialCard = ({ analysis, isPaid = false }: AppPotentialCardP
       {(ideas.length > 0 || example) && (
         <section className="mt-5">
           <h3 className="mb-2 text-sm font-semibold text-surface-700">How it could earn money</h3>
-          {ideas.length > 0 && (
-            <>
-              <BulletList items={ideas} />
-              <p className="mt-2 text-sm text-surface-600">Ideas to think about, not a forecast.</p>
-            </>
+          {ideas.length > 0 && <BulletList items={ideas} />}
+          {ideas.length > 0 && !example && (
+            <p className="mt-2 text-sm text-surface-600">Ideas to think about, not a forecast.</p>
           )}
-          {example && (
-            <>
-              <h3 className="mb-2 mt-5 text-sm font-semibold text-surface-700">What that could look like</h3>
-              <EarningTable example={example} />
-            </>
-          )}
+          {example && <EarningLine example={example} />}
         </section>
       )}
 
