@@ -45,3 +45,10 @@ describe("page layout", () => {
     expect(screen.getByRole("button", { name: "Close menu" })).toBeTruthy();
   });
 });
+
+describe("page footer", () => {
+  it("says the service is not affiliated with Apple or Google, since both stores are named on the site", () => {
+    renderLayout();
+    expect(screen.getByText("Shippabel is not affiliated with Apple or Google.")).toBeTruthy();
+  });
+});

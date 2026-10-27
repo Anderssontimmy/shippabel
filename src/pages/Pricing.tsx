@@ -6,6 +6,7 @@ import { useStripe, type PlanId } from "@/hooks/useStripe";
 import { useAuth } from "@/hooks/useAuth";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { trackEvent } from "@/lib/analytics";
+import { guarantee } from "@/lib/guarantee";
 
 const plans = [
   {
@@ -186,10 +187,8 @@ export const Pricing = () => {
 
       {/* Guarantee */}
       <div className="mt-14 max-w-xl mx-auto rounded-2xl border border-green-200 bg-green-50 px-6 py-5 text-center">
-        <p className="text-sm font-semibold text-green-900">Our promise: your app goes live, or you get your money back.</p>
-        <p className="text-sm text-green-700 mt-1">
-          If we can't get your app onto Google Play, we refund the full amount. Just email us.
-        </p>
+        <p className="text-sm font-semibold text-green-900">{guarantee.headline}</p>
+        <p className="text-sm text-green-700 mt-1">{guarantee.detail}</p>
       </div>
 
       <div className="mt-8 text-center">

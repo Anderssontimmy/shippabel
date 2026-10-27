@@ -133,6 +133,9 @@ export const Layout = () => {
             <a href="mailto:hello@shippabel.com" className="py-2 hover:text-surface-600 transition-colors">hello@shippabel.com</a>
           </div>
         </div>
+        <p className="mx-auto max-w-6xl px-6 pb-8 text-center text-sm text-surface-500 sm:text-left">
+          Shippabel is not affiliated with Apple or Google.
+        </p>
       </footer>
     </div>
   );

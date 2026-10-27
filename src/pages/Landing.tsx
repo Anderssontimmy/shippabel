@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Minus } from "lucide-react";
 import { lazy, Suspense, useEffect, useState, useRef, type ReactNode, type RefObject } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { ScanField } from "@/components/ScanField";
 import { primaryCta } from "@/components/ui/styles";
 import { trackEvent } from "@/lib/analytics";
+import { guarantee } from "@/lib/guarantee";
 
 // The animated phone is below the first screen, so it loads after the page is usable.
 const PlayPhone = lazy(() => import("@/components/PlayPhone"));
@@ -58,12 +59,68 @@ const trustPoints = [
   },
 ];
 
+// The times are the ones the product states elsewhere (the FAQ and the build page), not promises made up for this strip.
+const steps = [
+  { title: "Check", time: "About 30 seconds", body: "Paste your GitHub link. It's free and needs no account." },
+  { title: "Fix and write", time: "A few minutes", body: "Fix problems with one click, then AI drafts your store page." },
+  { title: "Build and upload", time: "About 10 to 20 minutes", body: "We build and sign your app and upload it to Google Play's testing track." },
+  { title: "Google's review", time: "A few hours to a few days", body: "We track the status and explain any rejection in plain language." },
+];
+
+const included = [
+  "One-click fixes for what Google would reject",
+  "Your web app wrapped as an Android app, if it needs it",
+  "Your store page, written by AI in three styles",
+  "Screenshots in professional device frames",
+  "A privacy policy, written and hosted for you",
+  "A signed build, uploaded to Google Play's testing track",
+  "Review status tracked, with rejections explained in plain language",
+];
+
+const notIncluded = [
+  "Google's $25 developer fee, paid to Google",
+  "Google's closed test with at least 12 testers for 14 days, which new personal developer accounts run in their own Play Console",
+  "Your own backend or hosting costs, if your app has any",
+  "New features or a redesign: we publish the app you built",
+];
+
+type Tone = "live" | "step" | "soon" | "no";
+const toneStyles: Record<Tone, string> = {
+  live: "bg-green-50 text-green-800",
+  step: "bg-amber-50 text-amber-800",
+  soon: "bg-surface-100 text-surface-700",
+  no: "bg-surface-100 text-surface-600",
+};
+const appSupport: { what: string; status: string; tone: Tone }[] = [
+  { what: "Web apps from Lovable, Bolt, v0, Cursor and others (Vite)", status: "Live", tone: "live" },
+  { what: "Expo apps", status: "Live", tone: "live" },
+  { what: "Next.js and Nuxt apps", status: "Static export first", tone: "step" },
+  { what: "Flutter, Swift and Kotlin apps", status: "Not supported", tone: "no" },
+];
+const storeSupport: { what: string; status: string; tone: Tone }[] = [
+  { what: "Google Play", status: "Live", tone: "live" },
+  { what: "App Store", status: "Coming soon", tone: "soon" },
+];
+
+// Each one is a guide that already exists in the blog; a test keeps them honest.
+const toolGuides = [
+  { label: "Cursor", slug: "publish-cursor-app-to-google-play" },
+  { label: "Bolt", slug: "publish-bolt-app-to-google-play" },
+  { label: "Lovable", slug: "publish-lovable-app" },
+  { label: "Base44", slug: "publish-base44-app" },
+  { label: "ChatGPT", slug: "publish-chatgpt-built-app" },
+  { label: "Claude Code", slug: "publish-claude-code-app" },
+];
+
 const faqs = [
   { q: "Do I need to know how to code?", a: "Not at all. Shippabel is built for people who used AI tools to create their app. We handle all the technical stuff." },
   { q: "Do I need a Google Play account?", a: "Yes. Google charges a one-time $25 developer fee, paid to Google. We'll walk you through it." },
   { q: "How long does it take?", a: "The check takes about 30 seconds. Fixing and writing your store page take a few minutes. After submitting, Google usually reviews new apps in a few hours to a few days." },
   { q: "What if my app gets rejected?", a: "We track your review status. If rejected, we explain why in plain language and help you fix it." },
   { q: "What kind of apps work?", a: "Apps built with ChatGPT, Claude, Gemini, Cursor, Lovable, Bolt, Replit or v0. Vite web apps are wrapped as a mobile app for you, and Expo and React Native apps are built as they are. Next.js apps need a static export first; the free check tells you." },
+  { q: "Can I publish to the App Store?", a: "Not yet. Today Shippabel builds and submits to Google Play only. App Store publishing is coming, and we'll say so on this page when it works." },
+  { q: "Is there a guarantee?", a: `${guarantee.headline} ${guarantee.detail}` },
+  { q: "Why does Google ask for 12 testers?", a: "Google requires developer accounts created as personal accounts after November 2023 to run a closed test with at least 12 testers for 14 days before an app can be released publicly. We upload your build to Google Play's internal testing track. The closed test happens in your Play Console." },
 ];
 
 const FaqItem = ({ q, a }: { q: string; a: string }) => {
@@ -150,6 +207,23 @@ export const Landing = () => {
         <p className="mt-14 text-sm text-surface-600">
           Made for apps built with ChatGPT, Claude, Gemini, Cursor, Lovable, Bolt, Replit and v0.
         </p>
+
+        <div className="mt-16">
+          <h2 className="font-display text-2xl md:text-3xl font-extrabold tracking-tight">
+            From your link to Google Play, step by step.
+          </h2>
+          <ol aria-label="How long each step takes" className="mt-8 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step, i) => (
+              <li key={step.title} className="border-t border-surface-300 pt-4">
+                <p className="text-sm font-semibold text-green-700">
+                  {i + 1}. {step.time}
+                </p>
+                <h3 className="mt-1.5 text-lg font-semibold text-surface-900">{step.title}</h3>
+                <p className="mt-1.5 text-base leading-relaxed text-surface-600">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       {/* Fix, then the store page */}
@@ -201,8 +275,58 @@ export const Landing = () => {
         </div>
       </section>
 
+      {/* What the price covers, and what it does not */}
+      <section id="whats-included" className="bg-surface-50 py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <FadeIn>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
+              What $99 gets you, and what it doesn't.
+            </h2>
+            <p className="mt-4 max-w-xl text-lg leading-relaxed text-surface-600">
+              One payment for one app, no subscription. Have more than one app?{" "}
+              <Link to="/pricing" className="font-medium text-green-700 underline hover:text-green-800">Unlimited is $179</Link>.
+            </p>
+          </FadeIn>
+
+          <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
+            <FadeIn>
+              <h3 id="included-heading" className="text-lg font-semibold text-surface-900">Included</h3>
+              <ul aria-labelledby="included-heading" className="mt-4 space-y-3">
+                {included.map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-base leading-relaxed text-surface-700">
+                    <Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-green-700" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </FadeIn>
+            <FadeIn delay={0.1}>
+              <h3 id="not-included-heading" className="text-lg font-semibold text-surface-900">Not included</h3>
+              <ul aria-labelledby="not-included-heading" className="mt-4 space-y-3">
+                {notIncluded.map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-base leading-relaxed text-surface-600">
+                    <Minus aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-surface-500" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </FadeIn>
+          </div>
+
+          <FadeIn className="mt-12">
+            <div className="max-w-2xl rounded-2xl border border-green-200 bg-green-50 px-6 py-5">
+              <p className="text-base font-semibold text-green-900">{guarantee.headline}</p>
+              <p className="mt-1 text-base text-green-800">{guarantee.detail}</p>
+              <a href="mailto:hello@shippabel.com" className="mt-2 inline-block text-base font-medium text-green-800 underline hover:text-green-900">
+                hello@shippabel.com
+              </a>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* What stays true */}
-      <section className="bg-surface-50 py-20 md:py-28">
+      <section className="py-20 md:py-28">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
           <FadeIn>
             <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
@@ -218,6 +342,47 @@ export const Landing = () => {
                 </li>
               ))}
             </ul>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Which apps and stores work today, said plainly */}
+      <section className="bg-surface-50 py-20 md:py-28">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-6 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
+          <FadeIn>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
+              Which apps and stores work today.
+            </h2>
+            <p className="mt-5 max-w-md text-lg leading-relaxed text-surface-600">
+              So you know before you start. The free check tells you where your own app stands.
+            </p>
+            <nav aria-label="Guides by tool" className="mt-8">
+              <p className="text-sm font-medium text-surface-700">Step-by-step guides</p>
+              <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+                {toolGuides.map((guide) => (
+                  <li key={guide.slug}>
+                    <Link to={`/blog/${guide.slug}`} className="text-base font-medium text-green-700 underline hover:text-green-800">
+                      {guide.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </FadeIn>
+          <FadeIn delay={0.1}>
+            {([["Apps", appSupport], ["Stores", storeSupport]] as const).map(([title, rows], group) => (
+              <div key={title} className={group === 0 ? "" : "mt-10"}>
+                <h3 id={`support-${title.toLowerCase()}`} className="text-lg font-semibold text-surface-900">{title}</h3>
+                <ul aria-labelledby={`support-${title.toLowerCase()}`} className="mt-4">
+                  {rows.map((row) => (
+                    <li key={row.what} className="flex items-start justify-between gap-4 border-t border-surface-200 py-4 first:border-t-0 first:pt-0">
+                      <span className="text-base text-surface-800">{row.what}</span>
+                      <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${toneStyles[row.tone]}`}>{row.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </FadeIn>
         </div>
       </section>
@@ -261,6 +426,10 @@ export const Landing = () => {
                 See pricing
               </Link>
             </div>
+            <p className="mt-6 text-base text-surface-600">
+              Questions first? Email{" "}
+              <a href="mailto:hello@shippabel.com" className="font-medium text-green-700 underline hover:text-green-800">hello@shippabel.com</a>.
+            </p>
           </FadeIn>
         </div>
       </section>
