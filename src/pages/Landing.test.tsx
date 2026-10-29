@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/analytics", () => ({ trackEvent: vi.fn() }));
+vi.mock("@/components/PlayPhone", () => ({ default: () => <div data-testid="phone" /> }));
 import { Landing } from "./Landing";
 import { guarantee } from "@/lib/guarantee";
 
@@ -50,14 +51,12 @@ describe("landing page", () => {
     expect(screen.getByText(/No link\? Choose .upload a zip file. instead/)).toBeTruthy();
   });
 
-  it("shows one example app going from the maker's own screen to live in both stores", () => {
+  it("shows the moving phone with a made-up app, and says it is an example", async () => {
     renderLanding();
-    const example = screen.getByRole("figure");
-    expect(within(example).getByText("On your screen only")).toBeTruthy();
-    expect(within(example).getByText("App Store")).toBeTruthy();
-    expect(within(example).getByText("Google Play")).toBeTruthy();
-    expect(within(example).getAllByText("Live")).toHaveLength(2);
-    expect(within(example).getByText(/An example/)).toBeTruthy();
+    expect(await screen.findByTestId("phone")).toBeTruthy();
+    const example = screen.getByRole("img", { name: /An example: an app is checked, fixed, sent to both stores and goes live/ });
+    expect(within(example).getByTestId("phone")).toBeTruthy();
+    expect(screen.getByText("An example app, made up for this page.")).toBeTruthy();
   });
 
   it("shows how it goes in three steps, ending with the app in both stores", () => {
