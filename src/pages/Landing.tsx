@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowRight, Check, ChevronDown } from "lucide-react";
-import { useEffect, useState, useRef, type ReactNode, type RefObject } from "react";
+import { ArrowRight, Check, ChevronDown } from "lucide-react";
+import { lazy, Suspense, useEffect, useState, useRef, type ReactNode, type RefObject } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { ScanField } from "@/components/ScanField";
 import { primaryCta } from "@/components/ui/styles";
 import { trackEvent } from "@/lib/analytics";
 import { guarantee } from "@/lib/guarantee";
+
+// The moving phone loads after the page is usable, in a box that already has its height so nothing jumps.
+const PlayPhone = lazy(() => import("@/components/PlayPhone"));
 
 const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) => {
   const ref = useRef(null);
@@ -75,50 +78,20 @@ const FaqItem = ({ q, a }: { q: string; a: string }) => {
   );
 };
 
-const AppTile = ({ muted = false }: { muted?: boolean }) => (
-  <div
-    aria-hidden="true"
-    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-semibold ${
-      muted ? "bg-surface-200 text-surface-600" : "bg-green-700 text-white"
-    }`}
-  >
-    D
-  </div>
-);
-
-const StoreRow = ({ store }: { store: string }) => (
-  <div className="flex items-center gap-4 rounded-2xl border border-surface-200 bg-white p-4 shadow-sm">
-    <AppTile />
-    <div className="min-w-0 flex-1">
-      <p className="text-base font-semibold text-surface-900">Daily Habits</p>
-      <p className="text-sm text-surface-600">{store}</p>
+// The page's story once, as a phone: an app is checked, fixed, sent to both stores and goes live. The app is made up.
+const ExamplePhone = () => (
+  <div className="animate-fade-up-delay-2 flex flex-col items-center">
+    <div
+      role="img"
+      aria-label="An example: an app is checked, fixed, sent to both stores and goes live."
+      className="flex min-h-[560px] items-center justify-center"
+    >
+      <Suspense fallback={null}>
+        <PlayPhone />
+      </Suspense>
     </div>
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-800">
-      <Check aria-hidden="true" className="h-3.5 w-3.5" />
-      Live
-    </span>
+    <p className="mt-2 text-center text-sm text-surface-600">An example app, made up for this page.</p>
   </div>
-);
-
-// What the product is for, in one picture: an app that only its maker can see, and the same app in both stores.
-const StoresExample = () => (
-  <figure className="animate-fade-up-delay-2">
-    <div className="rounded-3xl bg-surface-50 p-6 sm:p-8">
-      <div className="flex items-center gap-4 rounded-2xl border border-dashed border-surface-300 p-4">
-        <AppTile muted />
-        <div className="min-w-0">
-          <p className="text-base font-semibold text-surface-900">Daily Habits</p>
-          <p className="text-sm text-surface-600">On your screen only</p>
-        </div>
-      </div>
-      <ArrowDown aria-hidden="true" className="mx-auto my-3 h-5 w-5 text-surface-500" />
-      <div className="space-y-3">
-        <StoreRow store="App Store" />
-        <StoreRow store="Google Play" />
-      </div>
-    </div>
-    <figcaption className="mt-3 text-sm text-surface-600">An example: one app, from your screen to both stores.</figcaption>
-  </figure>
 );
 
 const StickyCheckBar = ({ visible }: { visible: boolean }) => (
@@ -173,7 +146,7 @@ export const Landing = () => {
             </details>
           </div>
 
-          <StoresExample />
+          <ExamplePhone />
         </div>
 
         <p className="mt-14 text-sm text-surface-600">
