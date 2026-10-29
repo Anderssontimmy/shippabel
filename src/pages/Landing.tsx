@@ -1,14 +1,11 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, ChevronDown, Minus } from "lucide-react";
-import { lazy, Suspense, useEffect, useState, useRef, type ReactNode, type RefObject } from "react";
+import { ArrowDown, ArrowRight, Check, ChevronDown } from "lucide-react";
+import { useEffect, useState, useRef, type ReactNode, type RefObject } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { ScanField } from "@/components/ScanField";
 import { primaryCta } from "@/components/ui/styles";
 import { trackEvent } from "@/lib/analytics";
 import { guarantee } from "@/lib/guarantee";
-
-// The animated phone is below the first screen, so it loads after the page is usable.
-const PlayPhone = lazy(() => import("@/components/PlayPhone"));
 
 const FadeIn = ({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) => {
   const ref = useRef(null);
@@ -44,55 +41,25 @@ const useObserved = (ref: RefObject<HTMLElement | null>, test: (entry: Intersect
 const scrolledPast = (entry: IntersectionObserverEntry) => !entry.isIntersecting && entry.boundingClientRect.bottom < 0;
 const reached = (entry: IntersectionObserverEntry) => entry.isIntersecting || entry.boundingClientRect.top < 0;
 
-const trustPoints = [
-  {
-    title: "The check is free.",
-    body: "Paste a link and get your report in about 30 seconds. The check only reads your code, and you don't need an account.",
-  },
-  {
-    title: "We change your code only when you ask.",
-    body: "Fixes and builds happen when you press the button. They are ordinary commits in your GitHub, so you can review and undo them.",
-  },
-  {
-    title: "One price, no subscription.",
-    body: "$99 once for one app, or $179 for unlimited apps. Google's $25 developer fee is paid to Google.",
-  },
-];
-
-// The times are the ones the product states elsewhere (the FAQ and the build page), not promises made up for this strip.
+// The page is written for people who have never published an app and know no developer words: what they do, what we do,
+// one price. Keep it short; anything technical belongs in the free check, which tells each person what their own app needs.
 const steps = [
-  { title: "Check", time: "About 30 seconds", body: "Paste your GitHub link. It's free and needs no account." },
-  { title: "Fix and write", time: "A few minutes", body: "Fix problems with one click, then AI drafts your store page." },
-  { title: "Build and upload", time: "About 10 to 20 minutes", body: "We build and sign your app and upload it to Google Play's testing track." },
-  { title: "Google's review", time: "A few hours to a few days", body: "We track the status and explain any rejection in plain language." },
+  { title: "Paste your link", body: "We check your app for free and tell you, in plain words, what's in the way. It takes about 30 seconds." },
+  { title: "Check your store page", body: "We fix the problems and write your app's page for the stores, with a name, a description and screenshots. You read it and change anything you like." },
+  { title: "Press publish", body: "We send your app to the App Store and Google Play and keep you updated. The stores usually take a few days to approve it." },
 ];
 
-const included = [
-  "One-click fixes for what Google would reject",
-  "Your web app wrapped as an Android app, if it needs it",
-  "Your store page, written by AI in three styles",
-  "Screenshots in professional device frames",
-  "A privacy policy, written and hosted for you",
-  "A signed build, uploaded to Google Play's testing track",
-  "Review status tracked, with rejections explained in plain language",
-];
-
-const notIncluded = [
-  "Google's $25 developer fee, paid to Google",
-  "Google's closed test with at least 12 testers for 14 days, which new personal developer accounts run in their own Play Console",
-  "Your own backend or hosting costs, if your app has any",
-  "New features or a redesign: we publish the app you built",
+const reassurances = [
+  "Free check, no account needed",
+  "We only change your app when you say so",
+  guarantee.headline,
 ];
 
 const faqs = [
-  { q: "Do I need to know how to code?", a: "Not at all. Shippabel is built for people who used AI tools to create their app. We handle all the technical stuff." },
-  { q: "Do I need a Google Play account?", a: "Yes. Google charges a one-time $25 developer fee, paid to Google. We'll walk you through it." },
-  { q: "How long does it take?", a: "The check takes about 30 seconds. Fixing and writing your store page take a few minutes. After submitting, Google usually reviews new apps in a few hours to a few days." },
-  { q: "What if my app gets rejected?", a: "We track your review status. If rejected, we explain why in plain language and help you fix it." },
-  { q: "What kind of apps work?", a: "Apps built with ChatGPT, Claude, Gemini, Cursor, Lovable, Bolt, Replit or v0. Vite web apps are wrapped as a mobile app for you, and Expo and React Native apps are built as they are. Next.js apps need a static export first; the free check tells you." },
-  { q: "Can I publish to the App Store?", a: "Not yet. Today Shippabel builds and submits to Google Play only. App Store publishing is coming, and we'll say so on this page when it works." },
-  { q: "Is there a guarantee?", a: `${guarantee.headline} ${guarantee.detail}` },
-  { q: "Why does Google ask for 12 testers?", a: "Google requires developer accounts created as personal accounts after November 2023 to run a closed test with at least 12 testers for 14 days before an app can be released publicly. We upload your build to Google Play's internal testing track. The closed test happens in your Play Console." },
+  { q: "Do I need to know how to code?", a: "No. If you can paste a link, you can use Shippabel. We do the technical parts." },
+  { q: "What do I need before I start?", a: "An app made with an AI tool, and its link. To publish, you also need a developer account with Apple and one with Google. We walk you through both. Not every app can be published as it is. The free check tells you what yours needs." },
+  { q: "How long does it take?", a: "The check takes about 30 seconds. Getting your app ready takes a few minutes of your time. After that, the stores review your app, which usually takes a few days." },
+  { q: "What if the stores say no?", a: "We explain why in plain words and help you fix it. If we can't get your app live, you get your money back." },
 ];
 
 const FaqItem = ({ q, a }: { q: string; a: string }) => {
@@ -108,24 +75,49 @@ const FaqItem = ({ q, a }: { q: string; a: string }) => {
   );
 };
 
-const SampleReport = () => (
-  <figure className="animate-fade-up-delay-2">
-    <div className="overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm [mask-image:linear-gradient(to_bottom,black_80%,transparent)]">
-      <img
-        src="/landing/report.jpg"
-        width={1560}
-        height={1350}
-        fetchPriority="high"
-        alt="A sample report from the free check: a score of 73 out of 100, the verdict 'Your app can be on Google Play', and the problems to fix first."
-        className="block h-auto w-full"
-      />
+const AppTile = ({ muted = false }: { muted?: boolean }) => (
+  <div
+    aria-hidden="true"
+    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-semibold ${
+      muted ? "bg-surface-200 text-surface-600" : "bg-green-700 text-white"
+    }`}
+  >
+    D
+  </div>
+);
+
+const StoreRow = ({ store }: { store: string }) => (
+  <div className="flex items-center gap-4 rounded-2xl border border-surface-200 bg-white p-4 shadow-sm">
+    <AppTile />
+    <div className="min-w-0 flex-1">
+      <p className="text-base font-semibold text-surface-900">Daily Habits</p>
+      <p className="text-sm text-surface-600">{store}</p>
     </div>
-    <figcaption className="mt-3 text-sm text-surface-600">
-      A sample report from the free check.{" "}
-      <Link to="/scan/demo" className="font-medium text-green-700 underline hover:text-green-800">
-        See the whole report
-      </Link>
-    </figcaption>
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-800">
+      <Check aria-hidden="true" className="h-3.5 w-3.5" />
+      Live
+    </span>
+  </div>
+);
+
+// What the product is for, in one picture: an app that only its maker can see, and the same app in both stores.
+const StoresExample = () => (
+  <figure className="animate-fade-up-delay-2">
+    <div className="rounded-3xl bg-surface-50 p-6 sm:p-8">
+      <div className="flex items-center gap-4 rounded-2xl border border-dashed border-surface-300 p-4">
+        <AppTile muted />
+        <div className="min-w-0">
+          <p className="text-base font-semibold text-surface-900">Daily Habits</p>
+          <p className="text-sm text-surface-600">On your screen only</p>
+        </div>
+      </div>
+      <ArrowDown aria-hidden="true" className="mx-auto my-3 h-5 w-5 text-surface-500" />
+      <div className="space-y-3">
+        <StoreRow store="App Store" />
+        <StoreRow store="Google Play" />
+      </div>
+    </div>
+    <figcaption className="mt-3 text-sm text-surface-600">An example: one app, from your screen to both stores.</figcaption>
   </figure>
 );
 
@@ -157,8 +149,8 @@ export const Landing = () => {
   return (
     <div className="bg-white text-surface-900 min-h-screen">
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-6 pt-16 md:pt-24 pb-16 md:pb-20">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+      <section className="mx-auto max-w-6xl px-6 pt-16 md:pt-24 pb-16 md:pb-24">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div ref={heroFieldRef}>
             <h1 className="animate-fade-up font-display text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.1]">
               You built it.
@@ -167,153 +159,80 @@ export const Landing = () => {
             </h1>
 
             <p className="animate-fade-up-delay-1 mt-6 max-w-md text-lg leading-relaxed text-surface-600">
-              You built an app with AI. We take it the rest of the way: onto the App Store and Google Play, with no tech skills needed.
+              Made an app with an AI tool? We put it in the App Store and Google Play for you. You don't need to know anything technical.
             </p>
 
             <ScanField location="landing_hero" className="animate-fade-up-delay-3 mt-8" />
+
+            <details className="mt-4 max-w-md text-sm text-surface-600">
+              <summary className="cursor-pointer font-medium text-green-700 underline hover:text-green-800">What's a GitHub link?</summary>
+              <p className="mt-2 leading-relaxed">
+                It's the web address where your app's files are saved online. Tools like Lovable and Bolt have a GitHub button that
+                makes one for you. No link? Choose "upload a zip file" instead.
+              </p>
+            </details>
           </div>
 
-          <SampleReport />
+          <StoresExample />
         </div>
 
         <p className="mt-14 text-sm text-surface-600">
           Made for apps built with ChatGPT, Claude, Gemini, Cursor, Lovable, Bolt, Replit and v0.
         </p>
-
-        <div className="mt-16">
-          <h2 className="font-display text-2xl md:text-3xl font-extrabold tracking-tight">
-            From your link to Google Play, step by step.
-          </h2>
-          <ol aria-label="How long each step takes" className="mt-8 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((step, i) => (
-              <li key={step.title} className="border-t border-surface-300 pt-4">
-                <p className="text-sm font-semibold text-green-700">
-                  {i + 1}. {step.time}
-                </p>
-                <h3 className="mt-1.5 text-lg font-semibold text-surface-900">{step.title}</h3>
-                <p className="mt-1.5 text-base leading-relaxed text-surface-600">{step.body}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
       </section>
 
-      {/* Fix, then the store page */}
+      {/* How it goes */}
       <section id="how-it-works" className="bg-surface-50 py-20 md:py-28">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-2 lg:gap-20">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
           <FadeIn>
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
-              We fix what Google would reject, then write your store page.
-            </h2>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-surface-600">
-              Many problems in the report can be fixed with one click. After that, AI drafts your app name,
-              description and keywords in three styles. You pick the one you like and change anything you want.
-            </p>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">How it goes</h2>
+            <p className="mt-4 max-w-sm text-lg leading-relaxed text-surface-600">You do three things. We do the rest.</p>
           </FadeIn>
           <FadeIn delay={0.1}>
-            <div className="overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-sm">
-              <img
-                src="/landing/listing.jpg"
-                width={1560}
-                height={1050}
-                loading="lazy"
-                alt="The store page editor: three written versions to choose from, the app name, the short description and a Google Play preview."
-                className="block h-auto w-full"
-              />
-            </div>
+            <ol aria-label="The three steps">
+              {steps.map((step, i) => (
+                <li key={step.title} className="flex gap-6 border-t border-surface-200 py-7 first:border-t-0 first:pt-0">
+                  <span aria-hidden="true" className="font-display text-4xl font-extrabold leading-none text-green-700">{i + 1}</span>
+                  <div>
+                    <h3 className="text-xl font-semibold text-surface-900">{step.title}</h3>
+                    <p className="mt-2 text-base leading-relaxed text-surface-600">{step.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </FadeIn>
         </div>
       </section>
 
-      {/* Build and send */}
-      <section className="py-20 md:py-28">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-2 lg:gap-20">
-          <FadeIn className="flex justify-center lg:order-first">
-            <div className="min-h-[560px]">
-              <Suspense fallback={null}>
-                <PlayPhone />
-              </Suspense>
-            </div>
-          </FadeIn>
-          <FadeIn delay={0.1}>
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
-              We build it and send it to Google Play.
-            </h2>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-surface-600">
-              We build your app, sign it and upload it to Google Play, and show you every step on the way.
-              Google's own review decides when it goes public.
-            </p>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* What the price covers, and what it does not */}
-      <section id="whats-included" className="bg-surface-50 py-20 md:py-28">
-        <div className="mx-auto max-w-6xl px-6">
-          <FadeIn>
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
-              What $99 gets you, and what it doesn't.
-            </h2>
-            <p className="mt-4 max-w-xl text-lg leading-relaxed text-surface-600">
-              One payment for one app, no subscription. Have more than one app?{" "}
-              <Link to="/pricing" className="font-medium text-green-700 underline hover:text-green-800">Unlimited is $179</Link>.
-            </p>
-          </FadeIn>
-
-          <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
-            <FadeIn>
-              <h3 id="included-heading" className="text-lg font-semibold text-surface-900">Included</h3>
-              <ul aria-labelledby="included-heading" className="mt-4 space-y-3">
-                {included.map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-base leading-relaxed text-surface-700">
-                    <Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-green-700" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </FadeIn>
-            <FadeIn delay={0.1}>
-              <h3 id="not-included-heading" className="text-lg font-semibold text-surface-900">Not included</h3>
-              <ul aria-labelledby="not-included-heading" className="mt-4 space-y-3">
-                {notIncluded.map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-base leading-relaxed text-surface-600">
-                    <Minus aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-surface-500" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </FadeIn>
-          </div>
-
-          <FadeIn className="mt-12">
-            <div className="max-w-2xl rounded-2xl border border-green-200 bg-green-50 px-6 py-5">
-              <p className="text-base font-semibold text-green-900">{guarantee.headline}</p>
-              <p className="mt-1 text-base text-green-800">{guarantee.detail}</p>
-              <a href="mailto:hello@shippabel.com" className="mt-2 inline-block text-base font-medium text-green-800 underline hover:text-green-900">
-                hello@shippabel.com
-              </a>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* What stays true */}
+      {/* The price */}
       <section className="py-20 md:py-28">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
           <FadeIn>
-            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">
-              You stay in control.
-            </h2>
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight leading-[1.15]">One price. No surprises.</h2>
           </FadeIn>
           <FadeIn delay={0.1}>
-            <ul>
-              {trustPoints.map((point) => (
-                <li key={point.title} className="border-t border-surface-200 py-6 first:border-t-0 first:pt-0">
-                  <h3 className="text-lg font-semibold text-surface-900">{point.title}</h3>
-                  <p className="mt-1.5 text-base leading-relaxed text-surface-600">{point.body}</p>
+            <p className="max-w-lg text-lg leading-relaxed text-surface-700">
+              $99 once for one app. No subscription. The check is free, so you know what you're paying for first.
+            </p>
+            <ul className="mt-6 space-y-3">
+              {reassurances.map((item) => (
+                <li key={item} className="flex items-start gap-3 text-base leading-relaxed text-surface-700">
+                  <Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-green-700" />
+                  {item}
                 </li>
               ))}
             </ul>
+            <p className="mt-6 max-w-lg text-sm leading-relaxed text-surface-600">
+              Apple and Google charge their own fee for a developer account (Apple $99 a year, Google $25 once). We walk you through it.
+            </p>
+            <Link
+              to="/scan"
+              onClick={() => trackEvent("CTA Clicked", { location: "landing_price", action: "scan_empty" })}
+              className={`${primaryCta} mt-8`}
+            >
+              Check my app for free
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
           </FadeIn>
         </div>
       </section>
@@ -342,7 +261,7 @@ export const Landing = () => {
               Find out what's in the way.
             </h2>
             <p className="mt-4 max-w-md text-lg text-surface-600">
-              Paste your GitHub link. The check is free and takes about 30 seconds.
+              Paste your link. The check is free and takes about 30 seconds.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-6">
               <Link
@@ -353,8 +272,8 @@ export const Landing = () => {
                 Check my app now
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </Link>
-              <Link to="/pricing" className="text-base font-medium text-surface-700 underline hover:text-surface-900">
-                See pricing
+              <Link to="/scan/demo" className="text-base font-medium text-surface-700 underline hover:text-surface-900">
+                See an example report
               </Link>
             </div>
             <p className="mt-6 text-base text-surface-600">
