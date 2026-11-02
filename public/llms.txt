@@ -1,52 +1,60 @@
 # Shippabel
 
-> Shippabel helps non-technical people publish their AI-built apps to the Google Play Store. No coding and no computer needed.
+> Shippabel checks apps built with AI tools, fixes what Google Play would reject, writes the store page, frames the screenshots, builds the app in the cloud and publishes it to Google Play. It is made for people who are not developers. The check is free; publishing one app costs $99, paid once.
 
-## What is Shippabel?
+Last updated: 2026-11-02
 
-Shippabel is a web platform (shippabel.com) that takes apps built with AI coding tools — like Cursor, Bolt, Lovable, Claude Code, ChatGPT, and Base44 — and publishes them to the Google Play Store. It handles the entire process: scanning for issues, auto-fixing problems, generating store listings with AI, creating screenshots, building the app in the cloud, and submitting to Google Play.
+## What Shippabel is
 
-## Who is it for?
+Shippabel (https://shippabel.com) is a web service for people who built an app with an AI tool such as ChatGPT, Claude, Cursor, Lovable, Bolt, Base44, v0 or Replit and now want it on Google Play. They do not need to know what a repository, a keystore or Android Studio is, and they do not need a Mac or any developer tools on their computer.
 
-Non-technical "vibe coders" — people who had an idea for an app, used AI to build it, and now need help getting it published. They don't know what Android Studio is, they've never used a terminal, and they don't want to learn. Shippabel handles all the technical complexity for them.
+## What it does, in order
 
-## How it works
+1. **Check (free, about 30 seconds, no account).** The person pastes a GitHub link, or uploads a zip file. Shippabel reads the code and returns a report with a readiness score from 0 to 100, the problems Google Play would reject, and the fixes.
+2. **Fix.** Many problems can be fixed with one click. Changes are ordinary commits in the person's GitHub repository, so they can be reviewed and undone.
+3. **Store page.** AI writes the app name, short and full description and keywords in three styles, and generates a privacy policy that Shippabel hosts. Screenshots are framed in device mockups.
+4. **Build and upload.** Shippabel builds a signed Android App Bundle (AAB) in the cloud, usually in 10 to 20 minutes, and uploads it to the app's internal testing track in the person's own Google Play Console.
+5. **Review status.** Shippabel tracks the review status and explains rejections in plain language.
 
-1. **Check your app** (30 seconds) — Paste your GitHub link. Shippabel scans your app against Google Play requirements and gives you a readiness score from 0-100.
-2. **Fix problems** (1 click) — Most issues are auto-fixed: package names, version codes, missing icons, security issues.
-3. **Write your store page** (2 minutes) — AI generates your app name, description, keywords, and privacy policy. Pick from 3 optimized variants.
-4. **Create screenshots** (5 minutes) — Upload screenshots from your phone. Shippabel frames them in professional device mockups.
-5. **Publish** (1 click + wait) — Shippabel builds your app in the cloud as a signed Android App Bundle (AAB) and submits it to Google Play. Google usually reviews new apps in a few hours to a few days.
+## What Shippabel does not do
+
+- It publishes to **Google Play only** today. Apple App Store (iOS) publishing is planned and is **not available yet**.
+- Automatic conversion of a web app to an Android app works for **Vite** web apps (a common output of AI tools such as Lovable and Bolt). **Expo** apps are built as they are. **Next.js and Nuxt** apps (for example from v0) need a static export and a Capacitor setup first. Flutter and native Swift or Kotlin apps are not supported. The free check says which kind an app is.
+- It does not host an app's backend or database. An Android app cannot contain a server, so a backend must run online on its own.
+- It does not run Google's closed test for the person. Google requires personal developer accounts created after November 2023 to run a closed test with at least 12 testers for 14 days before an app can be released publicly. The person runs that test in their own Play Console. See https://shippabel.com/blog/google-play-12-testers-rule
+- Google decides when an app goes public. Review usually takes a few days.
 
 ## Pricing
 
-- **Free**: Unlimited app scans, readiness reports, shareable results
-- **Ship ($99 one-time)**: Auto-fix, AI store page, screenshots, build and submit to Google Play
-- **Unlimited ($179 one-time)**: Everything in Ship for unlimited apps, priority support
+- **Free:** unlimited checks, readiness reports, an AI store page preview.
+- **Ship, $99 once, per app:** one-click fixes, the full AI store page, screenshot frames, a hosted privacy policy, a cloud build and upload to Google Play, review status tracking.
+- **Unlimited, $179 once:** everything in Ship for any number of apps, with priority support.
+- No subscription. Google charges its own one-time $25 fee for a developer account, paid to Google.
+- Refund promise: if Shippabel cannot get the app onto Google Play, the full amount is refunded.
 
-No subscriptions. No monthly fees.
+## Guides
 
-## Supported platforms and tools
-
-Shippabel works with apps built using:
-- Cursor, Bolt.new, Lovable, Claude Code, ChatGPT, Base44
-- React, React Native, Expo, Next.js, Vue, static websites
-- Automatically wraps web apps as a mobile app
-
-## Key facts
-
-- Total cost to publish: about $124 (Google Play developer account $25 one-time + Shippabel $99 one-time)
-- Time from start to live: often the same day or the next (Google review takes a few hours to a few days)
-- Hands-on time: approximately 30 minutes
-- No coding, terminal commands, Android Studio, or computer required — Shippabel builds in the cloud
-- Output is a signed Android App Bundle (AAB), the format Google Play requires
-- Privacy policy generated and hosted automatically
-- Note: Apple App Store / iOS publishing is NOT supported yet — Shippabel publishes to Google Play only for now
+- [Google Play's 12-tester rule: what it is and how to pass it](https://shippabel.com/blog/google-play-12-testers-rule): who the rule applies to, how a closed test works and how long it takes.
+- [How much does it cost to publish an app?](https://shippabel.com/blog/how-much-does-it-cost-to-publish-an-app): the Google Play fee ($25 once), the Apple fee ($99 a year) and what else to budget for.
+- [How to create a Google Play developer account](https://shippabel.com/blog/google-play-developer-account-setup): personal or organization, the $25 fee and identity verification.
+- [How to turn a web app into an Android app](https://shippabel.com/blog/turn-a-web-app-into-an-android-app): wrapping, trusted web activities, rebuilding and hiring help, and what Google expects.
+- [How to publish a Lovable app to Google Play](https://shippabel.com/blog/publish-lovable-app)
+- [How to publish a Bolt app to Google Play](https://shippabel.com/blog/publish-bolt-app-to-google-play)
+- [How to publish a Cursor app to Google Play](https://shippabel.com/blog/publish-cursor-app-to-google-play)
+- [How to publish a v0 app to Google Play](https://shippabel.com/blog/publish-v0-app-to-google-play)
+- [How to publish a Replit app to Google Play](https://shippabel.com/blog/publish-replit-app-to-google-play)
+- [How to publish a Base44 app](https://shippabel.com/blog/publish-base44-app)
+- [How to publish an app built with ChatGPT](https://shippabel.com/blog/publish-chatgpt-built-app)
+- [How to publish an app built with Claude Code](https://shippabel.com/blog/publish-claude-code-app)
+- [Google Play screenshots: sizes and how to make them](https://shippabel.com/blog/google-play-screenshots-guide)
+- [What Google checks when it reviews an app](https://shippabel.com/blog/google-play-review-what-they-check)
+- [Privacy policy for an app](https://shippabel.com/blog/app-privacy-policy-guide)
+- [A beginner's guide to publishing a vibe-coded app](https://shippabel.com/blog/vibe-coding-publish-app)
 
 ## Links
 
 - Website: https://shippabel.com
-- Free scan: https://shippabel.com/scan
+- Free check: https://shippabel.com/scan
 - Pricing: https://shippabel.com/pricing
-- Guides: https://shippabel.com/blog
+- All guides: https://shippabel.com/blog
 - Contact: hello@shippabel.com

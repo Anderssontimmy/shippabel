@@ -5,7 +5,7 @@ import { useDocumentHead } from "@/hooks/useDocumentHead";
 export const About = () => {
   useDocumentHead({
     title: "About",
-    description: "Shippabel was built for the new generation of app creators — people who build with AI tools and need help getting their app onto the App Store and Google Play.",
+    description: "Shippabel helps people who built an app with AI tools get it onto Google Play, without the technical headache.",
   });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24">

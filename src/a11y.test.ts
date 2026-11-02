@@ -6,7 +6,8 @@ const pages = readdirSync("src/pages").filter((f) => f.endsWith(".tsx") && !f.in
 describe("accessibility guards", () => {
   it("gives every page except the landing page its own tab title", () => {
     // Without one, a signed-in user's tabs and a screen reader all say "Shippabel" on every page.
-    const missing = pages.filter((f) => f !== "Landing.tsx" && !readFileSync(`src/pages/${f}`, "utf8").includes("useDocumentHead("));
+    // Home only chooses between the landing page and the dashboard; the landing page keeps the site's own title.
+    const missing = pages.filter((f) => !["Landing.tsx", "Home.tsx"].includes(f) && !readFileSync(`src/pages/${f}`, "utf8").includes("useDocumentHead("));
     expect(missing).toEqual([]);
   });
 

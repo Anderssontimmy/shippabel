@@ -52,3 +52,17 @@ describe("page footer", () => {
     expect(screen.getByText("Shippabel is not affiliated with Apple or Google.")).toBeTruthy();
   });
 });
+
+describe("page footer guide links", () => {
+  it("links every page to the guides people search for, and each link goes to a guide that exists", async () => {
+    const { blogPosts } = await import("@/lib/blog-data");
+    renderLayout();
+    const guides = screen.getByRole("navigation", { name: "Popular guides" });
+    const links = Array.from(guides.querySelectorAll("a"));
+    expect(links).toHaveLength(5);
+    for (const link of links) {
+      const slug = link.getAttribute("href")!.replace("/blog/", "");
+      expect(blogPosts.some((p) => p.slug === slug), link.textContent ?? "").toBe(true);
+    }
+  });
+});

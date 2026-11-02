@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 
 export const NotFound = () => {
-  useDocumentHead({ title: "Page not found" });
+  useDocumentHead({ title: "Page not found", noindex: true });
   return (
     <div className="mx-auto max-w-md px-4 py-32 text-center">
       <p className="text-6xl font-bold text-surface-700 mb-4">404</p>

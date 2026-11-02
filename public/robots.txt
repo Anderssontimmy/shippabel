@@ -1,29 +1,24 @@
+# Search engines and AI assistants are welcome on every public page. The pages behind the login are not for them.
+# One group: every agent listed here follows the same rules, so none of them is allowed into the private pages by accident.
 User-agent: *
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: Bytespider
 Allow: /
 Disallow: /app/
 Disallow: /dashboard
 Disallow: /settings
-
-# Welcome AI crawlers
-User-agent: GPTBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-User-agent: CCBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: Bytespider
-Allow: /
+Disallow: /admin
 
 Sitemap: https://shippabel.com/sitemap.xml

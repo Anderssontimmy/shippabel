@@ -1,12 +1,11 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageViewTracker } from "./components/PageViewTracker";
 import { CheckoutReturn } from "./components/CheckoutReturn";
-import { Landing } from "./pages/Landing";
-import { useAuth } from "./hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { PageLoader } from "./components/PageLoader";
+import { Home } from "./pages/Home";
 
 // Lazy-load all routes except landing (keep first paint fast)
 const Scan = lazy(() => import("./pages/Scan").then((m) => ({ default: m.Scan })));
@@ -26,12 +25,6 @@ const About = lazy(() => import("./pages/About").then((m) => ({ default: m.About
 const Admin = lazy(() => import("./pages/Admin").then((m) => ({ default: m.Admin })));
 const NotFound = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFound })));
 
-const PageLoader = () => (
-  <div role="status" aria-label="Loading page" className="flex items-center justify-center py-32">
-    <Loader2 aria-hidden="true" className="h-8 w-8 text-primary-400 animate-spin" />
-  </div>
-);
-
 // Keep canonical + og:url in sync during client-side navigation.
 // (Crawlers get correct values from the prerendered static HTML.)
 const CanonicalSync = () => {
@@ -42,13 +35,6 @@ const CanonicalSync = () => {
     document.querySelector('meta[property="og:url"]')?.setAttribute("content", href);
   }, [pathname]);
   return null;
-};
-
-const Home = () => {
-  const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  if (user) return <Navigate to="/dashboard" replace />;
-  return <Landing />;
 };
 
 const App = () => {

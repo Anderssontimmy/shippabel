@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { BlogPost } from "./Blog";
@@ -35,5 +35,36 @@ describe("blog article", () => {
     expect(cta.getAttribute("href")).toBe("/scan");
     expect(cta.querySelector("button")).toBeNull();
     expect(screen.getAllByRole("button").map((b) => b.textContent?.trim())).toEqual(["Check now"]);
+  });
+});
+
+describe("blog article navigation and dates", () => {
+  const post = blogPosts.find((p) => p.slug === "google-play-12-testers-rule")!;
+
+  it("shows where the reader is, with a trail back to the home page and the guides", () => {
+    renderPost(post.slug);
+    const trail = screen.getByRole("navigation", { name: "Breadcrumb" });
+    const links = within(trail).getAllByRole("link");
+    expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual([["Home", "/"], ["Guides", "/blog"]]);
+    expect(within(trail).getByText(post.title).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("says when the guide was published and last updated, in a form machines can read too", () => {
+    const { container } = renderPost(post.slug);
+    const times = [...container.querySelectorAll("time")];
+    expect(times.map((t) => t.getAttribute("datetime"))).toEqual([post.date, post.updated]);
+    expect(screen.getByText(/Updated November 2, 2026/)).toBeTruthy();
+  });
+
+  it("ends with the guides the author chose as next reading, in that order", () => {
+    renderPost(post.slug);
+    const more = screen.getByRole("heading", { name: "More guides" }).parentElement!;
+    const hrefs = within(more).getAllByRole("link").map((a) => a.getAttribute("href"));
+    expect(hrefs).toEqual(post.related.map((slug) => `/blog/${slug}`));
+  });
+
+  it("asks search engines to leave out an address that is not a guide", () => {
+    renderPost("not-a-guide");
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex");
   });
 });
