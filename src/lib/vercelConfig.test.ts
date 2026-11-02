@@ -39,3 +39,15 @@ describe("which addresses search engines are told to leave out", () => {
     for (const path of wanted) expect(noindexed(path), path).toBe(false);
   });
 });
+
+describe("how long the files search engines and AI crawlers re-read may be cached", () => {
+  const ttl = (source: string) => {
+    const rule = config.headers.find((h) => h.source === source)!;
+    const value = rule.headers.find((x) => x.key === "Cache-Control")!.value;
+    return Number(/s-maxage=(\d+)/.exec(value)![1]);
+  };
+
+  it("keeps the sitemap, robots.txt and llms.txt in the CDN for an hour at most, so a change reaches them the same day", () => {
+    for (const file of ["/sitemap.xml", "/robots.txt", "/llms.txt"]) expect(ttl(file), file).toBeLessThanOrEqual(3600);
+  });
+});
