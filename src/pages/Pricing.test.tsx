@@ -39,3 +39,11 @@ describe("pricing page promise", () => {
     expect(screen.getByText(guarantee.detail)).toBeTruthy();
   });
 });
+
+describe("pricing page claims", () => {
+  it("compares the price with nothing it cannot source", () => {
+    renderPricing();
+    expect(screen.queryByText(/freelance/i)).toBeNull();
+    expect(document.body.textContent).not.toMatch(/\$500/);
+  });
+});

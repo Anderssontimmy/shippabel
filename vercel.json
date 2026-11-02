@@ -21,6 +21,18 @@
   ],
   "headers": [
     {
+      "source": "/scan/((?!demo$).+)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    },
+    {
+      "source": "/(dashboard|settings|admin|login|app(?:/.*)?)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    },
+    {
+      "source": "/((?!(?:assets|blog|scan|pricing|about|login|privacy|dashboard|settings|admin|app|mockups|\\.well-known)(?:/|$)|(?:version\\.json|favicon\\.svg|og-image\\.png|og-image\\.svg|robots\\.txt|sitemap\\.xml|llms\\.txt)$|$).*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    },
+    {
       "source": "/version.json",
       "headers": [{ "key": "Cache-Control", "value": "no-store" }]
     },

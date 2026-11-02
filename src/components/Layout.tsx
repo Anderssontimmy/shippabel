@@ -3,6 +3,15 @@ import { Rocket, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
+// Linked from the footer of every page, so the guides people search for are one click from anywhere.
+const popularGuides = [
+  { label: "Publish a Lovable app", slug: "publish-lovable-app" },
+  { label: "Publish a Cursor app", slug: "publish-cursor-app-to-google-play" },
+  { label: "Publish a Bolt app", slug: "publish-bolt-app-to-google-play" },
+  { label: "Google Play's 12-tester rule", slug: "google-play-12-testers-rule" },
+  { label: "What it costs to publish an app", slug: "how-much-does-it-cost-to-publish-an-app" },
+];
+
 export const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -133,6 +142,15 @@ export const Layout = () => {
             <a href="mailto:hello@shippabel.com" className="py-2 hover:text-surface-600 transition-colors">hello@shippabel.com</a>
           </div>
         </div>
+        <nav aria-label="Popular guides" className="mx-auto max-w-6xl px-6 pb-4 text-sm text-surface-500">
+          <ul className="flex flex-wrap justify-center gap-x-6 sm:justify-start">
+            {popularGuides.map((guide) => (
+              <li key={guide.slug}>
+                <Link to={`/blog/${guide.slug}`} className="inline-block py-1.5 hover:text-surface-600 transition-colors">{guide.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
         <p className="mx-auto max-w-6xl px-6 pb-8 text-center text-sm text-surface-500 sm:text-left">
           Shippabel is not affiliated with Apple or Google.
         </p>

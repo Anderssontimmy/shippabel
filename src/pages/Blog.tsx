@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Clock, Calendar } from "lucide-react";
-import { blogPosts } from "@/lib/blog-data";
+import { ArrowRight, Clock, Calendar } from "lucide-react";
+import { blogPosts, formatPostDate } from "@/lib/blog-data";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { ScanField } from "@/components/ScanField";
 
@@ -28,7 +28,7 @@ export const BlogIndex = () => {
               <div className="flex items-center gap-3 text-xs text-surface-500 mb-3">
                 <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">{post.category}</span>
                 <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{post.readTime}</span>
-                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{post.date}</span>
+                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatPostDate(post.date)}</span>
               </div>
               <h2 className="text-xl font-semibold text-surface-900 mb-2 group-hover:text-green-700 transition-colors">
                 {post.title}
@@ -63,6 +63,8 @@ export const BlogPost = () => {
   useDocumentHead({
     title: post?.title,
     description: post?.excerpt,
+    // an address that is not a guide must not end up in search results
+    noindex: !post,
   });
 
   if (!post) {
@@ -76,17 +78,27 @@ export const BlogPost = () => {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
-      {/* Back */}
-      <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm text-surface-500 hover:text-surface-700 mb-8 transition-colors">
-        <ArrowLeft className="h-3.5 w-3.5" /> All guides
-      </Link>
+      {/* Where the reader is, and the way back */}
+      <nav aria-label="Breadcrumb" className="mb-8 text-sm text-surface-500">
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <li><Link to="/" className="hover:text-surface-700 transition-colors">Home</Link></li>
+          <li aria-hidden="true">/</li>
+          <li><Link to="/blog" className="hover:text-surface-700 transition-colors">Guides</Link></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="text-surface-700">{post.title}</li>
+        </ol>
+      </nav>
 
       {/* Header */}
       <div className="mb-10">
         <div className="flex items-center gap-3 text-xs text-surface-500 mb-4">
           <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">{post.category}</span>
           <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{post.readTime}</span>
-          <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{post.date}</span>
+          <span className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <time dateTime={post.date}>Published {formatPostDate(post.date)}</time>
+          </span>
+          <time dateTime={post.updated}>Updated {formatPostDate(post.updated)}</time>
         </div>
         <h1 className="text-3xl sm:text-4xl font-semibold text-surface-900 leading-tight mb-4">{post.title}</h1>
         <p className="text-lg text-surface-500">{post.excerpt}</p>
@@ -129,7 +141,7 @@ export const BlogPost = () => {
       <div className="mt-16">
         <h3 className="text-lg font-semibold text-surface-900 mb-6">More guides</h3>
         <div className="space-y-3">
-          {blogPosts.filter((p) => p.slug !== slug).slice(0, 3).map((p) => (
+          {post.related.flatMap((related) => blogPosts.find((p) => p.slug === related) ?? []).map((p) => (
             <Link key={p.slug} to={`/blog/${p.slug}`} className="block rounded-xl border border-surface-200 p-4 hover:border-surface-300 transition-colors">
               <h4 className="font-medium text-surface-900 text-sm">{p.title}</h4>
               <p className="text-xs text-surface-500 mt-1">{p.readTime}</p>

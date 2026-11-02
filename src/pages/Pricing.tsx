@@ -194,7 +194,6 @@ export const Pricing = () => {
       <div className="mt-8 text-center">
         <p className="text-surface-500 text-sm">
           One-time payment. No subscriptions, no hidden fees.
-          {" "}A freelance developer charges $500&ndash;2,000 for the same job.
         </p>
       </div>
     </div>
