@@ -9,15 +9,15 @@ import { useCredentials } from "@/hooks/useCredentials";
 import { useDocumentHead } from "@/hooks/useDocumentHead";
 import { trackEvent } from "@/lib/analytics";
 import { needsGitHubAccess } from "@/lib/scanErrors";
-
-const GITHUB_URL = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/;
+import { parseGitHubLink } from "@/lib/githubLink";
+import { sendRejectedLink, shouldCount } from "@/lib/pageViews";
 
 export const Scan = () => {
   useDocumentHead({
     title: "Free Google Play Readiness Scanner",
     description: "Check if your app is ready for Google Play in 30 seconds. Paste your GitHub link and get a detailed report with issues, fixes, and a readiness score.",
   });
-  const { githubToken, signInWithGitHub, loading: authLoading } = useAuth();
+  const { user, githubToken, signInWithGitHub, loading: authLoading } = useAuth();
   const { hasCredential } = useCredentials();
   const hasGitHub = !!githubToken || hasCredential("github");
   const navigate = useNavigate();
@@ -53,11 +53,15 @@ export const Scan = () => {
       setValidationError("Paste the link to your app above first.");
       return;
     }
-    if (!GITHUB_URL.test(url)) {
-      setValidationError("That doesn't look like a GitHub link. It should start with https://github.com/");
+    const link = parseGitHubLink(url);
+    if (!link.ok) {
+      // So we can see what people paste instead (only the website's name, never the link) and make that work.
+      const counted = shouldCount({ hostname: window.location.hostname, pathname: "/scan", doNotTrack: navigator.doNotTrack === "1", isAdmin: user?.app_metadata?.is_admin === true });
+      if (counted) sendRejectedLink(link.site);
+      setValidationError("That doesn't look like a GitHub link. It should look like github.com/your-name/your-app");
       return;
     }
-    const projectId = await scanFromUrl(url);
+    const projectId = await scanFromUrl(link.url);
     if (projectId) navigate(`/scan/${projectId}`);
   };
 

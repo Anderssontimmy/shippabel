@@ -2,6 +2,7 @@ import { instrument } from "../_shared/monitoring.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
+  cleanSite,
   cleanSource,
   clientIp,
   countryFromHeaders,
@@ -35,11 +36,14 @@ Deno.serve(instrument("track", async (req) => {
   const salt = Deno.env.get("ANALYTICS_SALT");
   if (req.method !== "POST" || !ALLOWED_ORIGINS.includes(origin) || isBot(userAgent) || !salt) return done();
 
-  let body: { path?: unknown; ref?: unknown; src?: unknown; entry?: unknown };
+  let body: { path?: unknown; ref?: unknown; src?: unknown; entry?: unknown; rejected?: unknown };
   try { body = JSON.parse(await req.text()); } catch { return done(); }
+  // Either a page view, or the name of a website the scanner turned away instead of a GitHub link.
+  const site = body.rejected === undefined ? null : cleanSite(body.rejected);
   const path = normalizePath(body.path);
-  if (!path || path.startsWith("/admin")) return done();
+  if (body.rejected !== undefined ? !site : !path || path.startsWith("/admin")) return done();
   const entry = body.entry === true;
+  const table = site ? "rejected_links" : "page_views";
 
   try {
     const day = new Date().toISOString().slice(0, 10);
@@ -49,20 +53,24 @@ Deno.serve(instrument("track", async (req) => {
     // Someone sending more than a page a second is not reading.
     const since = new Date(Date.now() - 60_000).toISOString();
     const [mine, everyone] = await Promise.all([
-      supabase.from("page_views").select("id", { count: "exact", head: true }).eq("visitor", visitor).gte("created_at", since),
-      supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", since),
+      supabase.from(table).select("id", { count: "exact", head: true }).eq("visitor", visitor).gte("created_at", since),
+      supabase.from(table).select("id", { count: "exact", head: true }).gte("created_at", since),
     ]);
     if ((mine.count ?? 0) >= MAX_PER_VISITOR_PER_MINUTE || (everyone.count ?? 0) >= MAX_PER_MINUTE) return done();
 
-    await supabase.from("page_views").insert({
-      visitor,
-      path,
-      referrer: entry ? referrerHost(body.ref, SITE_HOSTS) : null,
-      source: entry ? cleanSource(body.src) : null,
-      country: countryFromHeaders(req.headers),
-      device: deviceFromUserAgent(userAgent!),
-      entry,
-    });
+    if (site) {
+      await supabase.from("rejected_links").insert({ visitor, site });
+    } else {
+      await supabase.from("page_views").insert({
+        visitor,
+        path,
+        referrer: entry ? referrerHost(body.ref, SITE_HOSTS) : null,
+        source: entry ? cleanSource(body.src) : null,
+        country: countryFromHeaders(req.headers),
+        device: deviceFromUserAgent(userAgent!),
+        entry,
+      });
+    }
   } catch {
     // A failed count is not worth a failed page view.
   }

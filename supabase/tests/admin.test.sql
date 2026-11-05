@@ -13,6 +13,9 @@ SELECT is(has_function_privilege('authenticated', 'public.admin_period(timestamp
 SELECT is((SELECT relrowsecurity FROM pg_class WHERE oid = 'public.page_views'::regclass), true, 'page_views has row level security');
 SELECT is(has_table_privilege('anon', 'public.page_views', 'select'), false, 'anon cannot read page views');
 SELECT is(has_table_privilege('authenticated', 'public.page_views', 'insert'), false, 'a signed-in user cannot write page views');
+SELECT is((SELECT relrowsecurity FROM pg_class WHERE oid = 'public.rejected_links'::regclass), true, 'rejected_links has row level security');
+SELECT is(has_table_privilege('anon', 'public.rejected_links', 'select'), false, 'anon cannot read the links the scanner turned away');
+SELECT is(has_table_privilege('authenticated', 'public.rejected_links', 'insert'), false, 'a signed-in user cannot write the links the scanner turned away');
 
 -- Fixture: two visitors, three page views today, one scan, one signup, one live and one test payment.
 -- auth.users.created_at has no default (GoTrue sets it when someone signs up), so the fixture sets it.
