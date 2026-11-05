@@ -33,11 +33,11 @@ export const buildPageView = (pathname: string, search: string, referrer: string
   entry ? { path: pathname, entry, ref: referrer || undefined, src: sourceFromSearch(search) } : { path: pathname, entry };
 
 // text/plain keeps this a "simple" request, so the browser sends it without a preflight.
-export const sendPageView = (view: PageView, send: typeof fetch = fetch): void => {
+const post = (payload: object, send: typeof fetch): void => {
   try {
     void send(ENDPOINT, {
       method: "POST",
-      body: JSON.stringify(view),
+      body: JSON.stringify(payload),
       headers: { "Content-Type": "text/plain;charset=UTF-8" },
       keepalive: true,
       credentials: "omit",
@@ -46,3 +46,8 @@ export const sendPageView = (view: PageView, send: typeof fetch = fetch): void =
     // Counting must never get in the way of the page.
   }
 };
+
+export const sendPageView = (view: PageView, send: typeof fetch = fetch): void => post(view, send);
+
+// A link the scanner turned away. `site` is only the name of the website (see githubLink.ts).
+export const sendRejectedLink = (site: string, send: typeof fetch = fetch): void => post({ rejected: site }, send);

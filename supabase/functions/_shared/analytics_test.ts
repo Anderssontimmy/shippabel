@@ -1,5 +1,6 @@
 import { assertEquals, assertNotEquals } from "jsr:@std/assert@1";
 import {
+  cleanSite,
   cleanSource,
   clientIp,
   countryFromHeaders,
@@ -44,6 +45,15 @@ Deno.test("cleanSource accepts a plain campaign name only", () => {
   assertEquals(cleanSource("<script>"), null);
   assertEquals(cleanSource("a".repeat(41)), null);
   assertEquals(cleanSource(null), null);
+});
+
+Deno.test("cleanSite keeps the name of a website and the not-a-link label, and nothing else", () => {
+  assertEquals(cleanSite("replit.com"), "replit.com");
+  assertEquals(cleanSite("Lovable.APP"), "lovable.app");
+  assertEquals(cleanSite("(not a link)"), "(not a link)");
+  for (const bad of [undefined, null, 42, "", "replit", "https://replit.com", "replit.com/@someone", "my-secret.lovable.app", "a b.com", "x@y.com", "<b>.com", "a".repeat(41) + ".com", "(anything else)"]) {
+    assertEquals(cleanSite(bad), null);
+  }
 });
 
 Deno.test("isBot flags crawlers, scripts and empty agents but not browsers", () => {

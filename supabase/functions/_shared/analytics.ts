@@ -31,7 +31,18 @@ export function cleanSource(raw: unknown): string | null {
   return /^[a-z0-9._-]{1,40}$/.test(value) ? value : null;
 }
 
-const BOT = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|facebookexternalhit|embedly|monitor|uptime|pingdom|curl|wget|python|node-fetch|axios|go-http|java\/|okhttp|libwww|scrapy|httpclient/i;
+// The website a visitor pasted into the scanner instead of a GitHub link: a bare domain such as replit.com, or
+// the label the page sends when it was not a link at all. Anything else is dropped and never stored.
+export const NOT_A_LINK = "(not a link)";
+
+export function cleanSite(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.trim().toLowerCase();
+  if (value === NOT_A_LINK) return value;
+  return value.length <= 40 && /^[a-z0-9-]+\.[a-z]{2,}$/.test(value) ? value : null;
+}
+
+const BOT =/bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|facebookexternalhit|embedly|monitor|uptime|pingdom|curl|wget|python|node-fetch|axios|go-http|java\/|okhttp|libwww|scrapy|httpclient/i;
 
 export function isBot(userAgent: string | null): boolean {
   return !userAgent || BOT.test(userAgent);

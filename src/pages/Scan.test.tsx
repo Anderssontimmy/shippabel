@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,9 +9,21 @@ const mock = vi.hoisted(() => ({
   scanError: null as string | null,
   scanFromUrl: vi.fn(),
   tracked: [] as unknown[][],
+  counting: true,
+  isAdmin: false,
+  reported: [] as string[],
 }));
 vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => ({ githubToken: mock.githubToken, signInWithGitHub: mock.signInWithGitHub, loading: mock.authLoading }),
+  useAuth: () => ({
+    user: { app_metadata: { is_admin: mock.isAdmin } },
+    githubToken: mock.githubToken,
+    signInWithGitHub: mock.signInWithGitHub,
+    loading: mock.authLoading,
+  }),
+}));
+vi.mock("@/lib/pageViews", () => ({
+  shouldCount: ({ isAdmin }: { isAdmin: boolean }) => mock.counting && !isAdmin,
+  sendRejectedLink: (site: string) => { mock.reported.push(site); },
 }));
 vi.mock("@/hooks/useCredentials", () => ({ useCredentials: () => ({ hasCredential: () => false }) }));
 vi.mock("@/hooks/useScan", () => ({
@@ -25,6 +37,11 @@ const page = (url: string) => <MemoryRouter initialEntries={[url]}><Scan /><Wher
 const renderScan = (url = "/scan") => render(page(url));
 const PRIVATE = "Repository or file not found. If it is a private app, continue with GitHub so we can read it.";
 const field = () => screen.getByLabelText("Paste your GitHub link here") as HTMLInputElement;
+const check = (pasted: string) => {
+  renderScan();
+  fireEvent.change(field(), { target: { value: pasted } });
+  fireEvent.click(screen.getByRole("button", { name: /check my app/i }));
+};
 
 describe("scan page", () => {
   beforeEach(() => {
@@ -32,6 +49,9 @@ describe("scan page", () => {
     mock.authLoading = false;
     mock.scanError = null;
     mock.tracked = [];
+    mock.counting = true;
+    mock.isAdmin = false;
+    mock.reported = [];
     mock.signInWithGitHub.mockReset();
     mock.signInWithGitHub.mockResolvedValue({ error: null });
     mock.scanFromUrl.mockReset();
@@ -78,6 +98,59 @@ describe("scan page", () => {
       renderScan("/scan");
       expect(field().value).toBe("");
       expect(mock.scanFromUrl).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("a link in any of the usual forms", () => {
+    it("is scanned as the plain project address, whatever was around it", () => {
+      for (const pasted of ["github.com/acme/app", "https://github.com/acme/app.git", "https://github.com/acme/app/tree/main/src"]) {
+        mock.scanFromUrl.mockClear();
+        check(pasted);
+        expect(mock.scanFromUrl, pasted).toHaveBeenCalledWith("https://github.com/acme/app");
+        cleanup();
+      }
+    });
+
+    it("from the landing page is cleaned up in the same way", () => {
+      renderScan("/scan?url=github.com%2Facme%2Fapp.git");
+      expect(mock.scanFromUrl).toHaveBeenCalledWith("https://github.com/acme/app");
+    });
+  });
+
+  describe("a link that is not a GitHub project", () => {
+    it("says what a link should look like, scans nothing, and tells the owner only the website's name", () => {
+      check("https://my-secret-app.lovable.app/preview?token=abc");
+      expect(screen.getByText(/doesn't look like a GitHub link. It should look like github.com\/your-name\/your-app/)).toBeTruthy();
+      expect(mock.scanFromUrl).not.toHaveBeenCalled();
+      expect(mock.reported).toEqual(["lovable.app"]);
+    });
+
+    it("does the same when the link came from the landing page", () => {
+      renderScan("/scan?url=https%3A%2F%2Freplit.com%2F%40someone%2FDaily-Habits");
+      expect(mock.scanFromUrl).not.toHaveBeenCalled();
+      expect(mock.reported).toEqual(["replit.com"]);
+    });
+
+    it("reports text that is not a link at all with a label, not with the text", () => {
+      check("my daily habits app");
+      expect(mock.reported).toEqual(["(not a link)"]);
+    });
+
+    it("reports nothing for someone who asked not to be counted, nor for the owner testing the page", () => {
+      mock.counting = false;
+      check("https://replit.com/@someone/app");
+      expect(mock.reported).toEqual([]);
+      expect(screen.getByText(/doesn't look like a GitHub link/)).toBeTruthy();
+      cleanup();
+      mock.counting = true;
+      mock.isAdmin = true;
+      check("https://replit.com/@someone/app");
+      expect(mock.reported).toEqual([]);
+    });
+
+    it("reports nothing when nothing was pasted", () => {
+      check("   ");
+      expect(mock.reported).toEqual([]);
     });
   });
 

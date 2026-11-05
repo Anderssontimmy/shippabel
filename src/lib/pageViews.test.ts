@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildPageView, sendPageView, shouldCount, sourceFromSearch } from "./pageViews";
+import { buildPageView, sendPageView, sendRejectedLink, shouldCount, sourceFromSearch } from "./pageViews";
 
 const real = { hostname: "shippabel.com", pathname: "/pricing", doNotTrack: false, isAdmin: false };
 
@@ -43,8 +43,18 @@ describe("sending a page view", () => {
     expect(JSON.parse(init.body)).toEqual({ path: "/", entry: true });
   });
 
+  it("sends a turned-away link as the name of its website and nothing else", () => {
+    const send = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    sendRejectedLink("replit.com", send);
+    const [url, init] = send.mock.calls[0]!;
+    expect(String(url)).toMatch(/\/functions\/v1\/track$/);
+    expect(init).toMatchObject({ method: "POST", credentials: "omit", headers: { "Content-Type": "text/plain;charset=UTF-8" } });
+    expect(JSON.parse(init.body)).toEqual({ rejected: "replit.com" });
+  });
+
   it("never lets a failed count reach the page", () => {
     expect(() => sendPageView({ path: "/", entry: true }, vi.fn().mockRejectedValue(new Error("offline")))).not.toThrow();
     expect(() => sendPageView({ path: "/", entry: true }, vi.fn(() => { throw new Error("blocked"); }))).not.toThrow();
+    expect(() => sendRejectedLink("replit.com", vi.fn().mockRejectedValue(new Error("offline")))).not.toThrow();
   });
 });
