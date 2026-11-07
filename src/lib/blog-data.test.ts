@@ -68,10 +68,20 @@ describe("the guides' data", () => {
   });
 
   it("cites Google or Apple for the facts the new guides lean on", () => {
-    for (const slug of ["google-play-12-testers-rule", "how-much-does-it-cost-to-publish-an-app", "google-play-developer-account-setup"]) {
+    for (const slug of [
+      "google-play-12-testers-rule", "how-much-does-it-cost-to-publish-an-app", "google-play-developer-account-setup",
+      "how-long-does-google-play-review-take", "apk-vs-aab-google-play", "google-play-testing-tracks-explained",
+      "google-play-data-safety-form", "pwa-or-google-play-app",
+    ]) {
       const post = blogPosts.find((p) => p.slug === slug)!;
       expect(post.content, slug).toMatch(/<h2>Sources<\/h2>/);
-      expect(post.content, slug).toMatch(/href="https:\/\/(support\.google\.com|developer\.apple\.com)/);
+      expect(post.content, slug).toMatch(/href="https:\/\/(support\.google\.com|developer\.apple\.com|developer\.android\.com|developer\.chrome\.com)/);
+    }
+  });
+
+  it("opens each guide published since November with the short answer, so a reader or an AI assistant gets it from the first sentence", () => {
+    for (const post of blogPosts.filter((p) => p.date >= "2026-11-02")) {
+      expect(post.content.trim(), post.slug).toMatch(/^<p><strong>The short answer:<\/strong>/);
     }
   });
 
