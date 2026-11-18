@@ -14,6 +14,329 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "how-long-does-google-play-review-take",
+    title: "How long does Google Play app review take? (2026)",
+    excerpt: "Plan for up to seven days, and longer in exceptional cases. What Google says, how to see your status, and what to do if your app is rejected.",
+    category: "Google Play",
+    readTime: "5 min read",
+    date: "2026-11-07",
+    updated: "2026-11-07",
+    related: ["google-play-review-what-they-check", "google-play-12-testers-rule", "google-play-data-safety-form"],
+    content: `
+<p><strong>The short answer:</strong> plan for up to seven days. Google says that apps and developer accounts that get an extended review can take up to seven days, and longer in exceptional cases. You do not get a fixed time in advance, so do not promise anyone a launch date for the day after you submit.</p>
+
+<h2>What does Google actually say?</h2>
+
+<p>Google's help page says that certain apps may be subject to extended reviews, and that for certain developer accounts Google takes more time to review an app thoroughly. Both can mean review times of up to seven days, or longer in exceptional cases. The page does not list every reason a review takes longer, so you cannot know in advance which group your app falls into.</p>
+
+<h2>Is review the only wait?</h2>
+
+<p>No. For a first app on a new personal developer account there are three waits, one after the other:</p>
+
+<ol>
+<li>The closed test: at least 12 testers for 14 days. <a href="https://shippabel.com/blog/google-play-12-testers-rule">The 12-tester rule</a> explains how it works.</li>
+<li>Google's answer to your request for production access.</li>
+<li>The review of your app before it goes public.</li>
+</ol>
+
+<p>Plan on about three weeks in total. Most of that is the closed test, which you control, so starting it early is the best way to save time.</p>
+
+<h2>How do I see where my app is?</h2>
+
+<p>In Play Console, your app's latest publishing status shows under its name and package name when you select the app. The Publishing overview page lists changes that have not been sent for review yet. Google notes that your changes are not sent for review automatically, so check that page if nothing seems to be happening. Statuses you may see include In review, Update rejected and App rejected.</p>
+
+<h2>Can I choose when it goes live?</h2>
+
+<p>Yes. With managed publishing, once Google has approved your changes you control exactly when they go live. Google explains how to turn it on in the Play Console Help.</p>
+
+<h2>What if my app is rejected?</h2>
+
+<p>For an update, Google says you can fix the issue and resubmit, or submit an appeal. The status App rejected applies to an app you are publishing for the first time, while it is still a draft. You cannot publish until the errors are fixed. <a href="https://shippabel.com/blog/google-play-review-what-they-check">What Google checks during Play review</a> lists the common reasons, so you can avoid them.</p>
+
+<h2>How do I avoid delays?</h2>
+
+<ul>
+<li>Fill in your store page, your privacy policy and the <a href="https://shippabel.com/blog/google-play-data-safety-form">Data safety form</a> before you submit.</li>
+<li>Fix every error Play Console shows. Google says you cannot publish your app until errors have been resolved.</li>
+<li>Run a free check first, so the usual reasons for rejection are fixed before Google sees your app.</li>
+</ul>
+
+<h2>Where does Shippabel fit in?</h2>
+
+<p>Shippabel tracks your review status and explains a rejection in plain language. Google decides when your app goes live, and no tool can speed that up.</p>
+
+<h2>Sources</h2>
+
+<ul>
+<li><a href="https://support.google.com/googleplay/android-developer/answer/9859751" target="_blank" rel="noopener noreferrer">Google Play Console Help: publish your app</a></li>
+</ul>
+
+<p><a href="https://shippabel.com/scan">Check your app for free →</a></p>
+`,
+  },
+  {
+    slug: "apk-vs-aab-google-play",
+    title: "APK vs AAB: which file does Google Play want?",
+    excerpt: "Google Play requires an Android App Bundle (AAB) for new apps. What AAB and APK files are, which one you need, and how to get one.",
+    category: "Google Play",
+    readTime: "4 min read",
+    date: "2026-11-07",
+    updated: "2026-11-07",
+    related: ["turn-a-web-app-into-an-android-app", "google-play-testing-tracks-explained", "google-play-developer-account-setup"],
+    content: `
+<p><strong>The short answer:</strong> Google Play wants an Android App Bundle (AAB) for new apps. An APK is a file you can install straight onto a phone, which is handy for trying your app yourself, but it is not what you upload to Google Play. Google has required app bundles for new apps since August 2021.</p>
+
+<h2>What is an AAB?</h2>
+
+<p>An Android App Bundle is a publishing format. It holds all of your app's code and resources, and Google Play uses it to build the files each phone needs. People download less, and you do not have to build a separate version for every kind of phone. The file ends in .aab.</p>
+
+<h2>What is an APK?</h2>
+
+<p>An APK is a finished Android app in a single file, ending in .apk. You can copy one to a phone and install it without Google Play, so it is a quick way to try your app on your own phone or to hand a test copy to a friend. Before Google required bundles, an APK was also what developers uploaded to the store.</p>
+
+<h2>AAB and APK side by side</h2>
+
+<table>
+<thead>
+<tr><th></th><th>AAB</th><th>APK</th></tr>
+</thead>
+<tbody>
+<tr><td>The file ends in</td><td>.aab</td><td>.apk</td></tr>
+<tr><td>Upload to Google Play for a new app</td><td>Yes, required</td><td>No</td></tr>
+<tr><td>Install straight on your phone</td><td>Not directly, Google Play prepares the files</td><td>Yes</td></tr>
+<tr><td>Who builds the files for each phone</td><td>Google Play</td><td>You</td></tr>
+<tr><td>Good for</td><td>Releasing in Google Play</td><td>Trying the app yourself</td></tr>
+</tbody>
+</table>
+
+<h2>Which one do you need?</h2>
+
+<p>If you want your app on Google Play, you need an AAB. If you only want to try the app on a phone, an APK is quicker. You may want both: an APK to test with and an AAB to publish.</p>
+
+<h2>Does the file have to be signed?</h2>
+
+<p>Yes. Android apps are signed, which shows that the app really comes from you, and Google's guidance is to build a signed bundle and upload it. After you upload, Google Play generates the final APKs from the bundle and signs them for each phone.</p>
+
+<h2>How do I get an AAB?</h2>
+
+<ul>
+<li><strong>Android Studio.</strong> Google's developer tool can build a signed bundle. You install it on your computer and create a signing key.</li>
+<li><strong>The command line.</strong> The same build, run from a terminal. This suits people who already work in one.</li>
+<li><strong>A cloud build.</strong> A service builds the bundle for you, so you need no developer tools. Shippabel does this: it builds a signed AAB in the cloud, usually in 10 to 20 minutes, and uploads it to your app's internal testing track in your own Play Console.</li>
+</ul>
+
+<p>Make sure it is a release build and not a debug build. A debug build is made for testing while you develop, and it is not meant to be published.</p>
+
+<h2>What if my tool gave me an APK?</h2>
+
+<p>Some tools and online builders hand you an APK. It installs on your phone, so it is useful for a first look, but for Google Play you need to produce an AAB from the same project. <a href="https://shippabel.com/blog/turn-a-web-app-into-an-android-app">How to turn a web app into an Android app</a> explains the options.</p>
+
+<h2>Sources</h2>
+
+<ul>
+<li><a href="https://developer.android.com/guide/app-bundle" target="_blank" rel="noopener noreferrer">Android Developers: about Android App Bundles</a></li>
+</ul>
+
+<p><a href="https://shippabel.com/scan">Check your app for free →</a></p>
+`,
+  },
+  {
+    slug: "google-play-testing-tracks-explained",
+    title: "Internal, closed and open testing on Google Play, explained",
+    excerpt: "Google Play has three test tracks: internal, closed and open. Who can join each, how many testers, and which one a new app should start with.",
+    category: "Google Play",
+    readTime: "5 min read",
+    date: "2026-11-07",
+    updated: "2026-11-07",
+    related: ["google-play-12-testers-rule", "apk-vs-aab-google-play", "how-long-does-google-play-review-take"],
+    content: `
+<p><strong>The short answer:</strong> Google Play has three test tracks you can use before you release to everyone: internal testing for up to 100 people you add by email, closed testing for people you invite, and open testing that anyone can join. Start with internal testing to check that your app installs. New personal developer accounts must also run a closed test before they can release publicly.</p>
+
+<h2>The three tracks side by side</h2>
+
+<table>
+<thead>
+<tr><th>Track</th><th>Who can join</th><th>How many testers</th></tr>
+</thead>
+<tbody>
+<tr><td>Internal</td><td>People you add by email address. They cannot find the app on Google Play, they need your link.</td><td>Up to 100</td></tr>
+<tr><td>Closed</td><td>People you invite with an email list, a Google Group or an organization. They need your opt-in link.</td><td>Email lists of up to 2,000 each, up to 50 lists per track. Google Groups have no limit.</td></tr>
+<tr><td>Open</td><td>Anyone. The app can be found on Google Play.</td><td>Unlimited, or a limit you set of at least 1,000.</td></tr>
+</tbody>
+</table>
+
+<h2>Internal testing</h2>
+
+<p>This is the quickest way to see your app on a real phone. You add up to 100 testers by email address, and they install the app from a link you send them. Google notes that internal tests might not be subject to the standard policy or security reviews. Treat that as a reason to use internal testing as a first check, not as a way around the review that comes before a public release.</p>
+
+<h2>Closed testing</h2>
+
+<p>A closed test is for a group you choose. You manage testers with email lists or Google Groups, or you choose an organization. Each tester has to open your opt-in link and accept, and if you use a Google Group they must join the group first. After you publish a test for the first time, the link can take several hours to start working.</p>
+
+<p>This is the track for the testing requirement on new personal developer accounts: at least 12 testers for 14 days. <a href="https://shippabel.com/blog/google-play-12-testers-rule">The 12-tester rule</a> explains how to get through it.</p>
+
+<h2>Open testing</h2>
+
+<p>An open test is visible on Google Play, and anyone with the link can join, so it works like a public preview. You can leave the number of testers unlimited or set a limit of at least 1,000. Check that your app and your store page are ready for visitors before you open one.</p>
+
+<h2>Can testers leave reviews?</h2>
+
+<p>Not public ones. Google says testers cannot leave public reviews on Google Play for test versions, so give them another way to send feedback, such as an email address or a short form.</p>
+
+<h2>Which track should you start with?</h2>
+
+<ol>
+<li>Upload your first build to internal testing and install it on a real phone.</li>
+<li>If your account is a new personal account, run the closed test with at least 12 testers for 14 days.</li>
+<li>Use open testing only if you want a public trial. It is optional.</li>
+<li>Release to production. New personal accounts apply for production access first.</li>
+</ol>
+
+<p>Google's help page says you must test your app before you release it to production.</p>
+
+<h2>Where does Shippabel fit in?</h2>
+
+<p>Shippabel builds your app and uploads it to the internal testing track in your own Play Console, so you can install it on a phone without any developer tools. You run the closed test yourself, because the testers have to be real people you invite.</p>
+
+<h2>Sources</h2>
+
+<ul>
+<li><a href="https://support.google.com/googleplay/android-developer/answer/9845334" target="_blank" rel="noopener noreferrer">Google Play Console Help: set up an open, closed, or internal test</a></li>
+</ul>
+
+<p><a href="https://shippabel.com/scan">Check your app for free →</a></p>
+`,
+  },
+  {
+    slug: "google-play-data-safety-form",
+    title: "Google Play Data safety form: how to fill it in",
+    excerpt: "Apps on Google Play need a Data safety form and a privacy policy. What the form asks, where to find it, and how to answer it for an AI-built app.",
+    category: "Google Play",
+    readTime: "6 min read",
+    date: "2026-11-07",
+    updated: "2026-11-07",
+    related: ["app-privacy-policy-guide", "google-play-review-what-they-check", "how-long-does-google-play-review-take"],
+    content: `
+<p><strong>The short answer:</strong> if your app is published on Google Play, you must fill in the Data safety form in Play Console. It tells people what data your app collects, whether you share it, how it is protected and whether users can ask you to delete it. You also need a privacy policy, and what it says must match your answers.</p>
+
+<h2>What does the form ask?</h2>
+
+<p>Google's form asks about four things:</p>
+
+<ul>
+<li><strong>What you collect.</strong> Google defines collecting as sending data from your app off the user's device.</li>
+<li><strong>What you share.</strong> Sharing means passing the data your app collected to a third party.</li>
+<li><strong>How it is protected.</strong> For example, whether the data is encrypted when it is sent.</li>
+<li><strong>Whether people can ask for deletion.</strong> Does your app give users a way to ask you to delete their data?</li>
+</ul>
+
+<p>For each kind of data you collect, you pick from Google's categories: location, personal info, financial info, health and fitness, messages, photos and videos, audio files, files and docs, calendar, contacts, app activity, web browsing, app info and performance, and device or other IDs.</p>
+
+<h2>Where do I find it?</h2>
+
+<p>Open Play Console, go to the App content page, find Data safety and select Start. Add your privacy policy first, because Google requires one to complete the form.</p>
+
+<h2>What if my app collects nothing?</h2>
+
+<p>You still complete the form and give a link to your privacy policy. The form and the policy can then say that no user data is collected or shared.</p>
+
+<h2>Does code from other companies count?</h2>
+
+<p>Yes. Google says the form covers data collected and handled through any third-party libraries or SDKs in your app, and that it is your responsibility to make sure such code follows the Play policies. If you added a login service, analytics or crash reporting, what they collect belongs in your answers.</p>
+
+<h2>What counts in an AI-built app?</h2>
+
+<p>These are examples to help you think, not advice for your app. Only you know what your app does.</p>
+
+<ul>
+<li>If people sign in with an email address, you collect that email address, which belongs under personal info.</li>
+<li>If your app saves anything to an online database, that data leaves the device, so it counts as collected.</li>
+<li>If you added analytics or crash reporting, check what that service collects and include it.</li>
+<li>If your app works fully on the device and never sends data anywhere, you may be able to say it collects nothing.</li>
+</ul>
+
+<h2>Keep it accurate</h2>
+
+<p>Google says you alone are responsible for complete and accurate declarations, and that your answers must stay accurate and complete at all times. Apps that do not become compliant are subject to policy enforcement, such as blocked updates or removal from Google Play. When you add a feature that collects something new, update the form and your privacy policy.</p>
+
+<h2>Which apps do not need the form?</h2>
+
+<p>Google says system services and private apps do not need to complete it. An ordinary public app does.</p>
+
+<h2>Where does Shippabel fit in?</h2>
+
+<p>The free check looks for a privacy policy, and Shippabel can write one for you and host it at a public address you can link to. You answer the Data safety form yourself in Play Console, because only you know what your app does with data. Our guide to <a href="https://shippabel.com/blog/app-privacy-policy-guide">writing a privacy policy</a> covers the policy side.</p>
+
+<h2>Sources</h2>
+
+<ul>
+<li><a href="https://support.google.com/googleplay/android-developer/answer/10787469" target="_blank" rel="noopener noreferrer">Google Play Console Help: provide information for Google Play's Data safety section</a></li>
+</ul>
+
+<p><a href="https://shippabel.com/scan">Check your app for free →</a></p>
+`,
+  },
+  {
+    slug: "pwa-or-google-play-app",
+    title: "Do you need Google Play? A web app, a PWA or a store app",
+    excerpt: "You do not need Google Play to share a web app. When a link or a PWA is enough, when you need a store listing, and how to get from one to the other.",
+    category: "Beginner",
+    readTime: "5 min read",
+    date: "2026-11-07",
+    updated: "2026-11-07",
+    related: ["turn-a-web-app-into-an-android-app", "how-much-does-it-cost-to-publish-an-app", "vibe-coding-publish-app"],
+    content: `
+<p><strong>The short answer:</strong> you do not need Google Play to share a web app. If people can open it from a link, or add it to their phone's home screen, that may be enough. You need a store listing when you want people to find and install your app from Google Play.</p>
+
+<h2>What is a PWA?</h2>
+
+<p>A PWA (progressive web app) is a website that can be added to a phone's home screen and opened like an app. It is still your web app, so when you update the site, everyone gets the update. People open your link in their browser and choose to add it to their home screen.</p>
+
+<h2>A link or a store listing: which fits you?</h2>
+
+<table>
+<thead>
+<tr><th>You want</th><th>A link or PWA</th><th>A store listing</th></tr>
+</thead>
+<tbody>
+<tr><td>To share the app with a few people</td><td>Enough</td><td>More work than needed</td></tr>
+<tr><td>To try your idea before spending money</td><td>Enough, there is no store fee</td><td>Costs a one-time $25 Google fee</td></tr>
+<tr><td>People to find the app by searching Google Play</td><td>Not possible</td><td>Yes, once it is published</td></tr>
+<tr><td>People to install the app from Google Play</td><td>Not possible</td><td>Yes</td></tr>
+</tbody>
+</table>
+
+<h2>When a link is enough</h2>
+
+<p>A link is enough for a prototype, a tool for your team or club, or an idea you are still testing. There is no store fee and no store review, and you can change the app whenever you like.</p>
+
+<h2>When you need the store</h2>
+
+<p>You need Google Play when you want to be listed there, or when you want people to get the app the way they get other apps. To get there, your web app has to be packaged as an Android app and uploaded as an app bundle. <a href="https://shippabel.com/blog/turn-a-web-app-into-an-android-app">How to turn a web app into an Android app</a> explains the options, and <a href="https://shippabel.com/blog/apk-vs-aab-google-play">APK vs AAB</a> explains the file you upload.</p>
+
+<h2>How does a web app run inside an Android app?</h2>
+
+<p>One way is a Trusted Web Activity, which lets an Android app open your web app using Chrome. Google says the app and the website must come from the same developer, which Android checks with Digital Asset Links, and that it needs Chrome 72 or newer on the phone. The Android app cannot read the web content directly, for example cookies and local storage.</p>
+
+<h2>What else comes with the store?</h2>
+
+<p>A Google Play developer account ($25, paid once, see <a href="https://shippabel.com/blog/how-much-does-it-cost-to-publish-an-app">what publishing costs</a>), a store page, a privacy policy and a <a href="https://shippabel.com/blog/google-play-data-safety-form">Data safety form</a>. If your account is a new personal account, Google also requires a closed test with at least 12 testers for 14 days: see <a href="https://shippabel.com/blog/google-play-12-testers-rule">the 12-tester rule</a>.</p>
+
+<h2>Where does Shippabel fit in?</h2>
+
+<p>Shippabel is for the second case. If a link is all you need, you do not need us. If you want a Google Play listing, the free check shows what your app still needs, and Shippabel can build the Android app, write the store page and upload the app to Google Play. Automatic conversion works for Vite web apps today.</p>
+
+<h2>Sources</h2>
+
+<ul>
+<li><a href="https://developer.chrome.com/docs/android/trusted-web-activity/" target="_blank" rel="noopener noreferrer">Chrome for Developers: Trusted Web Activities</a></li>
+<li><a href="https://support.google.com/googleplay/android-developer/answer/6112435" target="_blank" rel="noopener noreferrer">Google Play Console Help: get started with Play Console</a></li>
+</ul>
+
+<p><a href="https://shippabel.com/scan">Check your app for free →</a></p>
+`,
+  },
+  {
     slug: "google-play-12-testers-rule",
     title: "Google Play's 12-tester rule: what it is and how to pass it",
     excerpt: "New personal Google Play accounts must run a closed test with at least 12 testers for 14 days before going public. What it means and how to get through it.",
@@ -21,7 +344,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "6 min read",
     date: "2026-11-02",
     updated: "2026-11-02",
-    related: ["google-play-developer-account-setup", "publish-lovable-app", "google-play-review-what-they-check"],
+    related: ["google-play-testing-tracks-explained", "how-long-does-google-play-review-take", "google-play-developer-account-setup"],
     content: `
 <p><strong>The short answer:</strong> if you created a personal Google Play developer account after November 2023, Google makes you run a closed test with at least 12 testers for 14 days before you can apply to release your app to everyone. Until then, only the people you invite can install it.</p>
 
@@ -221,7 +544,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "7 min read",
     date: "2026-11-02",
     updated: "2026-11-02",
-    related: ["publish-lovable-app", "publish-bolt-app-to-google-play", "google-play-12-testers-rule"],
+    related: ["apk-vs-aab-google-play", "pwa-or-google-play-app", "publish-lovable-app"],
     content: `
 <p><strong>The short answer:</strong> the fastest way to turn a web app into an Android app is to wrap it. Your web app is packaged inside a small native app that shows it full screen, and the result is an Android App Bundle (AAB), the file format Google Play requires for new apps. Wrapping works well when your web app already looks and works well on a phone.</p>
 
@@ -615,7 +938,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "7 min read",
     date: "2026-05-31",
     updated: "2026-05-31",
-    related: ["app-privacy-policy-guide", "google-play-12-testers-rule", "google-play-screenshots-guide"],
+    related: ["how-long-does-google-play-review-take", "google-play-data-safety-form", "app-privacy-policy-guide"],
     content: `
 <p>Google Play rejects plenty of first-time submissions — not because the apps are bad, but because developers miss small but important requirements.</p>
 
@@ -674,7 +997,7 @@ export const blogPosts: BlogPost[] = [
     readTime: "4 min read",
     date: "2026-04-02",
     updated: "2026-05-31",
-    related: ["google-play-review-what-they-check", "google-play-developer-account-setup", "how-much-does-it-cost-to-publish-an-app"],
+    related: ["google-play-data-safety-form", "google-play-review-what-they-check", "google-play-developer-account-setup"],
     content: `
 <p>Every app on Google Play needs a <strong>privacy policy</strong>. No exceptions. Even if your app doesn't collect any data, you still need one.</p>
 

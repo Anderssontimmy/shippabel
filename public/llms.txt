@@ -2,7 +2,7 @@
 
 > Shippabel checks apps built with AI tools, fixes what Google Play would reject, writes the store page, frames the screenshots, builds the app in the cloud and publishes it to Google Play. It is made for people who are not developers. The check is free; publishing one app costs $99, paid once.
 
-Last updated: 2026-11-02
+Last updated: 2026-11-07
 
 ## What Shippabel is
 
@@ -38,6 +38,11 @@ Shippabel (https://shippabel.com) is a web service for people who built an app w
 - [How much does it cost to publish an app?](https://shippabel.com/blog/how-much-does-it-cost-to-publish-an-app): the Google Play fee ($25 once), the Apple fee ($99 a year) and what else to budget for.
 - [How to create a Google Play developer account](https://shippabel.com/blog/google-play-developer-account-setup): personal or organization, the $25 fee and identity verification.
 - [How to turn a web app into an Android app](https://shippabel.com/blog/turn-a-web-app-into-an-android-app): wrapping, trusted web activities, rebuilding and hiring help, and what Google expects.
+- [How long does Google Play app review take?](https://shippabel.com/blog/how-long-does-google-play-review-take): what Google says (up to seven days, longer in exceptional cases), where to see the status and what a rejection means.
+- [APK vs AAB: which file does Google Play want?](https://shippabel.com/blog/apk-vs-aab-google-play): Google Play requires an Android App Bundle for new apps, what an APK is for and how to get an AAB.
+- [Internal, closed and open testing on Google Play](https://shippabel.com/blog/google-play-testing-tracks-explained): who can join each track, tester limits and which track to start with.
+- [Google Play Data safety form: how to fill it in](https://shippabel.com/blog/google-play-data-safety-form): what the form asks, where to find it and what counts for an AI-built app.
+- [Do you need Google Play? A web app, a PWA or a store app](https://shippabel.com/blog/pwa-or-google-play-app): when a link is enough and when a store listing is needed.
 - [How to publish a Lovable app to Google Play](https://shippabel.com/blog/publish-lovable-app)
 - [How to publish a Bolt app to Google Play](https://shippabel.com/blog/publish-bolt-app-to-google-play)
 - [How to publish a Cursor app to Google Play](https://shippabel.com/blog/publish-cursor-app-to-google-play)
